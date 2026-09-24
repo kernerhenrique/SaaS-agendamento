@@ -75,13 +75,23 @@ export function DatetimeStep({
     <div className="flex flex-col gap-3">
       <h2 className="text-lg font-medium">Escolha data e horário</h2>
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" onClick={() => setDate((d) => addDaysToIsoDate(d, -1))}>
+        <Button
+          variant="outline"
+          size="sm"
+          aria-label="Dia anterior"
+          onClick={() => setDate((d) => addDaysToIsoDate(d, -1))}
+        >
           ←
         </Button>
         <p className="min-w-48 text-center text-sm font-medium capitalize">
           {formatDateLabel(date, timezone)}
         </p>
-        <Button variant="outline" size="sm" onClick={() => setDate((d) => addDaysToIsoDate(d, 1))}>
+        <Button
+          variant="outline"
+          size="sm"
+          aria-label="Próximo dia"
+          onClick={() => setDate((d) => addDaysToIsoDate(d, 1))}
+        >
           →
         </Button>
       </div>
@@ -98,6 +108,7 @@ export function DatetimeStep({
             <button
               key={slot.startAt}
               type="button"
+              data-testid="time-slot"
               className="rounded-lg border px-3 py-2 text-sm font-medium transition-colors hover:bg-[var(--accent)] hover:text-white focus-visible:bg-[var(--accent)] focus-visible:text-white"
               style={{ borderColor: accentColor, ["--accent" as string]: accentColor }}
               onClick={() => onSelect(slot)}
