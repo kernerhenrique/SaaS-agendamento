@@ -73,6 +73,22 @@ export function utcToLocalMinutes(date: Date, timeZone: string): number {
   return zoned.getUTCHours() * 60 + zoned.getUTCMinutes();
 }
 
+/** Data (YYYY-MM-DD) de "hoje" observada no timezone informado. */
+export function todayInTimeZone(timeZone: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+/** Soma (ou subtrai, com `days` negativo) dias a uma data YYYY-MM-DD, sem depender de timezone. */
+export function addDaysToIsoDate(dateISO: string, days: number): string {
+  const { year, month, day } = parseDateOnly(dateISO);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}
+
 export function rangesOverlap(
   aStart: Date,
   aEnd: Date,

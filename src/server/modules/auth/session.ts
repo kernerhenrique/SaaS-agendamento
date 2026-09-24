@@ -1,5 +1,7 @@
 import { cookies } from "next/headers";
 
+import { UnauthorizedError } from "@/server/errors";
+
 import { ACCESS_TOKEN_COOKIE } from "./cookies";
 import { verifyAccessToken, type AccessTokenPayload } from "./tokens";
 
@@ -25,4 +27,14 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   } catch {
     return null;
   }
+}
+
+/** Mesma coisa que `getAdminSession`, mas lança quando não há sessão — para
+ * usar no topo de route handlers que exigem um admin autenticado. */
+export async function requireAdminSession(): Promise<AdminSession> {
+  const session = await getAdminSession();
+  if (!session) {
+    throw new UnauthorizedError();
+  }
+  return session;
 }
