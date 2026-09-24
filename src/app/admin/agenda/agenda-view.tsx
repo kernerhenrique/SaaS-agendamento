@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { AppointmentStatus } from "@/generated/prisma/enums";
 import { addDaysToIsoDate, formatDateLabel, todayInTimeZone } from "@/lib/date";
 import { NEXT_STATUS_ACTIONS, STATUS_BADGE_CLASSES, STATUS_LABELS } from "@/lib/appointment-status";
@@ -25,6 +26,23 @@ export interface AppointmentDto {
   professional: { id: string; name: string };
   service: { id: string; name: string; durationMin: number };
   client: { id: string; name: string; phone: string };
+}
+
+function AppointmentCardSkeletons() {
+  return (
+    <div className="flex flex-col gap-2">
+      {[0, 1].map((i) => (
+        <div key={i} className="flex flex-col gap-2 rounded-lg border p-3">
+          <div className="flex items-center justify-between gap-2">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+          </div>
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="h-3 w-40" />
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function formatTime(dateISO: string, timeZone: string): string {
@@ -62,6 +80,9 @@ export function AgendaView({
   }, [date]);
 
   useEffect(() => {
+    // Busca ao montar/trocar de data; loadAppointments seta isLoading antes do
+    // fetch — padrão de efeito de busca com flag de carregamento, não um bug.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAppointments();
   }, [loadAppointments]);
 
@@ -133,7 +154,7 @@ export function AgendaView({
             </CardHeader>
             <CardContent className="flex flex-col gap-2">
               {isLoading ? (
-                <p className="text-sm text-muted-foreground">Carregando...</p>
+                <AppointmentCardSkeletons />
               ) : (appointmentsByProfessional.get(professional.id) ?? []).length === 0 ? (
                 <p className="text-sm text-muted-foreground">Nenhum agendamento neste dia.</p>
               ) : (

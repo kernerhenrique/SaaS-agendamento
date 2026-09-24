@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { SlotGridSkeleton } from "@/components/slot-grid-skeleton";
 import { addDaysToIsoDate, formatDateLabel, todayInTimeZone } from "@/lib/date";
 
 interface Slot {
@@ -33,6 +34,9 @@ export function RescheduleSection({
 
   useEffect(() => {
     let cancelled = false;
+    // Padrão de efeito de fetch com flag de loading e cancelamento de
+    // corrida, não um bug.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
     const params = new URLSearchParams({ businessId, serviceId, professionalId, date });
     fetch(`/api/availability?${params.toString()}`)
@@ -83,7 +87,7 @@ export function RescheduleSection({
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Carregando horários...</p>
+        <SlotGridSkeleton />
       ) : slots.length === 0 ? (
         <p className="text-sm text-muted-foreground">Nenhum horário disponível neste dia.</p>
       ) : (

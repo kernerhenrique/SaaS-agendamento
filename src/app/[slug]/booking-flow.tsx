@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 import { ConfirmationStep, type ConfirmedAppointmentInfo } from "./confirmation-step";
 import { ContactStep, type ContactInfo } from "./contact-step";
@@ -107,8 +108,15 @@ export function BookingFlow({
   return (
     <main className="flex flex-1 flex-col">
       <header className="border-b p-4 sm:p-6">
-        <h1 className="text-xl font-semibold">{business.name}</h1>
-        {business.address ? <p className="text-sm text-muted-foreground">{business.address}</p> : null}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold">{business.name}</h1>
+            {business.address ? (
+              <p className="text-sm text-muted-foreground">{business.address}</p>
+            ) : null}
+          </div>
+          <ThemeToggle />
+        </div>
         {step <= 4 ? (
           <div className="mt-4">
             <StepIndicator currentStep={step} accentColor={accentColor} />

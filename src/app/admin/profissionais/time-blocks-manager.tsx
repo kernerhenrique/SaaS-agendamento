@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { localMinutesToUtc } from "@/lib/date";
 import { timeInputToMinutes } from "@/lib/weekday";
 
@@ -52,6 +53,8 @@ export function TimeBlocksManager({
   }
 
   useEffect(() => {
+    // Padrão de efeito de fetch com flag de loading, não um bug.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadTimeBlocks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [professionalId]);
@@ -96,7 +99,10 @@ export function TimeBlocksManager({
   return (
     <div className="flex flex-col gap-2">
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Carregando...</p>
+        <div className="flex flex-col gap-1">
+          <Skeleton className="h-4 w-64" />
+          <Skeleton className="h-4 w-48" />
+        </div>
       ) : timeBlocks.length === 0 ? (
         <p className="text-sm text-muted-foreground">Nenhum bloqueio cadastrado.</p>
       ) : (

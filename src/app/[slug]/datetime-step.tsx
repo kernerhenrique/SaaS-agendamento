@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { SlotGridSkeleton } from "@/components/slot-grid-skeleton";
 import { addDaysToIsoDate, formatDateLabel, todayInTimeZone } from "@/lib/date";
 
 import { NO_PREFERENCE, type AvailableSlot } from "./types";
@@ -34,6 +35,9 @@ export function DatetimeStep({
 
   useEffect(() => {
     let cancelled = false;
+    // Reinicia o estado de carregamento a cada busca; padrão de efeito de
+    // fetch com flag de loading e cancelamento de corrida, não um bug.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
 
     const params = new URLSearchParams({ businessId, serviceId, date });
@@ -83,7 +87,7 @@ export function DatetimeStep({
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Carregando horários...</p>
+        <SlotGridSkeleton />
       ) : displaySlots.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           Nenhum horário disponível neste dia. Tente outra data.

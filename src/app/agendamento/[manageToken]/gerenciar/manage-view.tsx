@@ -19,14 +19,29 @@ function formatFullDateTime(dateISO: string, timeZone: string): string {
 
 const CANCELLABLE_STATUSES: AppointmentStatus[] = [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED];
 
-export function ManageView({ token, appointment: initial }: { token: string; appointment: ManagedAppointment }) {
+export function ManageView({
+  token,
+  appointment: initial,
+  initialIsFuture,
+}: {
+  token: string;
+  appointment: ManagedAppointment;
+  /**
+   * Se o horário original já era futuro, calculado uma vez no servidor
+   * (page.tsx) — recalcular com `Date.now()` durante a renderização no
+   * cliente quebraria a paridade servidor/cliente na primeira hidratação.
+   * As próprias mutações (cancelar/reagendar) sempre resultam em um status
+   * não gerenciável ou num novo horário futuro, então não é preciso
+   * reavaliar isso depois da carga inicial.
+   */
+  initialIsFuture: boolean;
+}) {
   const [appointment, setAppointment] = useState(initial);
   const [isCancelling, setIsCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isRescheduling, setIsRescheduling] = useState(false);
 
-  const isFuture = new Date(appointment.startAt).getTime() > Date.now();
-  const canManage = CANCELLABLE_STATUSES.includes(appointment.status) && isFuture;
+  const canManage = CANCELLABLE_STATUSES.includes(appointment.status) && initialIsFuture;
 
   async function handleCancel() {
     if (!window.confirm("Tem certeza que deseja cancelar este agendamento?")) return;

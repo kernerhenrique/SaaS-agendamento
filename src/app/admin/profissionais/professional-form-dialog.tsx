@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -38,8 +38,48 @@ export function ProfessionalFormDialog({
   timezone: string;
   onSaved: () => void | Promise<void>;
 }) {
-  const isEditing = Boolean(professional);
   const [open, setOpen] = useState(false);
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger render={trigger} />
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{professional ? "Editar profissional" : "Novo profissional"}</DialogTitle>
+          <DialogDescription>Nome, serviços realizados e expediente semanal.</DialogDescription>
+        </DialogHeader>
+        {/* Só monta o formulário enquanto o diálogo está aberto: cada
+            abertura começa com estado fresco (derivado de `professional` na
+            inicialização dos hooks), sem precisar de um efeito para
+            "resetar" campos de uma abertura anterior. */}
+        {open ? (
+          <ProfessionalFormFields
+            professional={professional}
+            services={services}
+            timezone={timezone}
+            onSaved={onSaved}
+            onClose={() => setOpen(false)}
+          />
+        ) : null}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ProfessionalFormFields({
+  professional,
+  services,
+  timezone,
+  onSaved,
+  onClose,
+}: {
+  professional?: ProfessionalListItem;
+  services: ServiceOption[];
+  timezone: string;
+  onSaved: () => void | Promise<void>;
+  onClose: () => void;
+}) {
+  const isEditing = Boolean(professional);
   const [name, setName] = useState(professional?.name ?? "");
   const [bio, setBio] = useState(professional?.bio ?? "");
   const [selectedServiceIds, setSelectedServiceIds] = useState<Set<string>>(
@@ -50,16 +90,6 @@ export function ProfessionalFormDialog({
   );
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    setName(professional?.name ?? "");
-    setBio(professional?.bio ?? "");
-    setSelectedServiceIds(new Set(professional?.professionalServices.map((ps) => ps.service.id) ?? []));
-    setWorkingHours(buildWorkingHoursFormEntries(professional?.workingHours ?? []));
-    setError(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
 
   function toggleService(serviceId: string) {
     setSelectedServiceIds((prev) => {
@@ -109,7 +139,7 @@ export function ProfessionalFormDialog({
         setError(data?.error ?? "Não foi possível salvar");
         return;
       }
-      setOpen(false);
+      onClose();
       await onSaved();
     } finally {
       setIsSubmitting(false);
@@ -117,63 +147,52 @@ export function ProfessionalFormDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={trigger} />
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Editar profissional" : "Novo profissional"}</DialogTitle>
-          <DialogDescription>
-            Nome, serviços realizados e expediente semanal.
-          </DialogDescription>
-        </DialogHeader>
-        <form className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto pr-1" onSubmit={handleSubmit}>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="name">Nome</Label>
-            <Input id="name" value={name} onChange={(event) => setName(event.target.value)} required />
-          </div>
+    <form className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto pr-1" onSubmit={handleSubmit}>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="name">Nome</Label>
+        <Input id="name" value={name} onChange={(event) => setName(event.target.value)} required />
+      </div>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="bio">Bio (opcional)</Label>
-            <Textarea id="bio" value={bio} onChange={(event) => setBio(event.target.value)} rows={2} />
-          </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="bio">Bio (opcional)</Label>
+        <Textarea id="bio" value={bio} onChange={(event) => setBio(event.target.value)} rows={2} />
+      </div>
 
-          <div className="flex flex-col gap-2">
-            <Label>Serviços realizados</Label>
-            <div className="flex flex-col gap-1">
-              {services.map((service) => (
-                <label key={service.id} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={selectedServiceIds.has(service.id)}
-                    onChange={() => toggleService(service.id)}
-                  />
-                  {service.name}
-                </label>
-              ))}
-            </div>
-          </div>
+      <div className="flex flex-col gap-2">
+        <Label>Serviços realizados</Label>
+        <div className="flex flex-col gap-1">
+          {services.map((service) => (
+            <label key={service.id} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={selectedServiceIds.has(service.id)}
+                onChange={() => toggleService(service.id)}
+              />
+              {service.name}
+            </label>
+          ))}
+        </div>
+      </div>
 
-          <div className="flex flex-col gap-2">
-            <Label>Expediente semanal</Label>
-            <WorkingHoursEditor value={workingHours} onChange={setWorkingHours} />
-          </div>
+      <div className="flex flex-col gap-2">
+        <Label>Expediente semanal</Label>
+        <WorkingHoursEditor value={workingHours} onChange={setWorkingHours} />
+      </div>
 
-          {isEditing ? (
-            <div className="flex flex-col gap-2">
-              <Label>Bloqueios manuais (folga, feriado)</Label>
-              <TimeBlocksManager professionalId={professional!.id} timezone={timezone} />
-            </div>
-          ) : null}
+      {isEditing ? (
+        <div className="flex flex-col gap-2">
+          <Label>Bloqueios manuais (folga, feriado)</Label>
+          <TimeBlocksManager professionalId={professional!.id} timezone={timezone} />
+        </div>
+      ) : null}
 
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-          <DialogFooter>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Salvando..." : "Salvar"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+      <DialogFooter>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Salvando..." : "Salvar"}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }
