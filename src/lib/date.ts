@@ -89,6 +89,18 @@ export function addDaysToIsoDate(dateISO: string, days: number): string {
   return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
 }
 
+/** Rótulo por extenso ("quinta-feira, 24 de setembro") de uma data YYYY-MM-DD no timezone informado. */
+export function formatDateLabel(dateISO: string, timeZone: string): string {
+  const { year, month, day } = parseDateOnly(dateISO);
+  const noonUtc = new Date(Date.UTC(year, month - 1, day, 12));
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone,
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+  }).format(noonUtc);
+}
+
 export function rangesOverlap(
   aStart: Date,
   aEnd: Date,

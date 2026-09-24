@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AppointmentStatus } from "@/generated/prisma/enums";
-import { addDaysToIsoDate, todayInTimeZone } from "@/lib/date";
+import { addDaysToIsoDate, formatDateLabel, todayInTimeZone } from "@/lib/date";
 import { NEXT_STATUS_ACTIONS, STATUS_BADGE_CLASSES, STATUS_LABELS } from "@/lib/appointment-status";
 
 import { NewAppointmentDialog } from "./new-appointment-dialog";
@@ -33,17 +33,6 @@ function formatTime(dateISO: string, timeZone: string): string {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(dateISO));
-}
-
-function formatDateLabel(dateISO: string, timeZone: string): string {
-  const [year, month, day] = dateISO.split("-").map(Number);
-  const noonUtc = new Date(Date.UTC(year, month - 1, day, 12));
-  return new Intl.DateTimeFormat("pt-BR", {
-    timeZone,
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-  }).format(noonUtc);
 }
 
 export function AgendaView({

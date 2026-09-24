@@ -52,7 +52,7 @@ export interface InsertAppointmentParams {
   notes?: string;
 }
 
-const MANAGE_TOKEN_TTL_DAYS_AFTER_APPOINTMENT = 30;
+export const MANAGE_TOKEN_TTL_DAYS_AFTER_APPOINTMENT = 30;
 
 /**
  * Núcleo compartilhado de criação de agendamento, usado tanto pelo encaixe
@@ -143,7 +143,7 @@ export async function updateAppointmentStatus(
   });
 }
 
-function isOverlapConstraintViolation(error: unknown): boolean {
+export function isOverlapConstraintViolation(error: unknown): boolean {
   const prismaError = error as Prisma.PrismaClientKnownRequestError | undefined;
   // P2010: erro de execução de query bruta / constraint do banco não mapeada
   // pelo Prisma; checamos a mensagem porque a exclusion constraint do

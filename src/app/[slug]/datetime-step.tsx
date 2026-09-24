@@ -3,20 +3,9 @@
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { addDaysToIsoDate, todayInTimeZone } from "@/lib/date";
+import { addDaysToIsoDate, formatDateLabel, todayInTimeZone } from "@/lib/date";
 
 import { NO_PREFERENCE, type AvailableSlot } from "./types";
-
-function formatDateLabel(dateISO: string, timeZone: string): string {
-  const [year, month, day] = dateISO.split("-").map(Number);
-  const noonUtc = new Date(Date.UTC(year, month - 1, day, 12));
-  return new Intl.DateTimeFormat("pt-BR", {
-    timeZone,
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-  }).format(noonUtc);
-}
 
 function formatTime(dateISO: string, timeZone: string): string {
   return new Intl.DateTimeFormat("pt-BR", { timeZone, hour: "2-digit", minute: "2-digit" }).format(
