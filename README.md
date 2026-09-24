@@ -55,8 +55,8 @@ Este projeto prioriza decisões defensáveis em entrevista técnica sobre "só f
 Pré-requisitos: Node.js ≥20.19 (o projeto foi desenvolvido com Node 24), Docker.
 
 ```bash
-git clone <url-deste-repositório>
-cd projeto-1
+git clone https://github.com/kernerhenrique/SaaS-agendamento.git
+cd SaaS-agendamento
 npm install
 
 cp .env.example .env
@@ -181,8 +181,8 @@ This project prioritizes decisions defensible in a technical interview over "jus
 Prerequisites: Node.js ≥20.19 (developed with Node 24), Docker.
 
 ```bash
-git clone <this-repository-url>
-cd projeto-1
+git clone https://github.com/kernerhenrique/SaaS-agendamento.git
+cd SaaS-agendamento
 npm install
 
 cp .env.example .env
