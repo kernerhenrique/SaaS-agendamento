@@ -1,7 +1,10 @@
 "use client";
 
 import { Weekday } from "@/generated/prisma/enums";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "cn";
 import { WEEKDAY_LABELS, WEEKDAY_ORDER, minutesToTimeInput, timeInputToMinutes } from "@/lib/weekday";
 
 import type { WorkingHoursInput } from "@/server/modules/professional/professional.service";
@@ -75,15 +78,20 @@ export function WorkingHoursEditor({
   return (
     <div className="flex flex-col gap-2">
       {value.map((entry, index) => (
-        <div key={entry.weekday} className="flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm">
-          <label className="flex w-24 items-center gap-2">
-            <input
-              type="checkbox"
+        <div
+          key={entry.weekday}
+          className={cn(
+            "flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm transition-colors",
+            entry.enabled ? "border-primary/30 bg-primary/5" : "border-border",
+          )}
+        >
+          <Label className="flex w-24 items-center gap-2 font-normal">
+            <Checkbox
               checked={entry.enabled}
-              onChange={(event) => updateEntry(index, { enabled: event.target.checked })}
+              onCheckedChange={(checked) => updateEntry(index, { enabled: checked === true })}
             />
             {WEEKDAY_LABELS[entry.weekday]}
-          </label>
+          </Label>
           {entry.enabled ? (
             <>
               <Input
@@ -99,14 +107,13 @@ export function WorkingHoursEditor({
                 value={entry.endTime}
                 onChange={(event) => updateEntry(index, { endTime: event.target.value })}
               />
-              <label className="flex items-center gap-1">
-                <input
-                  type="checkbox"
+              <Label className="flex items-center gap-1 font-normal">
+                <Checkbox
                   checked={entry.hasBreak}
-                  onChange={(event) => updateEntry(index, { hasBreak: event.target.checked })}
+                  onCheckedChange={(checked) => updateEntry(index, { hasBreak: checked === true })}
                 />
                 Almoço
-              </label>
+              </Label>
               {entry.hasBreak ? (
                 <>
                   <Input

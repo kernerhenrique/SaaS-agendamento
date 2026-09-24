@@ -1,4 +1,8 @@
+import { Users } from "lucide-react";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
+import { getInitials } from "@/lib/text";
 
 import { NO_PREFERENCE, type ProfessionalOption } from "./types";
 
@@ -22,6 +26,7 @@ export function ProfessionalStep({
           <SelectableCard
             key={professional.id}
             label={professional.name}
+            photoUrl={professional.photoUrl}
             onSelect={() => onSelect(professional.id)}
           />
         ))}
@@ -30,19 +35,37 @@ export function ProfessionalStep({
   );
 }
 
-function SelectableCard({ label, onSelect }: { label: string; onSelect: () => void }) {
+function SelectableCard({
+  label,
+  photoUrl,
+  onSelect,
+}: {
+  label: string;
+  photoUrl?: string | null;
+  onSelect: () => void;
+}) {
   return (
     <Card
       size="sm"
       role="button"
       tabIndex={0}
-      className="cursor-pointer transition-shadow hover:shadow-md"
+      className="cursor-pointer transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg"
       onClick={onSelect}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") onSelect();
       }}
     >
-      <CardContent>
+      <CardContent className="flex items-center gap-3">
+        {photoUrl !== undefined ? (
+          <Avatar>
+            <AvatarImage src={photoUrl ?? undefined} alt="" />
+            <AvatarFallback>{getInitials(label)}</AvatarFallback>
+          </Avatar>
+        ) : (
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <Users className="size-4" />
+          </div>
+        )}
         <p className="font-medium">{label}</p>
       </CardContent>
     </Card>

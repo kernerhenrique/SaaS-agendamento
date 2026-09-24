@@ -11,13 +11,25 @@ export default async function AgendaPage() {
     prisma.professional.findMany({
       where: { businessId: session.businessId, active: true, deletedAt: null },
       orderBy: { name: "asc" },
-      include: { professionalServices: { include: { service: true } } },
+      include: {
+        professionalServices: { include: { service: true } },
+        workingHours: {
+          select: {
+            weekday: true,
+            startMinute: true,
+            endMinute: true,
+            breakStartMinute: true,
+            breakEndMinute: true,
+          },
+        },
+      },
     }),
   ]);
 
   const professionalOptions = professionals.map((professional) => ({
     id: professional.id,
     name: professional.name,
+    photoUrl: professional.photoUrl,
     services: professional.professionalServices
       .filter((ps) => ps.service.active && !ps.service.deletedAt)
       .map((ps) => ({
@@ -25,6 +37,7 @@ export default async function AgendaPage() {
         name: ps.service.name,
         durationMin: ps.service.durationMin,
       })),
+    workingHours: professional.workingHours,
   }));
 
   return <AgendaView timezone={business.timezone} professionals={professionalOptions} />;

@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { SlotGridSkeleton } from "@/components/slot-grid-skeleton";
-import { addDaysToIsoDate, formatDateLabel, todayInTimeZone } from "@/lib/date";
+import { addDaysToIsoDate, formatDateLabel, todayInTimeZone, utcToLocalMinutes } from "@/lib/date";
 
 import { NO_PREFERENCE, type AvailableSlot } from "./types";
 
@@ -14,19 +15,23 @@ function formatTime(dateISO: string, timeZone: string): string {
   );
 }
 
+const PERIODS = [
+  { label: "Manhã", isInPeriod: (minutes: number) => minutes < 12 * 60 },
+  { label: "Tarde", isInPeriod: (minutes: number) => minutes >= 12 * 60 && minutes < 18 * 60 },
+  { label: "Noite", isInPeriod: (minutes: number) => minutes >= 18 * 60 },
+];
+
 export function DatetimeStep({
   businessId,
   serviceId,
   professionalId,
   timezone,
-  accentColor,
   onSelect,
 }: {
   businessId: string;
   serviceId: string;
   professionalId: string | typeof NO_PREFERENCE;
   timezone: string;
-  accentColor: string;
   onSelect: (slot: AvailableSlot) => void;
 }) {
   const [date, setDate] = useState(() => todayInTimeZone(timezone));
@@ -81,7 +86,7 @@ export function DatetimeStep({
           aria-label="Dia anterior"
           onClick={() => setDate((d) => addDaysToIsoDate(d, -1))}
         >
-          ←
+          <ChevronLeft />
         </Button>
         <p className="min-w-48 text-center text-sm font-medium capitalize">
           {formatDateLabel(date, timezone)}
@@ -92,7 +97,7 @@ export function DatetimeStep({
           aria-label="Próximo dia"
           onClick={() => setDate((d) => addDaysToIsoDate(d, 1))}
         >
-          →
+          <ChevronRight />
         </Button>
       </div>
 
@@ -103,19 +108,32 @@ export function DatetimeStep({
           Nenhum horário disponível neste dia. Tente outra data.
         </p>
       ) : (
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-          {displaySlots.map((slot) => (
-            <button
-              key={slot.startAt}
-              type="button"
-              data-testid="time-slot"
-              className="rounded-lg border px-3 py-2 text-sm font-medium transition-colors hover:bg-[var(--accent)] hover:text-white focus-visible:bg-[var(--accent)] focus-visible:text-white"
-              style={{ borderColor: accentColor, ["--accent" as string]: accentColor }}
-              onClick={() => onSelect(slot)}
-            >
-              {formatTime(slot.startAt, timezone)}
-            </button>
-          ))}
+        <div className="flex flex-col gap-4">
+          {PERIODS.map((period) => {
+            const periodSlots = displaySlots.filter((slot) =>
+              period.isInPeriod(utcToLocalMinutes(new Date(slot.startAt), timezone)),
+            );
+            if (periodSlots.length === 0) return null;
+
+            return (
+              <div key={period.label} className="flex flex-col gap-2">
+                <h3 className="text-xs font-medium text-muted-foreground uppercase">{period.label}</h3>
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {periodSlots.map((slot) => (
+                    <button
+                      key={slot.startAt}
+                      type="button"
+                      data-testid="time-slot"
+                      className="rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground focus-visible:border-primary focus-visible:bg-primary focus-visible:text-primary-foreground"
+                      onClick={() => onSelect(slot)}
+                    >
+                      {formatTime(slot.startAt, timezone)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { Clock, Pencil, Plus, Trash2 } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatPriceFromCents } from "@/lib/currency";
@@ -41,9 +43,13 @@ export function ServicesView({
   return (
     <main className="flex flex-1 flex-col gap-4 p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Serviços</h1>
+        <h1 className="text-2xl font-bold">Serviços</h1>
         <ServiceFormDialog
-          trigger={<Button>+ Novo serviço</Button>}
+          trigger={
+            <Button>
+              <Plus />+ Novo serviço
+            </Button>
+          }
           professionals={professionals}
           onSaved={refresh}
         />
@@ -58,21 +64,26 @@ export function ServicesView({
               <CardHeader>
                 <CardTitle className="text-base">{service.name}</CardTitle>
               </CardHeader>
-              <CardContent className="flex flex-col gap-2 text-sm">
+              <CardContent className="flex flex-col gap-3 text-sm">
                 {service.description ? (
                   <p className="text-muted-foreground">{service.description}</p>
                 ) : null}
-                <p>
-                  {service.durationMin}min · {formatPriceFromCents(service.priceCents)}
-                </p>
+                <div className="flex gap-1.5">
+                  <Badge variant="outline">
+                    <Clock className="size-3" />
+                    {service.durationMin}min
+                  </Badge>
+                  <Badge variant="outline">{formatPriceFromCents(service.priceCents)}</Badge>
+                </div>
                 <p>
                   <span className="font-medium">Profissionais: </span>
                   {service.professionalServices.map((ps) => ps.professional.name).join(", ") || "—"}
                 </p>
-                <div className="mt-2 flex gap-2">
+                <div className="mt-1 flex gap-2">
                   <ServiceFormDialog
                     trigger={
                       <Button variant="outline" size="sm">
+                        <Pencil />
                         Editar
                       </Button>
                     }
@@ -86,6 +97,7 @@ export function ServicesView({
                     disabled={deletingId === service.id}
                     onClick={() => handleDelete(service)}
                   >
+                    <Trash2 />
                     Remover
                   </Button>
                 </div>

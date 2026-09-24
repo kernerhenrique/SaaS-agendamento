@@ -11,6 +11,15 @@ Antes de qualquer mudança de arquitetura ou de schema, pare e proponha um plano
 - Cancelamento/reagendamento do cliente é feito por um `manage_token` único por agendamento (UUID v4), nunca por login ou por ID sequencial na URL.
 - Documento de escopo completo (regras de negócio, personas, referências de UX): `docs/escopo-sistema-agendamento.md`.
 
+## Referências para o projeto
+
+Use sempre essas refferêcias para fazer as telas do projeto:
+**Referências de mercado (inspiração de UX, não para copiar visualmente):**
+- **Fresha** — referência principal para o fluxo de agendamento em si: seleção de serviço → profissional → data/hora em poucos passos, com resumo sempre visível lateralmente (desktop) ou fixo no rodapé (mobile).
+- **Calendly** — referência para simplicidade do calendário de disponibilidade e para o fluxo "sem conta" de quem agenda.
+- **Booksy / Treatwell** — referência para o painel do lado do negócio (agenda visual por profissional, cores por status de agendamento, bloqueios de horário).
+- **Cal.com** (open source) — bom para inspirar a página pública "clean" do negócio e o design system (tipografia grande, bastante espaço em branco, poucos elementos por tela).
+
 ## Stack
 
 - Frontend: Next.js + TypeScript + Tailwind CSS + shadcn/ui

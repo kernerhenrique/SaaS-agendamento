@@ -13,12 +13,10 @@ export interface ContactInfo {
 }
 
 export function ContactStep({
-  accentColor,
   isSubmitting,
   error,
   onSubmit,
 }: {
-  accentColor: string;
   isSubmitting: boolean;
   error: string | null;
   onSubmit: (contact: ContactInfo) => void;
@@ -61,7 +59,7 @@ export function ContactStep({
           />
         </div>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        <Button type="submit" disabled={isSubmitting} style={{ backgroundColor: accentColor }}>
+        <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Confirmando..." : "Confirmar agendamento"}
         </Button>
       </form>

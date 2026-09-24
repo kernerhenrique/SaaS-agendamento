@@ -43,6 +43,26 @@ export function listAppointments(params: ListAppointmentsParams) {
   });
 }
 
+export interface ListTimeBlocksParams {
+  businessId: string;
+  professionalId?: string;
+  startAt: Date;
+  endAt: Date;
+}
+
+export function listTimeBlocksInRange(params: ListTimeBlocksParams) {
+  const { businessId, professionalId, startAt, endAt } = params;
+  return prisma.timeBlock.findMany({
+    where: {
+      professional: { businessId, ...(professionalId ? { id: professionalId } : {}) },
+      startAt: { lt: endAt },
+      endAt: { gt: startAt },
+    },
+    select: { id: true, professionalId: true, startAt: true, endAt: true, reason: true },
+    orderBy: { startAt: "asc" },
+  });
+}
+
 export interface InsertAppointmentParams {
   businessId: string;
   professionalId: string;

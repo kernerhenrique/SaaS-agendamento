@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -22,6 +23,7 @@ export function LogoutButton() {
 
   return (
     <Button variant="outline" onClick={handleLogout} disabled={isLoading}>
+      <LogOut />
       {isLoading ? "Saindo..." : "Sair"}
     </Button>
   );

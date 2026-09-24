@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -146,61 +147,63 @@ function ServiceFormFields({
   }
 
   return (
-    <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="serviceName">Nome</Label>
-        <Input id="serviceName" value={name} onChange={(event) => setName(event.target.value)} required />
-      </div>
+    <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+      <section className="flex flex-col gap-3">
+        <h3 className="text-sm font-semibold">Dados básicos</h3>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="serviceName">Nome</Label>
+          <Input id="serviceName" value={name} onChange={(event) => setName(event.target.value)} required />
+        </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="serviceDescription">Descrição (opcional)</Label>
-        <Textarea
-          id="serviceDescription"
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          rows={2}
-        />
-      </div>
-
-      <div className="flex gap-4">
-        <div className="flex flex-1 flex-col gap-2">
-          <Label htmlFor="duration">Duração (min)</Label>
-          <Input
-            id="duration"
-            type="number"
-            min={1}
-            value={durationMin}
-            onChange={(event) => setDurationMin(event.target.value)}
-            required
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="serviceDescription">Descrição (opcional)</Label>
+          <Textarea
+            id="serviceDescription"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            rows={2}
           />
         </div>
-        <div className="flex flex-1 flex-col gap-2">
-          <Label htmlFor="price">Preço (R$)</Label>
-          <Input
-            id="price"
-            inputMode="decimal"
-            value={price}
-            onChange={(event) => setPrice(event.target.value)}
-            required
-          />
-        </div>
-      </div>
 
-      <div className="flex flex-col gap-2">
-        <Label>Profissionais que realizam</Label>
-        <div className="flex flex-col gap-1">
+        <div className="flex gap-4">
+          <div className="flex flex-1 flex-col gap-2">
+            <Label htmlFor="duration">Duração (min)</Label>
+            <Input
+              id="duration"
+              type="number"
+              min={1}
+              value={durationMin}
+              onChange={(event) => setDurationMin(event.target.value)}
+              required
+            />
+          </div>
+          <div className="flex flex-1 flex-col gap-2">
+            <Label htmlFor="price">Preço (R$)</Label>
+            <Input
+              id="price"
+              inputMode="decimal"
+              value={price}
+              onChange={(event) => setPrice(event.target.value)}
+              required
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h3 className="text-sm font-semibold">Profissionais que realizam</h3>
+        <div className="flex flex-col gap-2">
           {professionals.map((professional) => (
-            <label key={professional.id} className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
+            <Label key={professional.id} className="flex items-center gap-2 text-sm font-normal">
+              <Checkbox
                 checked={selectedProfessionalIds.has(professional.id)}
-                onChange={() => toggleProfessional(professional.id)}
+                onCheckedChange={() => toggleProfessional(professional.id)}
               />
               {professional.name}
-            </label>
+            </Label>
           ))}
         </div>
-      </div>
+      </section>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 

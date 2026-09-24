@@ -16,6 +16,16 @@ export const STATUS_BADGE_CLASSES: Record<AppointmentStatus, string> = {
   NO_SHOW: "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400",
 };
 
+/** Versão "bloco cheio" das cores por status, usada na grade de horários da
+ * agenda (fundo sólido, não só borda/texto como STATUS_BADGE_CLASSES). */
+export const STATUS_BLOCK_CLASSES: Record<AppointmentStatus, string> = {
+  PENDING: "bg-amber-500 text-white",
+  CONFIRMED: "bg-blue-500 text-white",
+  CANCELLED: "bg-muted-foreground/50 text-white line-through",
+  COMPLETED: "bg-emerald-500 text-white",
+  NO_SHOW: "bg-red-500 text-white",
+};
+
 export const NEXT_STATUS_ACTIONS: Record<AppointmentStatus, { status: AppointmentStatus; label: string }[]> = {
   PENDING: [
     { status: AppointmentStatus.CONFIRMED, label: "Confirmar" },

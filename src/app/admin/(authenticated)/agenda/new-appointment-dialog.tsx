@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
+import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { localMinutesToUtc } from "@/lib/date";
 
-import type { ProfessionalOption } from "./agenda-view";
+import type { ProfessionalOption } from "./types";
 
 function parseTimeToMinutes(time: string): number | null {
   const match = /^(\d{2}):(\d{2})$/.exec(time);
@@ -116,7 +117,10 @@ export function NewAppointmentDialog({
         if (!nextOpen) resetForm();
       }}
     >
-      <DialogTrigger render={<Button />}>+ Novo agendamento</DialogTrigger>
+      <DialogTrigger render={<Button />}>
+        <Plus />
+        Novo agendamento
+      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Novo agendamento</DialogTitle>

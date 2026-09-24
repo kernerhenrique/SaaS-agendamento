@@ -35,7 +35,7 @@ export function SummaryPanel({
 
   return (
     <div className={className}>
-      <p className="text-xs font-medium text-muted-foreground uppercase">Resumo</p>
+      <p className="text-sm font-semibold">Resumo</p>
       <dl className="mt-2 flex flex-col gap-1 text-sm">
         <div className="flex justify-between gap-2">
           <dt className="text-muted-foreground">Serviço</dt>

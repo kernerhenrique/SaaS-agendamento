@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { Ban, Plus } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -108,8 +110,12 @@ export function TimeBlocksManager({
       ) : (
         <ul className="flex flex-col gap-1">
           {timeBlocks.map((timeBlock) => (
-            <li key={timeBlock.id} className="flex items-center justify-between gap-2 text-sm">
-              <span>
+            <li
+              key={timeBlock.id}
+              className="flex items-center justify-between gap-2 rounded-md bg-muted/40 p-2 text-sm"
+            >
+              <span className="flex items-center gap-2">
+                <Ban className="size-4 shrink-0 text-muted-foreground" />
                 {formatRange(timeBlock.startAt, timeBlock.endAt, timezone)}
                 {timeBlock.reason ? ` — ${timeBlock.reason}` : ""}
               </span>
@@ -144,6 +150,7 @@ export function TimeBlocksManager({
           <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Feriado, folga..." />
         </div>
         <Button type="button" variant="outline" onClick={handleAdd}>
+          <Plus />
           Adicionar
         </Button>
       </div>

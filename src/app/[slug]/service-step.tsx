@@ -1,3 +1,6 @@
+import { Clock } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatPriceFromCents } from "@/lib/currency";
 
@@ -24,20 +27,24 @@ export function ServiceStep({
             size="sm"
             role="button"
             tabIndex={0}
-            className="cursor-pointer transition-shadow hover:shadow-md"
+            className="cursor-pointer transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg"
             onClick={() => onSelect(service)}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") onSelect(service);
             }}
           >
-            <CardContent className="flex flex-col gap-1">
-              <p className="font-medium">{service.name}</p>
+            <CardContent className="flex flex-col gap-2">
+              <p className="text-base font-semibold">{service.name}</p>
               {service.description ? (
                 <p className="text-sm text-muted-foreground">{service.description}</p>
               ) : null}
-              <p className="text-sm">
-                {service.durationMin}min · {formatPriceFromCents(service.priceCents)}
-              </p>
+              <div className="flex gap-1.5">
+                <Badge variant="outline">
+                  <Clock className="size-3" />
+                  {service.durationMin}min
+                </Badge>
+                <Badge variant="outline">{formatPriceFromCents(service.priceCents)}</Badge>
+              </div>
             </CardContent>
           </Card>
         ))}

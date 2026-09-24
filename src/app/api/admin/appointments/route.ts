@@ -5,7 +5,11 @@ import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
 import { handleApiError } from "@/server/http";
 import { requireAdminSession } from "@/server/modules/auth/session";
-import { createManualAppointment, listAppointments } from "@/server/modules/appointment/appointment.service";
+import {
+  createManualAppointment,
+  listAppointments,
+  listTimeBlocksInRange,
+} from "@/server/modules/appointment/appointment.service";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -29,14 +33,12 @@ export async function GET(request: NextRequest) {
     const { start: startAt } = localDayRangeUtc(startDate, business.timezone);
     const { end: endAt } = localDayRangeUtc(endDate, business.timezone);
 
-    const appointments = await listAppointments({
-      businessId: session.businessId,
-      professionalId,
-      startAt,
-      endAt,
-    });
+    const [appointments, timeBlocks] = await Promise.all([
+      listAppointments({ businessId: session.businessId, professionalId, startAt, endAt }),
+      listTimeBlocksInRange({ businessId: session.businessId, professionalId, startAt, endAt }),
+    ]);
 
-    return NextResponse.json({ appointments });
+    return NextResponse.json({ appointments, timeBlocks });
   } catch (error) {
     return handleApiError(error);
   }

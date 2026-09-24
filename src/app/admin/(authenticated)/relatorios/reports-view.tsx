@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { CalendarClock, Trophy, UserX, XCircle, type LucideIcon } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { STATUS_LABELS } from "@/lib/appointment-status";
+import { STATUS_BADGE_CLASSES, STATUS_LABELS } from "@/lib/appointment-status";
 import type { ReportSummary } from "@/server/modules/report/report.service";
 
 function formatPercent(value: number): string {
@@ -40,6 +42,8 @@ export function ReportsView({
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-6">
+      <h1 className="text-2xl font-bold">Relatórios</h1>
+
       <div className="flex items-end gap-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor="startDate">De</Label>
@@ -55,10 +59,11 @@ export function ReportsView({
       </div>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <StatTile label="Agendamentos" value={String(summary.total)} />
-        <StatTile label="Taxa de cancelamento" value={formatPercent(summary.cancellationRate)} />
-        <StatTile label="Taxa de no-show" value={formatPercent(summary.noShowRate)} />
+        <StatTile icon={CalendarClock} label="Agendamentos" value={String(summary.total)} />
+        <StatTile icon={XCircle} label="Taxa de cancelamento" value={formatPercent(summary.cancellationRate)} />
+        <StatTile icon={UserX} label="Taxa de no-show" value={formatPercent(summary.noShowRate)} />
         <StatTile
+          icon={Trophy}
           label="Profissional mais requisitado"
           value={
             summary.mostRequestedProfessional
@@ -73,10 +78,12 @@ export function ReportsView({
           <CardTitle className="text-base">Agendamentos por status</CardTitle>
         </CardHeader>
         <CardContent>
-          <ul className="flex flex-col gap-1 text-sm">
+          <ul className="flex flex-col gap-2 text-sm">
             {Object.entries(summary.byStatus).map(([status, count]) => (
-              <li key={status} className="flex justify-between">
-                <span>{STATUS_LABELS[status as keyof typeof STATUS_LABELS]}</span>
+              <li key={status} className="flex items-center justify-between">
+                <Badge variant="outline" className={STATUS_BADGE_CLASSES[status as keyof typeof STATUS_LABELS]}>
+                  {STATUS_LABELS[status as keyof typeof STATUS_LABELS]}
+                </Badge>
                 <span className="font-medium">{count}</span>
               </li>
             ))}
@@ -87,12 +94,15 @@ export function ReportsView({
   );
 }
 
-function StatTile({ label, value }: { label: string; value: string }) {
+function StatTile({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
     <Card size="sm">
       <CardContent className="flex flex-col gap-1">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <span className="text-xl font-semibold">{value}</span>
+        <div className="flex items-center gap-1.5 text-muted-foreground">
+          <Icon className="size-3.5" />
+          <span className="text-xs">{label}</span>
+        </div>
+        <span className="text-2xl font-bold">{value}</span>
       </CardContent>
     </Card>
   );

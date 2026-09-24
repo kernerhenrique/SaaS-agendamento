@@ -1,10 +1,14 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { WEEKDAY_LABELS, minutesToTimeInput } from "@/lib/weekday";
+import { cn } from "cn";
+import { getInitials } from "@/lib/text";
+import { WEEKDAY_LABELS, WEEKDAY_ORDER, minutesToTimeInput } from "@/lib/weekday";
 
 import { ProfessionalFormDialog } from "./professional-form-dialog";
 import type { ProfessionalListItem, ServiceOption } from "./types";
@@ -43,9 +47,13 @@ export function ProfessionalsView({
   return (
     <main className="flex flex-1 flex-col gap-4 p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Profissionais</h1>
+        <h1 className="text-2xl font-bold">Profissionais</h1>
         <ProfessionalFormDialog
-          trigger={<Button>+ Novo profissional</Button>}
+          trigger={
+            <Button>
+              <Plus />+ Novo profissional
+            </Button>
+          }
           services={services}
           timezone={timezone}
           onSaved={refresh}
@@ -59,29 +67,26 @@ export function ProfessionalsView({
           professionals.map((professional) => (
             <Card key={professional.id} size="sm">
               <CardHeader>
-                <CardTitle className="text-base">{professional.name}</CardTitle>
+                <div className="flex items-center gap-3">
+                  <Avatar>
+                    <AvatarImage src={professional.photoUrl ?? undefined} alt="" />
+                    <AvatarFallback>{getInitials(professional.name)}</AvatarFallback>
+                  </Avatar>
+                  <CardTitle className="text-base">{professional.name}</CardTitle>
+                </div>
               </CardHeader>
-              <CardContent className="flex flex-col gap-2 text-sm">
+              <CardContent className="flex flex-col gap-3 text-sm">
                 {professional.bio ? <p className="text-muted-foreground">{professional.bio}</p> : null}
                 <p>
                   <span className="font-medium">Serviços: </span>
                   {professional.professionalServices.map((ps) => ps.service.name).join(", ") || "—"}
                 </p>
-                <div>
-                  <span className="font-medium">Expediente:</span>
-                  <ul className="ml-4 list-disc">
-                    {professional.workingHours.map((wh) => (
-                      <li key={wh.weekday}>
-                        {WEEKDAY_LABELS[wh.weekday]}: {minutesToTimeInput(wh.startMinute)}–
-                        {minutesToTimeInput(wh.endMinute)}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="mt-2 flex gap-2">
+                <WeeklyMiniGrid workingHours={professional.workingHours} />
+                <div className="mt-1 flex gap-2">
                   <ProfessionalFormDialog
                     trigger={
                       <Button variant="outline" size="sm">
+                        <Pencil />
                         Editar
                       </Button>
                     }
@@ -96,6 +101,7 @@ export function ProfessionalsView({
                     disabled={deletingId === professional.id}
                     onClick={() => handleDelete(professional)}
                   >
+                    <Trash2 />
                     Remover
                   </Button>
                 </div>
@@ -105,5 +111,41 @@ export function ProfessionalsView({
         )}
       </div>
     </main>
+  );
+}
+
+function WeeklyMiniGrid({
+  workingHours,
+}: {
+  workingHours: ProfessionalListItem["workingHours"];
+}) {
+  const byWeekday = new Map(workingHours.map((wh) => [wh.weekday, wh]));
+
+  return (
+    <div>
+      <span className="font-medium">Expediente</span>
+      <div className="mt-1 grid grid-cols-7 gap-1">
+        {WEEKDAY_ORDER.map((weekday) => {
+          const wh = byWeekday.get(weekday);
+          const label = WEEKDAY_LABELS[weekday];
+          return (
+            <div
+              key={weekday}
+              title={
+                wh
+                  ? `${label}: ${minutesToTimeInput(wh.startMinute)}–${minutesToTimeInput(wh.endMinute)}`
+                  : `${label}: fechado`
+              }
+              className={cn(
+                "flex flex-col items-center gap-0.5 rounded-md py-1.5 text-[0.65rem] font-medium",
+                wh ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+              )}
+            >
+              <span>{label.slice(0, 1)}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

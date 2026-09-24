@@ -1,6 +1,12 @@
+import { Check } from "lucide-react";
+
+import { getAccentForeground } from "@/lib/accent-color";
+
 const STEP_LABELS = ["Serviço", "Profissional", "Horário", "Contato"];
 
 export function StepIndicator({ currentStep, accentColor }: { currentStep: number; accentColor: string }) {
+  const activeForeground = getAccentForeground(accentColor);
+
   return (
     <ol className="flex items-center gap-2 text-xs sm:text-sm">
       {STEP_LABELS.map((label, index) => {
@@ -10,17 +16,17 @@ export function StepIndicator({ currentStep, accentColor }: { currentStep: numbe
         return (
           <li key={label} className="flex items-center gap-2">
             <span
-              className="flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-medium"
+              className="flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors"
               style={{
                 backgroundColor: isActive || isDone ? accentColor : "var(--muted)",
-                color: isActive || isDone ? "white" : "var(--muted-foreground)",
+                color: isActive || isDone ? activeForeground : "var(--muted-foreground)",
               }}
             >
-              {stepNumber}
+              {isDone ? <Check className="size-4" /> : stepNumber}
             </span>
             <span className={isActive ? "font-medium" : "text-muted-foreground"}>{label}</span>
             {stepNumber < STEP_LABELS.length ? (
-              <span className="mx-1 h-px w-4 bg-border sm:w-8" />
+              <span className="mx-1 h-0.5 w-4 bg-border sm:w-8" />
             ) : null}
           </li>
         );

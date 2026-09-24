@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { CalendarClock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,8 +44,11 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
+    <Card className="w-full max-w-sm shadow-lg">
+      <CardHeader className="items-center text-center">
+        <div className="mb-2 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <CalendarClock className="size-6" />
+        </div>
         <CardTitle>Entrar</CardTitle>
         <CardDescription>Painel do negócio</CardDescription>
       </CardHeader>

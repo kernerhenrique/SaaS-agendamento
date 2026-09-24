@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -147,43 +148,44 @@ function ProfessionalFormFields({
   }
 
   return (
-    <form className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto pr-1" onSubmit={handleSubmit}>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="name">Nome</Label>
-        <Input id="name" value={name} onChange={(event) => setName(event.target.value)} required />
-      </div>
+    <form className="flex max-h-[70vh] flex-col gap-6 overflow-y-auto pr-1" onSubmit={handleSubmit}>
+      <section className="flex flex-col gap-3">
+        <h3 className="text-sm font-semibold">Dados básicos</h3>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="name">Nome</Label>
+          <Input id="name" value={name} onChange={(event) => setName(event.target.value)} required />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="bio">Bio (opcional)</Label>
+          <Textarea id="bio" value={bio} onChange={(event) => setBio(event.target.value)} rows={2} />
+        </div>
+      </section>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="bio">Bio (opcional)</Label>
-        <Textarea id="bio" value={bio} onChange={(event) => setBio(event.target.value)} rows={2} />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label>Serviços realizados</Label>
-        <div className="flex flex-col gap-1">
+      <section className="flex flex-col gap-3">
+        <h3 className="text-sm font-semibold">Serviços realizados</h3>
+        <div className="flex flex-col gap-2">
           {services.map((service) => (
-            <label key={service.id} className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
+            <Label key={service.id} className="flex items-center gap-2 text-sm font-normal">
+              <Checkbox
                 checked={selectedServiceIds.has(service.id)}
-                onChange={() => toggleService(service.id)}
+                onCheckedChange={() => toggleService(service.id)}
               />
               {service.name}
-            </label>
+            </Label>
           ))}
         </div>
-      </div>
+      </section>
 
-      <div className="flex flex-col gap-2">
-        <Label>Expediente semanal</Label>
+      <section className="flex flex-col gap-3">
+        <h3 className="text-sm font-semibold">Expediente semanal</h3>
         <WorkingHoursEditor value={workingHours} onChange={setWorkingHours} />
-      </div>
+      </section>
 
       {isEditing ? (
-        <div className="flex flex-col gap-2">
-          <Label>Bloqueios manuais (folga, feriado)</Label>
+        <section className="flex flex-col gap-3">
+          <h3 className="text-sm font-semibold">Bloqueios manuais (folga, feriado)</h3>
           <TimeBlocksManager professionalId={professional!.id} timezone={timezone} />
-        </div>
+        </section>
       ) : null}
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}

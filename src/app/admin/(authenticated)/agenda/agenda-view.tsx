@@ -1,57 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import type { AppointmentStatus } from "@/generated/prisma/enums";
 import { addDaysToIsoDate, formatDateLabel, todayInTimeZone } from "@/lib/date";
-import { NEXT_STATUS_ACTIONS, STATUS_BADGE_CLASSES, STATUS_LABELS } from "@/lib/appointment-status";
 
 import { NewAppointmentDialog } from "./new-appointment-dialog";
-
-export interface ProfessionalOption {
-  id: string;
-  name: string;
-  services: { id: string; name: string; durationMin: number }[];
-}
-
-export interface AppointmentDto {
-  id: string;
-  status: AppointmentStatus;
-  startAt: string;
-  endAt: string;
-  professional: { id: string; name: string };
-  service: { id: string; name: string; durationMin: number };
-  client: { id: string; name: string; phone: string };
-}
-
-function AppointmentCardSkeletons() {
-  return (
-    <div className="flex flex-col gap-2">
-      {[0, 1].map((i) => (
-        <div key={i} className="flex flex-col gap-2 rounded-lg border p-3">
-          <div className="flex items-center justify-between gap-2">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-5 w-16 rounded-full" />
-          </div>
-          <Skeleton className="h-3 w-32" />
-          <Skeleton className="h-3 w-40" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function formatTime(dateISO: string, timeZone: string): string {
-  return new Intl.DateTimeFormat("pt-BR", {
-    timeZone,
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(dateISO));
-}
+import { ScheduleGrid } from "./schedule-grid";
+import type { AppointmentDto, ProfessionalOption, TimeBlockDto } from "./types";
 
 export function AgendaView({
   timezone,
@@ -62,6 +20,7 @@ export function AgendaView({
 }) {
   const [date, setDate] = useState(() => todayInTimeZone(timezone));
   const [appointments, setAppointments] = useState<AppointmentDto[]>([]);
+  const [timeBlocks, setTimeBlocks] = useState<TimeBlockDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [actionError, setActionError] = useState<string | null>(null);
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
@@ -69,11 +28,10 @@ export function AgendaView({
   const loadAppointments = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `/api/admin/appointments?startDate=${date}&endDate=${date}`,
-      );
+      const response = await fetch(`/api/admin/appointments?startDate=${date}&endDate=${date}`);
       const data = await response.json();
       setAppointments(response.ok ? data.appointments : []);
+      setTimeBlocks(response.ok ? data.timeBlocks : []);
     } finally {
       setIsLoading(false);
     }
@@ -85,19 +43,6 @@ export function AgendaView({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAppointments();
   }, [loadAppointments]);
-
-  const appointmentsByProfessional = useMemo(() => {
-    const map = new Map<string, AppointmentDto[]>();
-    for (const professional of professionals) {
-      map.set(professional.id, []);
-    }
-    for (const appointment of appointments) {
-      const list = map.get(appointment.professional.id) ?? [];
-      list.push(appointment);
-      map.set(appointment.professional.id, list);
-    }
-    return map;
-  }, [appointments, professionals]);
 
   async function handleStatusChange(appointmentId: string, status: AppointmentStatus) {
     setActionError(null);
@@ -122,15 +67,26 @@ export function AgendaView({
   return (
     <main className="flex flex-1 flex-col gap-4 p-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold">Agenda</h1>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setDate((d) => addDaysToIsoDate(d, -1))}>
-            ← Anterior
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label="Dia anterior"
+            onClick={() => setDate((d) => addDaysToIsoDate(d, -1))}
+          >
+            <ChevronLeft />
           </Button>
           <div className="min-w-56 text-center">
             <p className="text-sm font-medium capitalize">{formatDateLabel(date, timezone)}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setDate((d) => addDaysToIsoDate(d, 1))}>
-            Próximo →
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label="Próximo dia"
+            onClick={() => setDate((d) => addDaysToIsoDate(d, 1))}
+          >
+            <ChevronRight />
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setDate(todayInTimeZone(timezone))}>
             Hoje
@@ -146,54 +102,16 @@ export function AgendaView({
 
       {actionError ? <p className="text-sm text-destructive">{actionError}</p> : null}
 
-      <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {professionals.map((professional) => (
-          <Card key={professional.id} size="sm">
-            <CardHeader>
-              <CardTitle className="text-base">{professional.name}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2">
-              {isLoading ? (
-                <AppointmentCardSkeletons />
-              ) : (appointmentsByProfessional.get(professional.id) ?? []).length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nenhum agendamento neste dia.</p>
-              ) : (
-                appointmentsByProfessional.get(professional.id)!.map((appointment) => (
-                  <div key={appointment.id} className="rounded-lg border p-3 text-sm">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium">
-                        {formatTime(appointment.startAt, timezone)}–{formatTime(appointment.endAt, timezone)}
-                      </span>
-                      <Badge variant="outline" className={STATUS_BADGE_CLASSES[appointment.status]}>
-                        {STATUS_LABELS[appointment.status]}
-                      </Badge>
-                    </div>
-                    <p className="mt-1">{appointment.service.name}</p>
-                    <p className="text-muted-foreground">
-                      {appointment.client.name} · {appointment.client.phone}
-                    </p>
-                    {NEXT_STATUS_ACTIONS[appointment.status].length > 0 ? (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {NEXT_STATUS_ACTIONS[appointment.status].map((action) => (
-                          <Button
-                            key={action.status}
-                            size="sm"
-                            variant="outline"
-                            disabled={pendingActionId === appointment.id}
-                            onClick={() => handleStatusChange(appointment.id, action.status)}
-                          >
-                            {action.label}
-                          </Button>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <ScheduleGrid
+        professionals={professionals}
+        appointments={appointments}
+        timeBlocks={timeBlocks}
+        date={date}
+        timezone={timezone}
+        isLoading={isLoading}
+        pendingActionId={pendingActionId}
+        onStatusChange={handleStatusChange}
+      />
     </main>
   );
 }

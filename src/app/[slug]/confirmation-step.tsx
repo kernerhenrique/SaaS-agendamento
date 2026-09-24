@@ -1,3 +1,6 @@
+import { CalendarPlus, CircleCheckBig } from "lucide-react";
+
+import { buttonVariants } from "@/components/ui/button";
 import { buildAppointmentIcs } from "@/lib/ics";
 
 export interface ConfirmedAppointmentInfo {
@@ -31,15 +34,16 @@ export function ConfirmationStep({ appointment }: { appointment: ConfirmedAppoin
   const icsHref = `data:text/calendar;charset=utf-8,${encodeURIComponent(icsContent)}`;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
+    <div className="flex flex-col items-center gap-4 text-center sm:items-start sm:text-left">
+      <div className="flex flex-col items-center gap-2 sm:items-start">
+        <CircleCheckBig className="size-12 text-primary" />
         <h2 className="text-lg font-medium">Agendamento confirmado!</h2>
         <p className="text-sm text-muted-foreground">
           Enviamos um e-mail de confirmação com o link para cancelar ou reagendar.
         </p>
       </div>
 
-      <dl className="flex flex-col gap-1 rounded-lg border p-4 text-sm">
+      <dl className="flex w-full flex-col gap-1 rounded-lg bg-card p-4 text-sm shadow-sm ring-1 ring-foreground/10">
         <div className="flex justify-between gap-2">
           <dt className="text-muted-foreground">Serviço</dt>
           <dd className="font-medium">{appointment.serviceName}</dd>
@@ -62,11 +66,17 @@ export function ConfirmationStep({ appointment }: { appointment: ConfirmedAppoin
         ) : null}
       </dl>
 
+      {/* Precisa continuar sendo um <a> de verdade (role="link"), não um
+          Button estilizado: o Button do Base UI sempre se anuncia como
+          role="button" para leitores de tela, mesmo renderizando outro
+          elemento por baixo — então aplicamos os estilos via buttonVariants
+          direto no link nativo. */}
       <a
         href={icsHref}
         download="agendamento.ics"
-        className="inline-flex w-fit items-center justify-center rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted"
+        className={buttonVariants({ variant: "outline" })}
       >
+        <CalendarPlus />
         Adicionar ao calendário (.ics)
       </a>
     </div>
