@@ -51,7 +51,8 @@ export function ProfessionalsView({
         <ProfessionalFormDialog
           trigger={
             <Button>
-              <Plus />+ Novo profissional
+              <Plus />
+              Novo profissional
             </Button>
           }
           services={services}
@@ -137,8 +138,8 @@ function WeeklyMiniGrid({
                   : `${label}: fechado`
               }
               className={cn(
-                "flex flex-col items-center gap-0.5 rounded-md py-1.5 text-[0.65rem] font-medium",
-                wh ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+                "flex flex-col items-center gap-0.5 rounded-md py-1.5 text-xs font-semibold",
+                wh ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground/70",
               )}
             >
               <span>{label.slice(0, 1)}</span>

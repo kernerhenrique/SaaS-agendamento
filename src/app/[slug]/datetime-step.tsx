@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { SlotGridSkeleton } from "@/components/slot-grid-skeleton";
 import { addDaysToIsoDate, formatDateLabel, todayInTimeZone, utcToLocalMinutes } from "@/lib/date";
 
+import { MonthCalendar } from "./month-calendar";
+import { yearMonthOf } from "./month-grid";
 import { NO_PREFERENCE, type AvailableSlot } from "./types";
 
 function formatTime(dateISO: string, timeZone: string): string {
@@ -34,7 +36,9 @@ export function DatetimeStep({
   timezone: string;
   onSelect: (slot: AvailableSlot) => void;
 }) {
-  const [date, setDate] = useState(() => todayInTimeZone(timezone));
+  const [today] = useState(() => todayInTimeZone(timezone));
+  const [date, setDate] = useState(today);
+  const [visibleMonth, setVisibleMonth] = useState(() => yearMonthOf(today));
   const [slots, setSlots] = useState<AvailableSlot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -76,31 +80,77 @@ export function DatetimeStep({
   }
   const displaySlots = Array.from(uniqueSlotsByTime.values());
 
-  return (
-    <div className="flex flex-col gap-3">
-      <h2 className="text-lg font-medium">Escolha data e horário</h2>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          aria-label="Dia anterior"
-          onClick={() => setDate((d) => addDaysToIsoDate(d, -1))}
-        >
-          <ChevronLeft />
-        </Button>
-        <p className="min-w-48 text-center text-sm font-medium capitalize">
-          {formatDateLabel(date, timezone)}
-        </p>
-        <Button
-          variant="outline"
-          size="sm"
-          aria-label="Próximo dia"
-          onClick={() => setDate((d) => addDaysToIsoDate(d, 1))}
-        >
-          <ChevronRight />
-        </Button>
-      </div>
+  // Navegar pelas setas de dia também leva o calendário ao mês da nova data.
+  function changeDate(dateISO: string) {
+    setDate(dateISO);
+    setVisibleMonth(yearMonthOf(dateISO));
+  }
 
+  return (
+    <div className="flex flex-col gap-4">
+      <h2 className="text-lg font-semibold">Escolha data e horário</h2>
+
+      <div className="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
+        <div className="w-full max-w-sm self-start rounded-xl border bg-card p-4 shadow-sm">
+          <MonthCalendar
+            visibleMonth={visibleMonth}
+            selectedDate={date}
+            minDate={today}
+            timezone={timezone}
+            onMonthChange={setVisibleMonth}
+            onSelect={changeDate}
+          />
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon-sm"
+              aria-label="Dia anterior"
+              disabled={date <= today}
+              onClick={() => changeDate(addDaysToIsoDate(date, -1))}
+            >
+              <ChevronLeft />
+            </Button>
+            <p className="min-w-48 text-center text-sm font-medium first-letter:uppercase">
+              {formatDateLabel(date, timezone)}
+            </p>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              aria-label="Próximo dia"
+              onClick={() => changeDate(addDaysToIsoDate(date, 1))}
+            >
+              <ChevronRight />
+            </Button>
+          </div>
+
+          <DaySlots
+            isLoading={isLoading}
+            displaySlots={displaySlots}
+            timezone={timezone}
+            onSelect={onSelect}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DaySlots({
+  isLoading,
+  displaySlots,
+  timezone,
+  onSelect,
+}: {
+  isLoading: boolean;
+  displaySlots: AvailableSlot[];
+  timezone: string;
+  onSelect: (slot: AvailableSlot) => void;
+}) {
+  return (
+    <>
       {isLoading ? (
         <SlotGridSkeleton />
       ) : displaySlots.length === 0 ? (
@@ -118,7 +168,7 @@ export function DatetimeStep({
             return (
               <div key={period.label} className="flex flex-col gap-2">
                 <h3 className="text-xs font-medium text-muted-foreground uppercase">{period.label}</h3>
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
                   {periodSlots.map((slot) => (
                     <button
                       key={slot.startAt}
@@ -136,6 +186,6 @@ export function DatetimeStep({
           })}
         </div>
       )}
-    </div>
+    </>
   );
 }

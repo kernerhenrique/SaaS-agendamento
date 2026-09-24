@@ -78,7 +78,7 @@ export function RescheduleSection({
         <Button variant="outline" size="sm" onClick={() => setDate((d) => addDaysToIsoDate(d, -1))}>
           ←
         </Button>
-        <p className="min-w-40 text-center text-sm font-medium capitalize">
+        <p className="min-w-40 text-center text-sm font-medium first-letter:uppercase">
           {formatDateLabel(date, timezone)}
         </p>
         <Button variant="outline" size="sm" onClick={() => setDate((d) => addDaysToIsoDate(d, 1))}>

@@ -45,11 +45,12 @@ export function LoginForm() {
 
   return (
     <Card className="w-full max-w-sm shadow-lg">
-      <CardHeader className="items-center text-center">
-        <div className="mb-2 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+      <CardHeader className="text-center">
+        {/* CardHeader é grid: `mx-auto` centraliza o ícone (items-center não teria efeito). */}
+        <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
           <CalendarClock className="size-6" />
         </div>
-        <CardTitle>Entrar</CardTitle>
+        <CardTitle className="text-lg">Entrar</CardTitle>
         <CardDescription>Painel do negócio</CardDescription>
       </CardHeader>
       <CardContent>

@@ -47,7 +47,8 @@ export function ServicesView({
         <ServiceFormDialog
           trigger={
             <Button>
-              <Plus />+ Novo serviço
+              <Plus />
+              Novo serviço
             </Button>
           }
           professionals={professionals}

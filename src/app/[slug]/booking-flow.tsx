@@ -7,6 +7,7 @@ import { AccentColorScope } from "@/components/accent-color-scope";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { resolveAccentColor } from "@/lib/accent-color";
+import { cn } from "cn";
 
 import { ConfirmationStep, type ConfirmedAppointmentInfo } from "./confirmation-step";
 import { ContactStep, type ContactInfo } from "./contact-step";
@@ -23,6 +24,10 @@ import {
   type ProfessionalOption,
   type ServiceOption,
 } from "./types";
+
+// Coluna central com largura máxima (como Cal.com/Calendly): em telas largas
+// o conteúdo não se estica de ponta a ponta. Header e corpo usam a mesma.
+const CONTENT_WIDTH_CLASS = "mx-auto w-full max-w-6xl";
 
 export function BookingFlow({
   business,
@@ -110,78 +115,83 @@ export function BookingFlow({
     <AccentColorScope accentColor={business.accentColor} className="flex flex-1 flex-col">
       <main className="flex flex-1 flex-col">
         <header className="border-b bg-card p-4 shadow-sm sm:p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold sm:text-3xl">{business.name}</h1>
-              {business.address ? (
-                <p className="text-sm text-muted-foreground">{business.address}</p>
-              ) : null}
+          <div className={CONTENT_WIDTH_CLASS}>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-bold sm:text-3xl">{business.name}</h1>
+                {business.address ? (
+                  <p className="text-sm text-muted-foreground">{business.address}</p>
+                ) : null}
+              </div>
+              <ThemeToggle />
             </div>
-            <ThemeToggle />
+            {step <= 4 ? (
+              <div className="mt-4">
+                <StepIndicator currentStep={step} accentColor={accentColor} />
+              </div>
+            ) : null}
           </div>
-          {step <= 4 ? (
-            <div className="mt-4">
-              <StepIndicator currentStep={step} accentColor={accentColor} />
-            </div>
-          ) : null}
         </header>
 
-        <div className="flex flex-1 flex-col gap-6 p-4 pb-28 sm:flex-row sm:p-6 sm:pb-6">
-          <div className="flex-1">
-            {step === 1 ? <ServiceStep services={services} onSelect={handleSelectService} /> : null}
+        <div className="flex flex-1 flex-col p-4 pb-28 sm:p-6 sm:pb-6">
+          <div className={cn(CONTENT_WIDTH_CLASS, "flex flex-1 flex-col gap-6 sm:flex-row")}>
+            <div className="min-w-0 flex-1">
+              {step === 1 ? <ServiceStep services={services} onSelect={handleSelectService} /> : null}
 
-            {step === 2 && selection.service ? (
-              <ProfessionalStep
-                professionals={professionals}
-                serviceId={selection.service.id}
-                onSelect={handleSelectProfessional}
-              />
-            ) : null}
+              {step === 2 && selection.service ? (
+                <ProfessionalStep
+                  professionals={professionals}
+                  serviceId={selection.service.id}
+                  onSelect={handleSelectProfessional}
+                />
+              ) : null}
 
-            {step === 3 && selection.service && selection.professionalId ? (
-              <DatetimeStep
-                businessId={business.id}
-                serviceId={selection.service.id}
-                professionalId={selection.professionalId}
-                timezone={business.timezone}
-                onSelect={handleSelectSlot}
-              />
-            ) : null}
+              {step === 3 && selection.service && selection.professionalId ? (
+                <DatetimeStep
+                  businessId={business.id}
+                  serviceId={selection.service.id}
+                  professionalId={selection.professionalId}
+                  timezone={business.timezone}
+                  onSelect={handleSelectSlot}
+                />
+              ) : null}
 
-            {step === 4 ? (
-              <ContactStep isSubmitting={isSubmitting} error={submitError} onSubmit={handleSubmitContact} />
-            ) : null}
+              {step === 4 ? (
+                <ContactStep isSubmitting={isSubmitting} error={submitError} onSubmit={handleSubmitContact} />
+              ) : null}
 
-            {step === 5 && confirmedAppointment ? (
-              <ConfirmationStep appointment={confirmedAppointment} />
-            ) : null}
+              {step === 5 && confirmedAppointment ? (
+                <ConfirmationStep appointment={confirmedAppointment} />
+              ) : null}
 
-            {step > 1 && step <= 4 ? (
-              <Button variant="ghost" className="mt-4" onClick={goBack}>
-                <ChevronLeft />
-                Voltar
-              </Button>
+              {step > 1 && step <= 4 ? (
+                <Button variant="ghost" className="mt-4" onClick={goBack}>
+                  <ChevronLeft />
+                  Voltar
+                </Button>
+              ) : null}
+            </div>
+
+            {step <= 4 ? (
+              <>
+                {/* Resumo fixo lateral no desktop */}
+                <SummaryPanel
+                  selection={selection}
+                  professionals={professionals}
+                  timezone={business.timezone}
+                  className="sticky top-6 hidden w-72 shrink-0 self-start rounded-xl border-l-4 border-l-primary bg-card p-5 shadow-sm ring-1 ring-foreground/10 sm:block"
+                />
+                {/* Resumo fixo no rodapé no mobile */}
+                <SummaryPanel
+                  selection={selection}
+                  professionals={professionals}
+                  timezone={business.timezone}
+                  compact
+                  className="fixed inset-x-0 bottom-0 border-t bg-background p-4 shadow-[0_-4px_12px_-4px_rgb(0_0_0_/_0.1)] sm:hidden"
+                />
+              </>
             ) : null}
           </div>
-
-          {step <= 4 ? (
-            <>
-              {/* Resumo fixo lateral no desktop */}
-              <SummaryPanel
-                selection={selection}
-                professionals={professionals}
-                timezone={business.timezone}
-                className="hidden w-64 shrink-0 rounded-lg border-l-4 border-l-primary bg-card p-4 shadow-sm sm:block"
-              />
-              {/* Resumo fixo no rodapé no mobile */}
-              <SummaryPanel
-                selection={selection}
-                professionals={professionals}
-                timezone={business.timezone}
-                className="fixed inset-x-0 bottom-0 border-t bg-background p-4 shadow-[0_-4px_12px_-4px_rgb(0_0_0_/_0.1)] sm:hidden"
-              />
-            </>
-          ) : null}
         </div>
       </main>
     </AccentColorScope>

@@ -54,7 +54,7 @@ export function ConfirmationStep({ appointment }: { appointment: ConfirmedAppoin
         </div>
         <div className="flex justify-between gap-2">
           <dt className="text-muted-foreground">Data/hora</dt>
-          <dd className="text-right font-medium capitalize">
+          <dd className="text-right font-medium first-letter:uppercase">
             {formatFullDateTime(appointment.startAt, appointment.timezone)}
           </dd>
         </div>

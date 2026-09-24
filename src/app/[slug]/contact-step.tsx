@@ -33,7 +33,7 @@ export function ContactStep({
   return (
     <div className="flex flex-col gap-3">
       <h2 className="text-lg font-medium">Seus dados</h2>
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+      <form className="flex max-w-lg flex-col gap-4" onSubmit={handleSubmit}>
         <div className="flex flex-col gap-2">
           <Label htmlFor="clientName">Nome</Label>
           <Input id="clientName" value={name} onChange={(e) => setName(e.target.value)} required />

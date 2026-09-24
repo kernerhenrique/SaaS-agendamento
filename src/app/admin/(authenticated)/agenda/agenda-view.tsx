@@ -78,7 +78,7 @@ export function AgendaView({
             <ChevronLeft />
           </Button>
           <div className="min-w-56 text-center">
-            <p className="text-sm font-medium capitalize">{formatDateLabel(date, timezone)}</p>
+            <p className="text-sm font-medium first-letter:uppercase">{formatDateLabel(date, timezone)}</p>
           </div>
           <Button
             variant="outline"
