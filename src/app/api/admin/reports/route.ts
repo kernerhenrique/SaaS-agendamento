@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { localDayRangeUtc } from "@/lib/date";
 import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
 import { handleApiError } from "@/server/http";
@@ -25,10 +24,11 @@ export async function GET(request: NextRequest) {
     });
     if (!business) throw new NotFoundError("Negócio não encontrado");
 
-    const { start: startAt } = localDayRangeUtc(startDate, business.timezone);
-    const { end: endAt } = localDayRangeUtc(endDate, business.timezone);
-
-    const summary = await getReportSummary(session.businessId, { startAt, endAt });
+    const summary = await getReportSummary(session.businessId, {
+      startDate,
+      endDate,
+      timeZone: business.timezone,
+    });
     return NextResponse.json({ summary });
   } catch (error) {
     return handleApiError(error);
