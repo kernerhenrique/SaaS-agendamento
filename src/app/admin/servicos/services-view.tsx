@@ -4,13 +4,10 @@ import { useCallback, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatPriceFromCents } from "@/lib/currency";
 
 import { ServiceFormDialog } from "./service-form-dialog";
 import type { ProfessionalOption, ServiceListItem } from "./types";
-
-function formatPrice(cents: number): string {
-  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
 
 export function ServicesView({
   initialServices,
@@ -66,7 +63,7 @@ export function ServicesView({
                   <p className="text-muted-foreground">{service.description}</p>
                 ) : null}
                 <p>
-                  {service.durationMin}min · {formatPrice(service.priceCents)}
+                  {service.durationMin}min · {formatPriceFromCents(service.priceCents)}
                 </p>
                 <p>
                   <span className="font-medium">Profissionais: </span>

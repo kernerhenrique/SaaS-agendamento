@@ -43,7 +43,7 @@ export function listAppointments(params: ListAppointmentsParams) {
   });
 }
 
-export interface CreateManualAppointmentParams {
+export interface InsertAppointmentParams {
   businessId: string;
   professionalId: string;
   serviceId: string;
@@ -52,13 +52,15 @@ export interface CreateManualAppointmentParams {
   notes?: string;
 }
 
+const MANAGE_TOKEN_TTL_DAYS_AFTER_APPOINTMENT = 30;
+
 /**
- * Criação manual de agendamento pelo admin (encaixe direto na agenda, sem
- * passar pela página pública). Reaproveita a mesma proteção de concorrência
- * da reserva pública: se dois agendamentos colidirem, a exclusion constraint
- * do Postgres rejeita a segunda gravação.
+ * Núcleo compartilhado de criação de agendamento, usado tanto pelo encaixe
+ * manual do admin quanto pela reserva pública. Reaproveita a mesma proteção
+ * de concorrência nos dois casos: se dois agendamentos colidirem, a
+ * exclusion constraint do Postgres rejeita a segunda gravação.
  */
-export async function createManualAppointment(params: CreateManualAppointmentParams) {
+async function insertAppointment(params: InsertAppointmentParams) {
   const { businessId, professionalId, serviceId, startAt, client, notes } = params;
 
   const [professional, service] = await Promise.all([
@@ -73,6 +75,9 @@ export async function createManualAppointment(params: CreateManualAppointmentPar
   if (!service) throw new NotFoundError("Serviço não encontrado");
 
   const endAt = new Date(startAt.getTime() + service.durationMin * 60_000);
+  const manageTokenExpiresAt = new Date(
+    endAt.getTime() + MANAGE_TOKEN_TTL_DAYS_AFTER_APPOINTMENT * 24 * 60 * 60 * 1000,
+  );
 
   const clientRecord = await prisma.client.upsert({
     where: { businessId_phone: { businessId, phone: client.phone } },
@@ -91,7 +96,9 @@ export async function createManualAppointment(params: CreateManualAppointmentPar
         endAt,
         status: AppointmentStatus.CONFIRMED,
         notes,
+        manageTokenExpiresAt,
       },
+      include: { professional: true, service: true, client: true, business: true },
     });
   } catch (error) {
     if (isOverlapConstraintViolation(error)) {
@@ -99,6 +106,16 @@ export async function createManualAppointment(params: CreateManualAppointmentPar
     }
     throw error;
   }
+}
+
+/** Encaixe manual pelo admin, direto na agenda (sem passar pela página pública). */
+export function createManualAppointment(params: InsertAppointmentParams) {
+  return insertAppointment(params);
+}
+
+/** Reserva feita pelo cliente final na página pública, sem login. */
+export function createPublicAppointment(params: InsertAppointmentParams) {
+  return insertAppointment(params);
 }
 
 export async function updateAppointmentStatus(
