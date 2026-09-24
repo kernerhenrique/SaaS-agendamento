@@ -36,9 +36,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
       {/* Navegação desktop: sidebar fixa */}
       <aside className="hidden w-56 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground p-4 sm:flex">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6">
           <BusinessBadge name={business.name} logoUrl={business.logoUrl} />
-          <ThemeToggle />
         </div>
         <NavLinks className="flex flex-col gap-1" />
         <div className="mt-auto pt-4">
@@ -46,14 +45,20 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
       </aside>
 
-      <div className="flex flex-1 flex-col">{children}</div>
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Barra superior desktop: tema no canto direito, como na página pública */}
+        <header className="hidden h-14 shrink-0 items-center justify-end border-b bg-card px-6 shadow-sm sm:flex">
+          <ThemeToggle />
+        </header>
+        {children}
+      </div>
     </AccentColorScope>
   );
 }
 
 function BusinessBadge({ name, logoUrl }: { name: string; logoUrl: string | null }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 items-center gap-2">
       <Avatar size="sm">
         <AvatarImage src={logoUrl ?? undefined} alt="" />
         <AvatarFallback>{getInitials(name)}</AvatarFallback>

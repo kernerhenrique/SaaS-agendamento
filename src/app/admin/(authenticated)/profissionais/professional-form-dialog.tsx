@@ -44,7 +44,8 @@ export function ProfessionalFormDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={trigger} />
-      <DialogContent className="max-w-lg">
+      {/* `sm:` é necessário: o DialogContent base limita a `sm:max-w-sm`. */}
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{professional ? "Editar profissional" : "Novo profissional"}</DialogTitle>
           <DialogDescription>Nome, serviços realizados e expediente semanal.</DialogDescription>
