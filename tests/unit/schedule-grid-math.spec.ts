@@ -1,11 +1,60 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  clampToRange,
   computeDayRange,
   hourMarks,
+  instantRangeToDayMinutes,
   minutesToHeightPx,
   minutesToTopPx,
 } from "@/app/admin/(authenticated)/agenda/schedule-grid-math";
+import { localDayRangeUtc } from "@/lib/date";
+
+describe("instantRangeToDayMinutes", () => {
+  const tz = "America/Sao_Paulo";
+  const day = localDayRangeUtc("2026-09-24", tz);
+
+  it("converte um agendamento para minutos no horário local do negócio", () => {
+    // 17:45–18:05 em São Paulo = 20:45–21:05 UTC
+    const result = instantRangeToDayMinutes(
+      new Date("2026-09-24T20:45:00Z"),
+      new Date("2026-09-24T21:05:00Z"),
+      day,
+      tz,
+    );
+    expect(result).toEqual({ startMinute: 17 * 60 + 45, endMinute: 18 * 60 + 5 });
+  });
+
+  it("um bloqueio de dia inteiro ocupa o dia todo, não vira 0 → 0", () => {
+    const result = instantRangeToDayMinutes(day.start, day.end, day, tz);
+    expect(result).toEqual({ startMinute: 0, endMinute: 24 * 60 });
+  });
+
+  it("recorta itens que começam no dia anterior ou terminam no seguinte", () => {
+    const result = instantRangeToDayMinutes(
+      new Date("2026-09-23T12:00:00Z"),
+      new Date("2026-09-24T13:00:00Z"), // 10:00 local
+      day,
+      tz,
+    );
+    expect(result).toEqual({ startMinute: 0, endMinute: 10 * 60 });
+  });
+});
+
+describe("clampToRange", () => {
+  const range = { rangeStartMinute: 8 * 60, rangeEndMinute: 20 * 60 };
+
+  it("recorta um intervalo aos limites da grade", () => {
+    expect(clampToRange({ startMinute: 0, endMinute: 24 * 60 }, range)).toEqual({
+      startMinute: 8 * 60,
+      endMinute: 20 * 60,
+    });
+  });
+
+  it("retorna null para intervalos totalmente fora da grade", () => {
+    expect(clampToRange({ startMinute: 21 * 60, endMinute: 22 * 60 }, range)).toBeNull();
+  });
+});
 
 describe("computeDayRange", () => {
   it("usa o padrão 08:00–20:00 quando não há nenhum dado", () => {

@@ -1,4 +1,4 @@
-import { fromZonedTime, toZonedTime } from "date-fns-tz";
+import { fromZonedTime } from "date-fns-tz";
 
 import { Weekday } from "@/generated/prisma/enums";
 
@@ -56,31 +56,46 @@ export function localDayRangeUtc(dateISO: string, timeZone: string): { start: Da
 }
 
 /**
- * Dia da semana (enum Weekday) que uma data YYYY-MM-DD representa no timezone
- * informado. `toZonedTime` devolve um `Date` cujos getters UTC (não os locais,
- * que dependem do timezone do processo Node) refletem o horário de parede na
- * zona informada — por isso usamos `getUTCDay()` aqui.
+ * Dia da semana (enum Weekday) de uma data de calendário YYYY-MM-DD. O dia da
+ * semana de uma data de calendário não depende de timezone — "24/09/2026" é
+ * quinta-feira em qualquer lugar — então basta calculá-lo em UTC puro.
  */
-export function weekdayOfLocalDate(dateISO: string, timeZone: string): Weekday {
-  const { start } = localDayRangeUtc(dateISO, timeZone);
-  const zoned = toZonedTime(start, timeZone);
-  return WEEKDAYS_BY_JS_INDEX[zoned.getUTCDay()];
+export function weekdayOfLocalDate(dateISO: string): Weekday {
+  const { year, month, day } = parseDateOnly(dateISO);
+  return WEEKDAYS_BY_JS_INDEX[new Date(Date.UTC(year, month - 1, day)).getUTCDay()];
 }
 
-/** Minutos desde 00:00 local (no timezone informado) que um instante UTC representa num dado dia. */
+/**
+ * Minutos desde 00:00 local (no timezone informado) que um instante UTC
+ * representa. Usa Intl em vez de `toZonedTime` + getters de `Date`: o
+ * resultado daquele depende do timezone do processo (servidor ou navegador),
+ * o que já causou horários deslocados na agenda.
+ */
 export function utcToLocalMinutes(date: Date, timeZone: string): number {
-  const zoned = toZonedTime(date, timeZone);
-  return zoned.getUTCHours() * 60 + zoned.getUTCMinutes();
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).formatToParts(date);
+  const hour = Number(parts.find((part) => part.type === "hour")?.value);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value);
+  return hour * 60 + minute;
 }
 
-/** Data (YYYY-MM-DD) de "hoje" observada no timezone informado. */
-export function todayInTimeZone(timeZone: string): string {
+/** Data de calendário (YYYY-MM-DD) que um instante UTC representa no timezone informado. */
+export function utcToLocalDate(date: Date, timeZone: string): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(new Date());
+  }).format(date);
+}
+
+/** Data (YYYY-MM-DD) de "hoje" observada no timezone informado. */
+export function todayInTimeZone(timeZone: string): string {
+  return utcToLocalDate(new Date(), timeZone);
 }
 
 /** Soma (ou subtrai, com `days` negativo) dias a uma data YYYY-MM-DD, sem depender de timezone. */

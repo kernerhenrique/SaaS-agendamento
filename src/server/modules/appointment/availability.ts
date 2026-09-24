@@ -135,7 +135,7 @@ export async function getAvailableSlots(params: GetAvailableSlotsParams): Promis
     throw new NotFoundError("Profissional não encontrado ou não realiza este serviço");
   }
 
-  const weekday = weekdayOfLocalDate(dateISO, business.timezone);
+  const weekday = weekdayOfLocalDate(dateISO);
   const { start: dayStart, end: dayEnd } = localDayRangeUtc(dateISO, business.timezone);
   const professionalIds = professionals.map((professional) => professional.id);
 

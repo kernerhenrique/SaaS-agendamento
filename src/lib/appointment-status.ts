@@ -21,7 +21,7 @@ export const STATUS_BADGE_CLASSES: Record<AppointmentStatus, string> = {
 export const STATUS_BLOCK_CLASSES: Record<AppointmentStatus, string> = {
   PENDING: "bg-amber-500 text-white",
   CONFIRMED: "bg-blue-500 text-white",
-  CANCELLED: "bg-muted-foreground/50 text-white line-through",
+  CANCELLED: "bg-muted text-muted-foreground line-through ring-1 ring-border",
   COMPLETED: "bg-emerald-500 text-white",
   NO_SHOW: "bg-red-500 text-white",
 };

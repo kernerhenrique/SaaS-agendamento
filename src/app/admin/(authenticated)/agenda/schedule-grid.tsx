@@ -15,20 +15,29 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AppointmentStatus, Weekday } from "@/generated/prisma/enums";
 import { NEXT_STATUS_ACTIONS, STATUS_BLOCK_CLASSES, STATUS_LABELS } from "@/lib/appointment-status";
-import { utcToLocalMinutes, weekdayOfLocalDate } from "@/lib/date";
+import { localDayRangeUtc, weekdayOfLocalDate } from "@/lib/date";
 import { getInitials } from "@/lib/text";
 import { minutesToTimeInput } from "@/lib/weekday";
 import { cn } from "cn";
 
 import {
+  clampToRange,
   computeDayRange,
   hourMarks,
+  instantRangeToDayMinutes,
   minutesToHeightPx,
   minutesToTopPx,
 } from "./schedule-grid-math";
 import type { AppointmentDto, ProfessionalOption, TimeBlockDto } from "./types";
 
-const PIXELS_PER_HOUR = 64;
+// 96px/h: um serviço de 30min ocupa 48px, o suficiente para duas linhas
+// (horário + cliente, serviço). Serviços mais curtos usam a altura mínima.
+const PIXELS_PER_HOUR = 96;
+const MIN_APPOINTMENT_HEIGHT_PX = 44;
+// Os rótulos de hora são centralizados na linha; sem esse respiro, o primeiro
+// encosta no cabeçalho e o último é cortado na borda de baixo. A mesma margem
+// vale para todas as colunas, mantendo agendamentos alinhados às horas.
+const GRID_BODY_CLASS = "relative my-3";
 
 function formatTime(dateISO: string, timeZone: string): string {
   return new Intl.DateTimeFormat("pt-BR", { timeZone, hour: "2-digit", minute: "2-digit" }).format(
@@ -58,24 +67,29 @@ export function ScheduleGrid({
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const selectedAppointment = appointments.find((a) => a.id === selectedAppointmentId) ?? null;
 
-  const weekday: Weekday = weekdayOfLocalDate(date, timezone);
+  const weekday: Weekday = weekdayOfLocalDate(date);
+  const day = localDayRangeUtc(date, timezone);
 
   const workingHourRanges = professionals.flatMap((professional) =>
     professional.workingHours
       .filter((wh) => wh.weekday === weekday)
       .map((wh) => ({ startMinute: wh.startMinute, endMinute: wh.endMinute })),
   );
-  const itemRanges = [
-    ...appointments.map((a) => ({
-      startMinute: utcToLocalMinutes(new Date(a.startAt), timezone),
-      endMinute: utcToLocalMinutes(new Date(a.endAt), timezone),
-    })),
-    ...timeBlocks.map((tb) => ({
-      startMinute: utcToLocalMinutes(new Date(tb.startAt), timezone),
-      endMinute: utcToLocalMinutes(new Date(tb.endAt), timezone),
-    })),
-  ];
-  const range = computeDayRange(workingHourRanges, itemRanges);
+  const appointmentMinutes = new Map(
+    appointments.map((a) => [
+      a.id,
+      instantRangeToDayMinutes(new Date(a.startAt), new Date(a.endAt), day, timezone),
+    ]),
+  );
+  const timeBlockMinutes = new Map(
+    timeBlocks.map((tb) => [
+      tb.id,
+      instantRangeToDayMinutes(new Date(tb.startAt), new Date(tb.endAt), day, timezone),
+    ]),
+  );
+  // Bloqueios ficam de fora do cálculo do intervalo: um feriado de dia
+  // inteiro esticaria a grade para 00:00–24:00. Eles são recortados à grade.
+  const range = computeDayRange(workingHourRanges, [...appointmentMinutes.values()]);
   const marks = hourMarks(range);
   const totalHeight = minutesToTopPx(range.rangeEndMinute, range, PIXELS_PER_HOUR);
 
@@ -92,7 +106,7 @@ export function ScheduleGrid({
       <div className="flex overflow-x-auto rounded-lg border bg-card shadow-sm">
         <div className="sticky left-0 z-10 w-14 shrink-0 border-r bg-background">
           <div className="h-11 border-b" />
-          <div className="relative" style={{ height: totalHeight }}>
+          <div className={GRID_BODY_CLASS} style={{ height: totalHeight }}>
             {marks.map((minute) => (
               <span
                 key={minute}
@@ -121,7 +135,7 @@ export function ScheduleGrid({
                 <span className="truncate text-sm font-medium">{professional.name}</span>
               </div>
 
-              <div className="relative" style={{ height: totalHeight }}>
+              <div className={GRID_BODY_CLASS} style={{ height: totalHeight }}>
                 {marks.map((minute) => (
                   <div
                     key={minute}
@@ -171,47 +185,52 @@ export function ScheduleGrid({
                 )}
 
                 {profTimeBlocks.map((timeBlock) => {
-                  const startMinute = utcToLocalMinutes(new Date(timeBlock.startAt), timezone);
-                  const endMinute = utcToLocalMinutes(new Date(timeBlock.endAt), timezone);
+                  const visible = clampToRange(timeBlockMinutes.get(timeBlock.id)!, range);
+                  if (!visible) return null;
                   return (
                     <div
                       key={timeBlock.id}
-                      className="absolute inset-x-1 flex items-center gap-1 overflow-hidden rounded-md px-1.5 text-[0.65rem] text-muted-foreground ring-1 ring-border"
+                      className="absolute inset-x-1 flex items-start gap-1 overflow-hidden rounded-md px-2 py-1 text-xs text-muted-foreground ring-1 ring-border"
                       style={{
-                        top: minutesToTopPx(startMinute, range, PIXELS_PER_HOUR),
-                        height: minutesToHeightPx(startMinute, endMinute, PIXELS_PER_HOUR),
+                        top: minutesToTopPx(visible.startMinute, range, PIXELS_PER_HOUR),
+                        height: minutesToHeightPx(visible.startMinute, visible.endMinute, PIXELS_PER_HOUR),
                         backgroundImage:
                           "repeating-linear-gradient(45deg, var(--color-muted), var(--color-muted) 6px, transparent 6px, transparent 12px)",
                       }}
                       title={timeBlock.reason ?? "Bloqueado"}
                     >
-                      <Ban className="size-3 shrink-0" />
+                      <Ban className="mt-0.5 size-3 shrink-0" />
                       <span className="truncate">{timeBlock.reason ?? "Bloqueado"}</span>
                     </div>
                   );
                 })}
 
                 {profAppointments.map((appointment) => {
-                  const startMinute = utcToLocalMinutes(new Date(appointment.startAt), timezone);
-                  const endMinute = utcToLocalMinutes(new Date(appointment.endAt), timezone);
+                  const { startMinute, endMinute } = appointmentMinutes.get(appointment.id)!;
+                  const timeLabel = `${formatTime(appointment.startAt, timezone)}–${formatTime(appointment.endAt, timezone)}`;
                   return (
                     <button
                       key={appointment.id}
                       type="button"
+                      title={`${timeLabel} · ${appointment.client.name} · ${appointment.service.name} (${STATUS_LABELS[appointment.status]})`}
                       className={cn(
-                        "absolute inset-x-1 overflow-hidden rounded-md px-1.5 py-0.5 text-left text-[0.7rem] shadow-sm transition-opacity hover:opacity-90",
+                        "absolute inset-x-1 flex flex-col overflow-hidden rounded-md px-2 py-1 text-left text-xs leading-tight shadow-sm transition-shadow hover:z-20 hover:shadow-md",
                         STATUS_BLOCK_CLASSES[appointment.status],
                       )}
                       style={{
                         top: minutesToTopPx(startMinute, range, PIXELS_PER_HOUR),
-                        height: minutesToHeightPx(startMinute, endMinute, PIXELS_PER_HOUR),
+                        height: minutesToHeightPx(
+                          startMinute,
+                          endMinute,
+                          PIXELS_PER_HOUR,
+                          MIN_APPOINTMENT_HEIGHT_PX,
+                        ),
                       }}
                       onClick={() => setSelectedAppointmentId(appointment.id)}
                     >
-                      <p className="truncate font-medium">
-                        {formatTime(appointment.startAt, timezone)} · {appointment.client.name}
-                      </p>
-                      <p className="truncate opacity-90">{appointment.service.name}</p>
+                      <span className="truncate font-semibold">{timeLabel}</span>
+                      <span className="truncate">{appointment.client.name}</span>
+                      <span className="truncate opacity-80">{appointment.service.name}</span>
                     </button>
                   );
                 })}

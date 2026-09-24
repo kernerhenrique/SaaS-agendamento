@@ -1,7 +1,26 @@
 import { describe, expect, it } from "vitest";
 
 import { Weekday } from "@/generated/prisma/enums";
-import { localDayRangeUtc, localMinutesToUtc, weekdayOfLocalDate } from "@/lib/date";
+import { localDayRangeUtc, localMinutesToUtc, utcToLocalMinutes, weekdayOfLocalDate } from "@/lib/date";
+
+describe("utcToLocalMinutes", () => {
+  it("converte um instante UTC para minutos no horário local de São Paulo", () => {
+    // 20:45 UTC = 17:45 em São Paulo (UTC-03:00)
+    expect(utcToLocalMinutes(new Date("2026-09-24T20:45:00Z"), "America/Sao_Paulo")).toBe(17 * 60 + 45);
+  });
+
+  it("não depende do timezone do processo (servidor/navegador)", () => {
+    const instant = new Date("2026-09-24T20:45:00Z");
+    expect(utcToLocalMinutes(instant, "Asia/Tokyo")).toBe(5 * 60 + 45); // UTC+09:00, dia seguinte
+    expect(utcToLocalMinutes(instant, "UTC")).toBe(20 * 60 + 45);
+    expect(utcToLocalMinutes(instant, "America/New_York")).toBe(16 * 60 + 45); // EDT, UTC-04:00
+  });
+
+  it("é o inverso de localMinutesToUtc", () => {
+    const utc = localMinutesToUtc("2026-09-24", 9 * 60 + 30, "America/Sao_Paulo");
+    expect(utcToLocalMinutes(utc, "America/Sao_Paulo")).toBe(9 * 60 + 30);
+  });
+});
 
 describe("localMinutesToUtc", () => {
   it("converte horário local para UTC usando o offset fixo do timezone (São Paulo, sem DST)", () => {
@@ -43,15 +62,10 @@ describe("localDayRangeUtc", () => {
 });
 
 describe("weekdayOfLocalDate", () => {
-  it("calcula o dia da semana no timezone do negócio, não no timezone do servidor", () => {
+  it("calcula o dia da semana de uma data de calendário", () => {
     // 2026-09-24 é uma quinta-feira.
-    expect(weekdayOfLocalDate("2026-09-24", "America/Sao_Paulo")).toBe(Weekday.THURSDAY);
-  });
-
-  it("usa o timezone informado para decidir o dia, mesmo perto da virada de data em UTC", () => {
-    // 2026-09-24T00:30 em Sao Paulo (UTC-03:00) corresponde a 2026-09-24T03:30Z,
-    // então a data local "2026-09-24" continua sendo quinta-feira.
-    expect(weekdayOfLocalDate("2026-09-24", "America/Sao_Paulo")).toBe(Weekday.THURSDAY);
-    expect(weekdayOfLocalDate("2026-09-25", "America/Sao_Paulo")).toBe(Weekday.FRIDAY);
+    expect(weekdayOfLocalDate("2026-09-24")).toBe(Weekday.THURSDAY);
+    expect(weekdayOfLocalDate("2026-09-25")).toBe(Weekday.FRIDAY);
+    expect(weekdayOfLocalDate("2026-09-27")).toBe(Weekday.SUNDAY);
   });
 });
