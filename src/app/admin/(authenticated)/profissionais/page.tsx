@@ -11,7 +11,11 @@ export default async function ProfissionaisPage() {
     prisma.professional.findMany({
       where: { businessId: session.businessId, deletedAt: null },
       orderBy: { name: "asc" },
-      include: { workingHours: true, professionalServices: { include: { service: true } } },
+      include: {
+        workingHours: true,
+        professionalServices: { include: { service: true } },
+        photos: { orderBy: { position: "asc" } },
+      },
     }),
     prisma.service.findMany({
       where: { businessId: session.businessId, active: true, deletedAt: null },

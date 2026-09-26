@@ -18,4 +18,5 @@ export interface ProfessionalListItem {
     breakEndMinute: number | null;
   }[];
   professionalServices: { service: { id: string; name: string } }[];
+  photos: { id: string; url: string }[];
 }

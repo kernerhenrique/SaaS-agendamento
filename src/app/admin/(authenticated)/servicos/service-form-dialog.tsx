@@ -15,9 +15,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-import type { ProfessionalOption, ServiceListItem } from "./types";
+import type { ProfessionalOption, ServiceCategoryOption, ServiceListItem } from "./types";
+
+const NO_CATEGORY = "none";
+const NEW_CATEGORY = "new";
 
 function centsToReaisInput(cents: number): string {
   return (cents / 100).toFixed(2);
@@ -34,11 +38,15 @@ export function ServiceFormDialog({
   trigger,
   service,
   professionals,
+  categories,
+  onCategoryCreated,
   onSaved,
 }: {
   trigger: React.ReactElement;
   service?: ServiceListItem;
   professionals: ProfessionalOption[];
+  categories: ServiceCategoryOption[];
+  onCategoryCreated: (category: ServiceCategoryOption) => void;
   onSaved: () => void | Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
@@ -49,7 +57,7 @@ export function ServiceFormDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{service ? "Editar serviço" : "Novo serviço"}</DialogTitle>
-          <DialogDescription>Nome, duração, preço e profissionais que realizam.</DialogDescription>
+          <DialogDescription>Nome, categoria, duração, preço e profissionais que realizam.</DialogDescription>
         </DialogHeader>
         {/* Só monta o formulário enquanto o diálogo está aberto: cada
             abertura começa com estado fresco, sem precisar de um efeito para
@@ -58,6 +66,8 @@ export function ServiceFormDialog({
           <ServiceFormFields
             service={service}
             professionals={professionals}
+            categories={categories}
+            onCategoryCreated={onCategoryCreated}
             onSaved={onSaved}
             onClose={() => setOpen(false)}
           />
@@ -70,11 +80,15 @@ export function ServiceFormDialog({
 function ServiceFormFields({
   service,
   professionals,
+  categories,
+  onCategoryCreated,
   onSaved,
   onClose,
 }: {
   service?: ServiceListItem;
   professionals: ProfessionalOption[];
+  categories: ServiceCategoryOption[];
+  onCategoryCreated: (category: ServiceCategoryOption) => void;
   onSaved: () => void | Promise<void>;
   onClose: () => void;
 }) {
@@ -83,6 +97,9 @@ function ServiceFormFields({
   const [description, setDescription] = useState(service?.description ?? "");
   const [durationMin, setDurationMin] = useState(String(service?.durationMin ?? 30));
   const [price, setPrice] = useState(centsToReaisInput(service?.priceCents ?? 0));
+  const [priceType, setPriceType] = useState<"FIXED" | "FROM">(service?.priceType ?? "FIXED");
+  const [categoryId, setCategoryId] = useState(service?.categoryId ?? NO_CATEGORY);
+  const [newCategoryName, setNewCategoryName] = useState("");
   const [selectedProfessionalIds, setSelectedProfessionalIds] = useState<Set<string>>(
     new Set(service?.professionalServices.map((ps) => ps.professional.id) ?? []),
   );
@@ -116,14 +133,37 @@ function ServiceFormFields({
       setError("Preço inválido");
       return;
     }
+    if (categoryId === NEW_CATEGORY && !newCategoryName.trim()) {
+      setError("Digite o nome da nova categoria");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
+      let finalCategoryId: string | null = categoryId === NO_CATEGORY ? null : categoryId;
+
+      if (categoryId === NEW_CATEGORY) {
+        const categoryResponse = await fetch("/api/admin/service-categories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: newCategoryName }),
+        });
+        const categoryData = await categoryResponse.json();
+        if (!categoryResponse.ok) {
+          setError(categoryData?.error ?? "Não foi possível criar a categoria");
+          return;
+        }
+        onCategoryCreated(categoryData.category);
+        finalCategoryId = categoryData.category.id;
+      }
+
       const payload = {
         name,
         description: description || null,
         durationMin: parsedDuration,
         priceCents: parsedCents,
+        priceType,
+        categoryId: finalCategoryId,
         professionalIds: Array.from(selectedProfessionalIds),
       };
       const response = await fetch(
@@ -165,6 +205,40 @@ function ServiceFormFields({
           />
         </div>
 
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="category">Categoria (opcional)</Label>
+          <Select value={categoryId} onValueChange={(value) => setCategoryId(value ?? NO_CATEGORY)}>
+            <SelectTrigger id="category">
+              {/* SelectValue não resolve o rótulo do SelectItem sozinho (Base UI
+                  só sabe o `value`) — precisa de uma função para mapear o texto. */}
+              <SelectValue placeholder="Selecione uma categoria">
+                {(value: string) => {
+                  if (value === NO_CATEGORY) return "Sem categoria";
+                  if (value === NEW_CATEGORY) return "+ Nova categoria";
+                  return categories.find((category) => category.id === value)?.name ?? "Selecione uma categoria";
+                }}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+              <SelectItem value={NEW_CATEGORY}>+ Nova categoria</SelectItem>
+            </SelectContent>
+          </Select>
+          {categoryId === NEW_CATEGORY ? (
+            <Input
+              autoFocus
+              placeholder="Nome da categoria"
+              value={newCategoryName}
+              onChange={(event) => setNewCategoryName(event.target.value)}
+            />
+          ) : null}
+        </div>
+
         <div className="flex gap-4">
           <div className="flex flex-1 flex-col gap-2">
             <Label htmlFor="duration">Duração (min)</Label>
@@ -186,6 +260,18 @@ function ServiceFormFields({
               onChange={(event) => setPrice(event.target.value)}
               required
             />
+          </div>
+          <div className="flex flex-1 flex-col gap-2">
+            <Label htmlFor="priceType">Tipo de preço</Label>
+            <Select value={priceType} onValueChange={(value) => setPriceType((value as "FIXED" | "FROM") ?? "FIXED")}>
+              <SelectTrigger id="priceType">
+                <SelectValue>{(value: "FIXED" | "FROM") => (value === "FROM" ? "A partir de" : "Fixo")}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FIXED">Fixo</SelectItem>
+                <SelectItem value="FROM">A partir de</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </section>

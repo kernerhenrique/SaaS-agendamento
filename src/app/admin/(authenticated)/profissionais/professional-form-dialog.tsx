@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -90,6 +91,7 @@ function ProfessionalFormFields({
   const [workingHours, setWorkingHours] = useState<WorkingHoursFormEntry[]>(
     buildWorkingHoursFormEntries(professional?.workingHours ?? []),
   );
+  const [photoUrls, setPhotoUrls] = useState<string[]>(professional?.photos.map((photo) => photo.url) ?? []);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -100,6 +102,14 @@ function ProfessionalFormFields({
       else next.add(serviceId);
       return next;
     });
+  }
+
+  function updatePhotoUrl(index: number, url: string) {
+    setPhotoUrls((prev) => prev.map((existing, i) => (i === index ? url : existing)));
+  }
+
+  function removePhotoUrl(index: number) {
+    setPhotoUrls((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -125,6 +135,7 @@ function ProfessionalFormFields({
         name,
         bio: bio || null,
         photoUrl: professional?.photoUrl ?? null,
+        photoUrls: photoUrls.map((url) => url.trim()).filter(Boolean),
         serviceIds: Array.from(selectedServiceIds),
         workingHours: parsedWorkingHours,
       };
@@ -159,6 +170,31 @@ function ProfessionalFormFields({
         <div className="flex flex-col gap-2">
           <Label htmlFor="bio">Bio (opcional)</Label>
           <Textarea id="bio" value={bio} onChange={(event) => setBio(event.target.value)} rows={2} />
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h3 className="text-sm font-semibold">Portfólio (opcional)</h3>
+        <p className="text-caption text-muted-foreground">
+          Cole o link de cada foto (hospedada em outro lugar) — sem upload de arquivo por enquanto.
+        </p>
+        <div className="flex flex-col gap-2">
+          {photoUrls.map((url, index) => (
+            <div key={index} className="flex gap-2">
+              <Input
+                placeholder="https://..."
+                value={url}
+                onChange={(event) => updatePhotoUrl(index, event.target.value)}
+              />
+              <Button type="button" variant="ghost" size="icon" onClick={() => removePhotoUrl(index)}>
+                <Trash2 />
+              </Button>
+            </div>
+          ))}
+          <Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => setPhotoUrls((prev) => [...prev, ""])}>
+            <Plus />
+            Adicionar foto
+          </Button>
         </div>
       </section>
 

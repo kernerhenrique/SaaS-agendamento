@@ -9,17 +9,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatPriceFromCents } from "@/lib/currency";
 
 import { ServiceFormDialog } from "./service-form-dialog";
-import type { ProfessionalOption, ServiceListItem } from "./types";
+import type { ProfessionalOption, ServiceCategoryOption, ServiceListItem } from "./types";
 
 export function ServicesView({
   initialServices,
   professionals,
+  initialCategories,
 }: {
   initialServices: ServiceListItem[];
   professionals: ProfessionalOption[];
+  initialCategories: ServiceCategoryOption[];
 }) {
   const [services, setServices] = useState(initialServices);
+  const [categories, setCategories] = useState(initialCategories);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  function handleCategoryCreated(category: ServiceCategoryOption) {
+    setCategories((prev) => (prev.some((c) => c.id === category.id) ? prev : [...prev, category]));
+  }
 
   const refresh = useCallback(async () => {
     const response = await fetch("/api/admin/services");
@@ -52,6 +59,8 @@ export function ServicesView({
             </Button>
           }
           professionals={professionals}
+          categories={categories}
+          onCategoryCreated={handleCategoryCreated}
           onSaved={refresh}
         />
       </div>
@@ -66,6 +75,11 @@ export function ServicesView({
                 <CardTitle className="text-base">{service.name}</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-3 text-sm">
+                {service.category ? (
+                  <Badge variant="secondary" className="w-fit">
+                    {service.category.name}
+                  </Badge>
+                ) : null}
                 {service.description ? (
                   <p className="text-muted-foreground">{service.description}</p>
                 ) : null}
@@ -74,7 +88,10 @@ export function ServicesView({
                     <Clock className="size-3" />
                     {service.durationMin}min
                   </Badge>
-                  <Badge variant="outline">{formatPriceFromCents(service.priceCents)}</Badge>
+                  <Badge variant="outline">
+                    {formatPriceFromCents(service.priceCents)}
+                    {service.priceType === "FROM" ? "+" : ""}
+                  </Badge>
                 </div>
                 <p>
                   <span className="font-medium">Profissionais: </span>
@@ -90,6 +107,8 @@ export function ServicesView({
                     }
                     service={service}
                     professionals={professionals}
+                    categories={categories}
+                    onCategoryCreated={handleCategoryCreated}
                     onSaved={refresh}
                   />
                   <Button
