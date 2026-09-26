@@ -7,6 +7,14 @@ import { toast } from "sonner";
 import { DetailDrawerContent } from "@/components/detail-drawer";
 import { StatusBadge } from "@/components/status-badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,6 +28,8 @@ import { localMinutesToUtc, utcToLocalDate, utcToLocalMinutes } from "@/lib/date
 import { formatPhoneBR } from "@/lib/phone";
 import { minutesToTimeInput, timeInputToMinutes } from "@/lib/weekday";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { BookingTimeNotice, useNow } from "@/components/admin/booking-time-notice";
+import { evaluateLocalSlot } from "@/server/modules/appointment/admin-booking-rules";
 import { RESCHEDULABLE_STATUSES } from "@/server/modules/appointment/reschedule-rules";
 
 import type { ProfessionalOption } from "./types";
@@ -88,6 +98,7 @@ function DrawerBody({
   const [reloadKey, setReloadKey] = useState(0);
   const [pendingStatus, setPendingStatus] = useState<AppointmentStatus | null>(null);
   const [isRescheduling, setIsRescheduling] = useState(false);
+  const [isConfirmingCancel, setIsConfirmingCancel] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -170,7 +181,8 @@ function DrawerBody({
                 variant={action.status === "CANCELLED" || action.status === "NO_SHOW" ? "outline" : "default"}
                 size="sm"
                 disabled={pendingStatus != null}
-                onClick={() => changeStatus(action.status)}
+                // Cancelar é estado final: passa por confirmação (modal curto).
+                onClick={() => (action.status === "CANCELLED" ? setIsConfirmingCancel(true) : changeStatus(action.status))}
               >
                 {pendingStatus === action.status ? "Salvando…" : action.label}
               </Button>
@@ -192,6 +204,7 @@ function DrawerBody({
           <RescheduleForm
             appointmentId={appointment.id}
             serviceId={appointment.service.id}
+            durationMin={appointment.service.durationMin}
             currentProfessionalId={appointment.professional.id}
             startAt={appointment.startAt}
             timezone={timezone}
@@ -257,6 +270,33 @@ function DrawerBody({
           )}
         </section>
       </div>
+
+      <Dialog open={isConfirmingCancel} onOpenChange={setIsConfirmingCancel}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancelar agendamento?</DialogTitle>
+            <DialogDescription>
+              {appointment.client.name} · {whenLabel}. Não dá para desfazer; para voltar, será preciso criar um novo
+              agendamento.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsConfirmingCancel(false)}>
+              Voltar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={pendingStatus != null}
+              onClick={async () => {
+                await changeStatus("CANCELLED");
+                setIsConfirmingCancel(false);
+              }}
+            >
+              {pendingStatus === "CANCELLED" ? "Cancelando…" : "Cancelar agendamento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DetailDrawerContent>
   );
 }
@@ -264,6 +304,7 @@ function DrawerBody({
 function RescheduleForm({
   appointmentId,
   serviceId,
+  durationMin,
   currentProfessionalId,
   startAt,
   timezone,
@@ -272,6 +313,7 @@ function RescheduleForm({
 }: {
   appointmentId: string;
   serviceId: string;
+  durationMin: number;
   currentProfessionalId: string;
   startAt: string;
   timezone: string;
@@ -285,6 +327,13 @@ function RescheduleForm({
   const [professionalId, setProfessionalId] = useState(currentProfessionalId);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const now = useNow();
+  const selected = eligible.find((p) => p.id === professionalId);
+  const startMinute = timeInputToMinutes(time);
+  const slot =
+    selected && date && startMinute !== null
+      ? evaluateLocalSlot({ date, startMinute, durationMin, timeZone: timezone, now, weeklyHours: selected.workingHours })
+      : null;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -293,13 +342,18 @@ function RescheduleForm({
       setError("Informe data e horário");
       return;
     }
+    if (slot?.isPast) return;
     setError(null);
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/admin/appointments/${appointmentId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ startAt: localMinutesToUtc(date, minutes, timezone).toISOString(), professionalId }),
+        body: JSON.stringify({
+          startAt: localMinutesToUtc(date, minutes, timezone).toISOString(),
+          professionalId,
+          allowOutsideHours: slot?.isOutsideHours ?? false,
+        }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -340,9 +394,17 @@ function RescheduleForm({
           </SelectContent>
         </Select>
       </div>
+      {slot && selected ? (
+        <BookingTimeNotice
+          professionalName={selected.name}
+          isPast={slot.isPast}
+          isOutsideHours={slot.isOutsideHours}
+          workingHours={slot.workingHours}
+        />
+      ) : null}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      <Button type="submit" size="sm" disabled={isSubmitting} className="self-start">
-        {isSubmitting ? "Salvando…" : "Confirmar novo horário"}
+      <Button type="submit" size="sm" disabled={isSubmitting || slot?.isPast} className="self-start">
+        {isSubmitting ? "Salvando…" : slot?.isOutsideHours && !slot.isPast ? "Remarcar mesmo assim" : "Confirmar novo horário"}
       </Button>
     </form>
   );

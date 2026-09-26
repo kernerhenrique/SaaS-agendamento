@@ -18,8 +18,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { ofLabel, selectLabel } from "@/config/vertical";
 import { useVertical } from "@/config/vertical-context";
-import { localMinutesToUtc, todayInTimeZone } from "@/lib/date";
+import { localMinutesToUtc, todayInTimeZone, utcToLocalMinutes } from "@/lib/date";
+import { minutesToTimeInput } from "@/lib/weekday";
 import { formatPhoneBR } from "@/lib/phone";
+import type { Weekday } from "@/generated/prisma/enums";
+import { evaluateLocalSlot, type WorkingHoursWindow } from "@/server/modules/appointment/admin-booking-rules";
+
+import { BookingTimeNotice, useNow } from "./booking-time-notice";
 
 export interface NewAppointmentInitial {
   date?: string;
@@ -28,10 +33,13 @@ export interface NewAppointmentInitial {
   time?: string;
 }
 
+type WeeklyHours = WorkingHoursWindow & { weekday: Weekday };
+
 interface ProfessionalChoice {
   id: string;
   name: string;
   services: { id: string; name: string; durationMin: number }[];
+  workingHours: WeeklyHours[];
 }
 
 interface ApiProfessional {
@@ -39,12 +47,21 @@ interface ApiProfessional {
   name: string;
   active: boolean;
   professionalServices: { service: { id: string; name: string; durationMin: number; active: boolean; deletedAt: string | null } }[];
+  workingHours: WeeklyHours[];
 }
 
 function parseTimeToMinutes(time: string): number | null {
   const match = /^(\d{2}):(\d{2})$/.exec(time);
   if (!match) return null;
   return Number(match[1]) * 60 + Number(match[2]);
+}
+
+/** Hoje: próximo quarto de hora a partir de agora (nunca abre já no passado). Outro dia: 09:00. */
+function defaultTime(date: string | undefined, timeZone: string): string {
+  const today = todayInTimeZone(timeZone);
+  if (date && date !== today) return "09:00";
+  const next = Math.ceil(utcToLocalMinutes(new Date(), timeZone) / 15) * 15;
+  return next >= 24 * 60 ? "23:45" : minutesToTimeInput(next);
 }
 
 /**
@@ -103,7 +120,7 @@ function NewAppointmentForm({
   const [date, setDate] = useState(initial?.date ?? todayInTimeZone(timezone));
   const [professionalId, setProfessionalId] = useState(initial?.professionalId ?? "");
   const [serviceId, setServiceId] = useState("");
-  const [time, setTime] = useState(initial?.time ?? "09:00");
+  const [time, setTime] = useState(() => initial?.time ?? defaultTime(initial?.date, timezone));
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
   const [clientEmail, setClientEmail] = useState("");
@@ -126,6 +143,7 @@ function NewAppointmentForm({
                 .map((ps) => ps.service)
                 .filter((s) => s.active && !s.deletedAt)
                 .map((s) => ({ id: s.id, name: s.name, durationMin: s.durationMin })),
+              workingHours: p.workingHours,
             })),
         );
       })
@@ -137,10 +155,23 @@ function NewAppointmentForm({
     };
   }, []);
 
-  const availableServices = useMemo(
-    () => professionals?.find((p) => p.id === professionalId)?.services ?? [],
-    [professionals, professionalId],
-  );
+  const selectedProfessional = professionals?.find((p) => p.id === professionalId);
+  const availableServices = useMemo(() => selectedProfessional?.services ?? [], [selectedProfessional]);
+  const now = useNow();
+  const startMinute = parseTimeToMinutes(time);
+  const selectedService = availableServices.find((s) => s.id === serviceId);
+  // Sem serviço escolhido ainda, avalia com 1 min: já avisa passado/dia sem expediente.
+  const slot =
+    selectedProfessional && date && startMinute !== null
+      ? evaluateLocalSlot({
+          date,
+          startMinute,
+          durationMin: selectedService?.durationMin ?? 1,
+          timeZone: timezone,
+          now,
+          weeklyHours: selectedProfessional.workingHours,
+        })
+      : null;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -151,6 +182,7 @@ function NewAppointmentForm({
       setError("Preencha todos os campos obrigatórios");
       return;
     }
+    if (slot?.isPast) return;
 
     setIsSubmitting(true);
     try {
@@ -162,6 +194,8 @@ function NewAppointmentForm({
           serviceId,
           startAt: localMinutesToUtc(date, minutes, timezone).toISOString(),
           client: { name: clientName, phone: clientPhone, email: clientEmail || undefined },
+          // O botão já disse "Agendar mesmo assim" — é a confirmação do dono.
+          allowOutsideHours: slot?.isOutsideHours ?? false,
         }),
       });
       const data = await response.json();
@@ -240,13 +274,29 @@ function NewAppointmentForm({
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-2">
           <Label htmlFor="na-date">Data</Label>
-          <Input id="na-date" type="date" value={date} onChange={(event) => setDate(event.target.value)} required />
+          <Input
+            id="na-date"
+            type="date"
+            min={todayInTimeZone(timezone)}
+            value={date}
+            onChange={(event) => setDate(event.target.value)}
+            required
+          />
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="na-time">Horário</Label>
           <Input id="na-time" type="time" value={time} onChange={(event) => setTime(event.target.value)} required />
         </div>
       </div>
+
+      {slot && selectedProfessional ? (
+        <BookingTimeNotice
+          professionalName={selectedProfessional.name}
+          isPast={slot.isPast}
+          isOutsideHours={slot.isOutsideHours}
+          workingHours={slot.workingHours}
+        />
+      ) : null}
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="na-client-name">Nome {ofLabel(terms.client)}</Label>
@@ -279,8 +329,8 @@ function NewAppointmentForm({
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       <DialogFooter>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Salvando..." : "Criar agendamento"}
+        <Button type="submit" disabled={isSubmitting || slot?.isPast}>
+          {isSubmitting ? "Salvando..." : slot?.isOutsideHours && !slot.isPast ? "Agendar mesmo assim" : "Criar agendamento"}
         </Button>
       </DialogFooter>
     </form>

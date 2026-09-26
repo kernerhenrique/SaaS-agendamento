@@ -31,6 +31,7 @@ import {
 } from "@/lib/date";
 import { getInitials } from "@/lib/text";
 import { minutesToTimeInput } from "@/lib/weekday";
+import { PAST_MESSAGE, isInPast } from "@/server/modules/appointment/admin-booking-rules";
 
 import { AgendaDayList } from "./agenda-day-list";
 import { AppointmentDrawer } from "./appointment-drawer";
@@ -116,6 +117,7 @@ export function AgendaView({
       ),
       timeBlocks: timeBlocks.filter((b) => b.professionalId === professional.id && inDay(b.startAt, b.endAt, columnDate)),
       isToday: columnDate === today,
+      isBeforeToday: columnDate < today,
     });
 
     if (view === "week") {
@@ -162,6 +164,10 @@ export function AgendaView({
     }
     const startAt = localMinutesToUtc(drop.column.date, drop.startMinute, timezone);
     const endAt = localMinutesToUtc(drop.column.date, drop.endMinute, timezone);
+    if (isInPast(startAt, new Date())) {
+      toast.error(PAST_MESSAGE);
+      return;
+    }
     const blocked = drop.column.timeBlocks.some((b) => new Date(b.startAt) < endAt && new Date(b.endAt) > startAt);
     if (blocked) {
       toast.error("Esse horário está bloqueado na agenda.");
@@ -171,10 +177,19 @@ export function AgendaView({
       setPendingDrop(drop);
       return;
     }
-    void commitDrop(drop);
+    void commitDrop(drop, false);
   }
 
-  async function commitDrop(drop: AppointmentDrop) {
+  function handleEmptySlotClick(column: GridColumn, minute: number) {
+    if (isInPast(localMinutesToUtc(column.date, minute, timezone), new Date())) {
+      toast.error(PAST_MESSAGE);
+      return;
+    }
+    openNewAppointment({ date: column.date, professionalId: column.professionalId, time: minutesToTimeInput(minute) });
+  }
+
+  /** `allowOutsideHours`: o dono confirmou no modal "Fora do expediente". */
+  async function commitDrop(drop: AppointmentDrop, allowOutsideHours: boolean) {
     const professional = professionals.find((p) => p.id === drop.column.professionalId);
     if (!professional) return;
     const startAt = localMinutesToUtc(drop.column.date, drop.startMinute, timezone);
@@ -196,7 +211,7 @@ export function AgendaView({
     const response = await fetch(`/api/admin/appointments/${drop.appointment.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ startAt: startAt.toISOString(), professionalId: professional.id }),
+      body: JSON.stringify({ startAt: startAt.toISOString(), professionalId: professional.id, allowOutsideHours }),
     });
     if (!response.ok) {
       const data = await response.json().catch(() => null);
@@ -307,9 +322,7 @@ export function AgendaView({
           timezone={timezone}
           isLoading={isLoading}
           onAppointmentClick={(appointment) => setSelectedId(appointment.id)}
-          onEmptySlotClick={(column, minute) =>
-            openNewAppointment({ date: column.date, professionalId: column.professionalId, time: minutesToTimeInput(minute) })
-          }
+          onEmptySlotClick={handleEmptySlotClick}
           onAppointmentDrop={handleDrop}
         />
         <p className="mt-2 text-caption text-muted-foreground">
@@ -360,7 +373,7 @@ export function AgendaView({
               onClick={() => {
                 const drop = pendingDrop;
                 setPendingDrop(null);
-                if (drop) void commitDrop(drop);
+                if (drop) void commitDrop(drop, true);
               }}
             >
               Mover mesmo assim

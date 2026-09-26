@@ -50,6 +50,8 @@ export interface GridColumn {
   appointments: AppointmentDto[];
   timeBlocks: TimeBlockDto[];
   isToday: boolean;
+  /** Dia anterior a hoje: a coluna inteira aparece como "já passou". */
+  isBeforeToday: boolean;
 }
 
 export interface AppointmentDrop {
@@ -243,6 +245,19 @@ function ColumnView({
             ) : null}
           </>
         )}
+
+        {column.isBeforeToday || (nowMinute != null && nowMinute > range.rangeStartMinute) ? (
+          // Tempo que já passou: não aceita novo agendamento (regra do servidor, 15 min de tolerância).
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 bg-muted/60"
+            style={{
+              height: column.isBeforeToday
+                ? totalHeight
+                : top(Math.min(nowMinute ?? range.rangeStartMinute, range.rangeEndMinute)),
+            }}
+            aria-hidden
+          />
+        ) : null}
 
         {column.timeBlocks.map((block) => {
           const visible = clampToRange(minutesByBlock.get(`${column.key}:${block.id}`)!, range);

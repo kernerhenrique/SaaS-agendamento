@@ -31,6 +31,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
+import { BookingTimeNotice } from "@/components/admin/booking-time-notice";
 import { NewAppointmentButton } from "@/components/admin/new-appointment-button";
 import { useAdminShell } from "@/components/admin/admin-shell-context";
 import { DetailDrawerContent } from "@/components/detail-drawer";
@@ -144,6 +145,22 @@ export default function DesignSystemPage() {
               >
                 <Ban className="size-3" /> Almoço (bloqueio)
               </div>
+            </div>
+          </Section>
+
+          <Section
+            title="Aviso de horário (BookingTimeNotice)"
+            description="Formulários do painel: passado bloqueia o envio; fora do expediente só avisa e o botão vira 'mesmo assim'."
+          >
+            <div className="flex max-w-md flex-col gap-3">
+              <BookingTimeNotice professionalName="Ana" isPast={false} isOutsideHours workingHours={null} />
+              <BookingTimeNotice
+                professionalName="Ana"
+                isPast={false}
+                isOutsideHours
+                workingHours={{ startMinute: 540, endMinute: 1080, breakStartMinute: 720, breakEndMinute: 780 }}
+              />
+              <BookingTimeNotice professionalName="Ana" isPast isOutsideHours={false} workingHours={null} />
             </div>
           </Section>
 
