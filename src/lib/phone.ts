@@ -1,4 +1,12 @@
 /**
+ * Forma canônica do telefone para gravar/comparar: só dígitos. É a chave de
+ * deduplicação do cliente — "(11) 99999-0001" e "11999990001" são a mesma pessoa.
+ */
+export function normalizePhoneBR(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+/**
  * Aplica a máscara de telefone brasileiro enquanto o usuário digita.
  * Aceita até 11 dígitos (DDD + 9 dígitos de celular); com 10 formata como fixo.
  */

@@ -24,6 +24,7 @@ async function main() {
       timezone: "America/Sao_Paulo",
       address: "Rua das Tesouras, 123 - São Paulo/SP",
       accentColor: "#4F46E5",
+      businessType: "barbershop",
       whatsapp: "11988880000",
       instagramUrl: "https://instagram.com/navalhadeouro",
       policyText: "Cancelamentos com menos de 2 horas de antecedência podem ser cobrados. Chegue com 10 minutos de antecedência.",
@@ -98,6 +99,7 @@ async function main() {
     data: {
       businessId: business.id,
       name: "João Barbeiro",
+      specialty: "Cortes clássicos e degradê",
       bio: "Especialista em cortes clássicos",
       workingHours: {
         create: weekdayWorkingHours.map((weekday) => ({
@@ -128,6 +130,7 @@ async function main() {
     data: {
       businessId: business.id,
       name: "Marcos Estilista",
+      specialty: "Barba e acabamento",
       bio: "Focado em barba e acabamento",
       workingHours: {
         create: [Weekday.TUESDAY, Weekday.WEDNESDAY, Weekday.THURSDAY, Weekday.FRIDAY, Weekday.SATURDAY].map(

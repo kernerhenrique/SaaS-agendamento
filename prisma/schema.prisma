@@ -46,6 +46,9 @@ model Business {
   whatsapp     String?
   instagramUrl String?
   policyText   String?
+  // Chave do preset de vertical (src/config/vertical.ts). String livre, não
+  // enum: novos verticais não devem exigir migration.
+  businessType String    @default("barbershop")
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
@@ -84,6 +87,9 @@ model Professional {
   name       String
   photoUrl   String?
   bio        String?
+  specialty  String?
+  // Chave da paleta de cores da agenda (src/lib/professional-colors.ts), nunca hex livre.
+  color      String?
   active     Boolean   @default(true)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
@@ -126,20 +132,22 @@ model WorkingHours {
 }
 
 model Service {
-  id          String           @id @default(cuid())
-  businessId  String
-  business    Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  categoryId  String?
-  category    ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  name        String
-  description String?
-  durationMin Int
-  priceCents  Int
-  priceType   ServicePriceType @default(FIXED)
-  active      Boolean          @default(true)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  deletedAt   DateTime?
+  id            String           @id @default(cuid())
+  businessId    String
+  business      Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  categoryId    String?
+  category      ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  name          String
+  description   String?
+  durationMin   Int
+  priceCents    Int
+  priceType     ServicePriceType @default(FIXED)
+  position      Int              @default(0)
+  visibleOnline Boolean          @default(true)
+  active        Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  deletedAt     DateTime?
 
   professionalServices ProfessionalService[]
   appointments         Appointment[]
@@ -188,14 +196,17 @@ model TimeBlock {
 }
 
 model Client {
-  id         String   @id @default(cuid())
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  name       String
-  phone      String
-  email      String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id            String   @id @default(cuid())
+  businessId    String
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name          String
+  // Só dígitos (normalizePhoneBR) — é a chave de deduplicação do cliente.
+  phone         String
+  email         String?
+  internalNotes String?
+  tags          String[] @default([])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   appointments Appointment[]
 

@@ -1,4 +1,5 @@
 import { AppointmentStatus, type Prisma } from "@/generated/prisma/client";
+import { normalizePhoneBR } from "@/lib/phone";
 import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
 
@@ -91,8 +92,11 @@ async function insertAppointment(params: InsertAppointmentParams) {
       where: { id: serviceId, businessId, active: true, deletedAt: null },
     }),
   ]);
-  if (!professional) throw new NotFoundError("Profissional não encontrado");
-  if (!service) throw new NotFoundError("Serviço não encontrado");
+  if (!professional) throw new NotFoundError("Cadastro não encontrado");
+  if (!service) throw new NotFoundError("Cadastro não encontrado");
+
+  const phone = normalizePhoneBR(client.phone);
+  if (phone.length < 10) throw new ValidationError("Telefone inválido: informe DDD e número");
 
   const endAt = new Date(startAt.getTime() + service.durationMin * 60_000);
   const manageTokenExpiresAt = new Date(
@@ -100,9 +104,9 @@ async function insertAppointment(params: InsertAppointmentParams) {
   );
 
   const clientRecord = await prisma.client.upsert({
-    where: { businessId_phone: { businessId, phone: client.phone } },
+    where: { businessId_phone: { businessId, phone } },
     update: { name: client.name, email: client.email },
-    create: { businessId, name: client.name, phone: client.phone, email: client.email },
+    create: { businessId, name: client.name, phone, email: client.email },
   });
 
   try {

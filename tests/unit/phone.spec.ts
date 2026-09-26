@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { formatPhoneBR } from "@/lib/phone";
+import { formatPhoneBR, normalizePhoneBR } from "@/lib/phone";
+
+describe("normalizePhoneBR", () => {
+  it("deixa só dígitos, para que máscaras diferentes virem o mesmo cliente", () => {
+    expect(normalizePhoneBR("(11) 99999-0001")).toBe("11999990001");
+    expect(normalizePhoneBR("11999990001")).toBe("11999990001");
+    expect(normalizePhoneBR(" 11 9 9999 0001 ")).toBe("11999990001");
+  });
+});
 
 describe("formatPhoneBR", () => {
   it("formata progressivamente enquanto digita", () => {
