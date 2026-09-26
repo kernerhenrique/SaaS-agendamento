@@ -67,6 +67,25 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
   - a API recusa com `code: "OUTSIDE_WORKING_HOURS"` se não vier `allowOutsideHours: true`.
 - **Cancelar** passa por modal de confirmação (estado final). O agendamento cancelado continua visível na agenda, riscado.
 
+## Cadastros (Fase 3D)
+
+- **Clientes** (`/admin/clientes`):
+  - `Table` + `TableToolbar` no desktop; lista de cartões no celular (tabela não cabe em 390px).
+  - Busca e filtro ficam na URL (`?q=`, `?filtro=sumidos-60`, `?cliente=<id>` abre a ficha). Assim o Início e o Ctrl+K levam direto à lista filtrada ou à ficha.
+  - A ficha abre em drawer: notas internas, tags (Enter ou vírgula adiciona), histórico, WhatsApp e "Novo agendamento" já preenchido.
+  - Regras puras em `src/server/modules/client/client-rules.ts`.
+- **Telefone já cadastrado no encaixe**: ao digitar um telefone conhecido, o formulário mostra "Já cadastrado: Nome" e preenche o nome. Se o nome for trocado, avisa que o cadastro será renomeado e oferece "Manter". O campo WhatsApp vem antes do nome, porque é ele que identifica o cliente.
+- **Profissionais**: cards levam ao perfil `/admin/profissionais/[id]`, com abas Próximos · Desempenho (métricas do Início para uma pessoa) · Dados.
+  - O cadastro é página, não diálogo (formulário longo), e também existe em `/admin/profissionais/novo`.
+  - Remover passa por modal de confirmação. Para só pausar, use "Ativo".
+- **Cor do profissional**: paleta fixa de tokens `--pro-*` (claro/escuro) em `globals.css`, mapeada em `src/lib/professional-colors.ts`.
+  - `Professional.color` guarda só a chave, nunca hex.
+  - `ProfessionalAvatar` desenha o anel na cor: cards, perfil, cabeçalho da agenda e marcador na visão semana.
+- **Serviços**: tabela por categoria, na mesma ordem da página pública (categoria → `position` → nome).
+  - Subir/descer troca com o vizinho da mesma categoria (`service-order.ts`, testado).
+  - "Na página" (`visibleOnline`) esconde o serviço da página pública e bloqueia a reserva pública pela API. O serviço oculto continua disponível para encaixe no painel.
+  - Ações da linha no menu "…"; remover pede confirmação.
+
 ## Quando usar drawer vs. modal vs. página
 
 - **Drawer** (`Sheet` + `DetailDrawerContent`, `src/components/detail-drawer.tsx`): detalhe de um registro existente (agendamento, cliente, profissional) — mantém a lista de fundo visível/no contexto.

@@ -1,16 +1,14 @@
 import { expect, test } from "@playwright/test";
 
+import { loginAsOwner } from "./helpers";
+
 /**
  * Agenda do painel: drawer de detalhes, mudança de status e remarcação.
  * Usa o dono do seed (prisma/seed.ts) e cria o próprio agendamento numa data
  * futura; no fim cancela, liberando o horário para a próxima execução.
  */
 test("dono abre o agendamento no drawer, remarca e cancela", async ({ page }) => {
-  await page.goto("/admin/login");
-  await page.getByLabel("E-mail").fill("dono@navalhadeouro.com");
-  await page.getByLabel("Senha").fill("senha123");
-  await page.getByRole("button", { name: "Entrar" }).click();
-  await expect(page).toHaveURL(/\/admin$/);
+  await loginAsOwner(page);
 
   const professionals = (await (await page.request.get("/api/admin/professionals")).json()).professionals as {
     id: string;
@@ -70,11 +68,7 @@ test("dono abre o agendamento no drawer, remarca e cancela", async ({ page }) =>
 });
 
 test("encaixe pelo painel recusa passado e só aceita fora do expediente com confirmação", async ({ page }) => {
-  await page.goto("/admin/login");
-  await page.getByLabel("E-mail").fill("dono@navalhadeouro.com");
-  await page.getByLabel("Senha").fill("senha123");
-  await page.getByRole("button", { name: "Entrar" }).click();
-  await expect(page).toHaveURL(/\/admin$/);
+  await loginAsOwner(page);
 
   const professionals = (await (await page.request.get("/api/admin/professionals")).json()).professionals as {
     id: string;

@@ -221,6 +221,13 @@ Todas de 2 a 6 são aditivas com `nullable`/`default`, sem backfill. `prisma/see
 - cancelar pede confirmação;
 - cancelado continua visível na agenda (apagar foi descartado).
 
+**3D: implementado.**
+- Clientes (mini-CRM): lista com busca e filtros "sumidos", mais faltas e mais atendimentos; ficha em drawer com notas, tags e histórico.
+- Aviso de "telefone já cadastrado" no encaixe (sugestão aceita pelo usuário).
+- Perfil do profissional com Próximos, Desempenho e Dados; cadastro em página; cor na agenda e ativo/inativo.
+- Serviços: tabela por categoria, ordem e visibilidade na página pública.
+- E2E: `tests/e2e/admin-cadastros.spec.ts`.
+
 - Navegação de 9 itens; telas novas de **Clientes** (mini-CRM) e **Configurações** (identidade, contato, políticas, horário geral, vertical).
 - `BusinessWorkingHours` como informativo (ver 1.6).
 

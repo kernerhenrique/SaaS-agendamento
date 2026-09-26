@@ -46,9 +46,12 @@ src/
 │   └── api/                 # route handlers (admin, público, availability)
 ├── server/
 │   ├── modules/             # lógica de negócio por domínio
-│   │   ├── appointment/     # disponibilidade, criação, status, cancelamento
+│   │   ├── appointment/     # disponibilidade, criação, status, cancelamento, regras de horário do painel
 │   │   ├── auth/
+│   │   ├── client/          # mini-CRM: lista/filtros, ficha, notas e tags, busca por telefone
+│   │   ├── dashboard/       # métricas do Início (reusadas no perfil do profissional)
 │   │   ├── professional/
+│   │   ├── search/          # busca Ctrl+K
 │   │   ├── service/
 │   │   ├── payment/         # registro de pagamentos externos
 │   │   ├── report/
@@ -58,7 +61,7 @@ src/
 │   ├── vertical.ts          # preset do nicho: terminologia + feature flags (ativo = Business.businessType)
 │   ├── vertical-context.tsx # VerticalProvider / useVertical() para client components
 │   └── brand.ts             # marca do PRODUTO (nome, logo): login, título, "feito com", .ics
-├── lib/                     # date.ts (timezone), rate-limit, .ics, formatadores pt-BR
+├── lib/                     # date.ts (timezone), rate-limit, .ics, formatadores pt-BR, professional-colors.ts
 └── components/              # ui/ (shadcn) + componentes de domínio + admin/ (shell do painel)
 tests/
 ├── unit/

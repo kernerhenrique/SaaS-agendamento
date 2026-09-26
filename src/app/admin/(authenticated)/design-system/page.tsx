@@ -32,6 +32,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { BookingTimeNotice } from "@/components/admin/booking-time-notice";
+import { ProfessionalAvatar } from "@/components/admin/professional-avatar";
+import { PROFESSIONAL_COLORS } from "@/lib/professional-colors";
 import { NewAppointmentButton } from "@/components/admin/new-appointment-button";
 import { useAdminShell } from "@/components/admin/admin-shell-context";
 import { DetailDrawerContent } from "@/components/detail-drawer";
@@ -144,6 +146,24 @@ export default function DesignSystemPage() {
                 }}
               >
                 <Ban className="size-3" /> Almoço (bloqueio)
+              </div>
+            </div>
+          </Section>
+
+          <Section
+            title="Cor do profissional (ProfessionalAvatar)"
+            description="Paleta fixa --pro-* (Professional.color guarda só a chave). Anel no avatar: cards, perfil e cabeçalho da agenda."
+          >
+            <div className="flex flex-wrap items-center gap-4">
+              {PROFESSIONAL_COLORS.map((color) => (
+                <div key={color.key} className="flex flex-col items-center gap-1">
+                  <ProfessionalAvatar name={color.label} photoUrl={null} color={color.key} />
+                  <span className="text-caption text-muted-foreground">{color.label}</span>
+                </div>
+              ))}
+              <div className="flex flex-col items-center gap-1">
+                <ProfessionalAvatar name="Sem cor" photoUrl={null} color={null} />
+                <span className="text-caption text-muted-foreground">Sem cor</span>
               </div>
             </div>
           </Section>
