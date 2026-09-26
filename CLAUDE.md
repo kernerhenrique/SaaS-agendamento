@@ -1,94 +1,163 @@
 # Project Context
 
-Sistema de agendamento/reservas multi-tenant para negócios baseados em horário marcado (barbearias, salões, clínicas, consultórios). Projeto de portfólio — deve parecer um produto real e vendável, não um CRUD de estudo. Prioridade: UI moderna, fluxo de agendamento com fricção mínima, decisões de arquitetura defensáveis em entrevista técnica.
+SaaS de agendamento para negócios onde **mais de um profissional atende** (barbearias, clínicas/estética, estúdios de tatuagem, salões). Este repositório é o **projeto base comercial**: ele é clonado e adaptado para cada cliente fechado, recebendo a identidade visual e a terminologia daquele negócio. Não é mais projeto de portfólio.
 
-Antes de qualquer mudança de arquitetura ou de schema, pare e proponha um plano. Antes de mexer na lógica de disponibilidade de horários, pergunte se há testes cobrindo o comportamento atual.
+Prioridades, nesta ordem:
+1. **Usabilidade**: dono e equipe conseguem usar sem treinamento; cliente final reserva em poucos toques pelo celular.
+2. **Visual moderno e consistente**, no nível de Fresha, Booksy, Trinks e Cal.com, sempre via design system.
+3. **Base genérica e clonável**: nada específico de um nicho fica hardcoded.
+4. **Correção**: nunca quebrar a lógica de disponibilidade, o isolamento multi-tenant nem a autenticação.
 
-## About This Project
+Antes de qualquer mudança de schema, autenticação ou lógica de disponibilidade de horários: **pare, proponha um plano e espere confirmação**. Antes de mexer na disponibilidade, verifique se há testes cobrindo o comportamento atual.
 
-- Negócio (`Business`) cadastra profissionais, serviços e horário de funcionamento.
-- Cliente final agenda por uma página pública (`/{slug}`) **sem criar conta**.
-- Cancelamento/reagendamento do cliente é feito por um `manage_token` único por agendamento (UUID v4), nunca por login ou por ID sequencial na URL.
-- Documento de escopo completo (regras de negócio, personas, referências de UX): `docs/escopo-sistema-agendamento.md`.
+## Documentos de referência
+- Escopo e regras de negócio: @docs/escopo-sistema-agendamento.md
+- Design system (tokens, componentes, padrões de tela): @docs/design-system.md
+- Como criar um novo cliente a partir do base: @docs/como-clonar.md
+- Referências de mercado e padrões adotados: @docs/pesquisa-referencias.md
 
-## Referências para o projeto
+Se algum desses arquivos ainda não existir, crie-o quando a tarefa tocar no assunto. Se este CLAUDE.md divergir do código real, **o código manda**: avise e atualize este arquivo.
 
-Use sempre essas refferêcias para fazer as telas do projeto:
-**Referências de mercado (inspiração de UX, não para copiar visualmente):**
-- **Fresha** — referência principal para o fluxo de agendamento em si: seleção de serviço → profissional → data/hora em poucos passos, com resumo sempre visível lateralmente (desktop) ou fixo no rodapé (mobile).
-- **Calendly** — referência para simplicidade do calendário de disponibilidade e para o fluxo "sem conta" de quem agenda.
-- **Booksy / Treatwell** — referência para o painel do lado do negócio (agenda visual por profissional, cores por status de agendamento, bloqueios de horário).
-- **Cal.com** (open source) — bom para inspirar a página pública "clean" do negócio e o design system (tipografia grande, bastante espaço em branco, poucos elementos por tela).
+## Produto em uma tela
+- **Página pública** `/{slug}`: página do negócio (capa, logo, serviços, equipe, portfólio, políticas) + fluxo de reserva serviço → profissional → data/hora → dados → confirmação. Cliente final **não cria conta**.
+- **Gerenciar reserva** `/agendamento/{manageToken}/gerenciar`: cancelar/reagendar via token.
+- **Painel admin** `/admin/*`: Início, Agenda, Clientes, Profissionais, Serviços, Financeiro, Relatórios, Mensagens, Configurações.
 
 ## Stack
+- Next.js 16 (App Router) + TypeScript estrito + Tailwind CSS v4 + shadcn/ui (Base UI), Lucide, Motion, Sonner
+- Backend: Route Handlers do próprio Next.js (sem servidor separado)
+- PostgreSQL + Prisma
+- Auth: JWT (access 15min + refresh 7 dias) com bcrypt, em cookies `httpOnly`; só para usuários do negócio
+- E-mail: Nodemailer (Gmail SMTP); sem credenciais, o e-mail é apenas logado no console
+- Testes: Vitest (unitário) + Playwright (E2E)
+- Deploy: Vercel + Postgres gerenciado (Supabase, Neon, Railway)
 
-- Frontend: Next.js + TypeScript + Tailwind CSS + shadcn/ui
-- Backend: NestJS (ou API Routes do Next.js) — Node.js + TypeScript
-- Banco: PostgreSQL via Prisma
-- Auth: JWT + bcrypt (apenas para admin do negócio; cliente final não autentica)
-- Testes: Vitest/Jest (unitário, foco em disponibilidade de horários) + Playwright (E2E do fluxo de agendamento)
-- Deploy: Vercel (app) + Railway/Render (Postgres)
-
-## Key Directories
-
-Estrutura alvo (criar conforme o projeto avança — ajustar esta seção quando divergir):
-
+## Estrutura real de diretórios
 ```
+prisma/
+├── schema.prisma
+├── seed.ts                  # seeds por vertical ficam aqui (ou em prisma/seeds/)
+└── migrations/
 src/
-├── app/                  # rotas Next.js (painel admin e página pública)
-│   ├── (admin)/          # área autenticada do negócio
-│   └── [slug]/           # página pública de agendamento
-├── modules/
-│   ├── business/
-│   ├── professional/
-│   ├── service/
-│   ├── appointment/      # inclui lógica de slots disponíveis e manage_token
-│   └── auth/
-├── lib/                  # utilidades compartilhadas (datas, timezone, tokens)
-├── prisma/
-│   ├── schema.prisma
-│   └── migrations/
-└── tests/
+├── app/
+│   ├── admin/               # painel autenticado (prefixo real, NÃO route group)
+│   ├── [slug]/              # página pública do negócio
+│   ├── agendamento/[manageToken]/gerenciar/
+│   └── api/                 # route handlers (admin, público, availability)
+├── server/
+│   ├── modules/             # lógica de negócio por domínio
+│   │   ├── appointment/     # disponibilidade, criação, status, cancelamento
+│   │   ├── auth/
+│   │   ├── professional/
+│   │   ├── service/
+│   │   ├── payment/         # registro de pagamentos externos
+│   │   ├── report/
+│   │   └── notification/    # e-mail; whatsapp/ isolado para trocar provedor
+│   └── db/prisma.ts         # singleton do PrismaClient
+├── config/
+│   └── vertical.ts          # preset do nicho: terminologia + feature flags
+├── lib/                     # date.ts (timezone), rate-limit, .ics, formatadores pt-BR
+└── components/              # ui/ (shadcn) + componentes de domínio
+tests/
+├── unit/
+└── e2e/
 docs/
-└── escopo-sistema-agendamento.md
 ```
+`admin` e `api` são slugs reservados (não podem ser slug de negócio).
+
+## Projeto base e clonagem
+**Customizável por cliente** (sem tocar em lógica):
+- Preset de vertical em `src/config/vertical.ts`: terminologia (Profissional → Barbeiro/Tatuador/Especialista; Serviço → Procedimento; Cliente → Paciente) e feature flags (portfólio, sinal, comissões, preço "a partir de", etc.)
+- Identidade: logo, capa, cor de marca, textos (via Configurações do negócio no painel)
+- Tokens do design system
+- Seed de exemplo do nicho
+
+**Nunca diverge entre clones**: lógica de disponibilidade, auth, isolamento multi-tenant, schema base.
+
+Regras:
+- Funcionalidade específica de um nicho entra **atrás de feature flag no preset**, nunca com `if (barbearia)` espalhado.
+- Textos visíveis que dependem do nicho vêm da terminologia do preset, não de strings fixas.
+- Existem projetos derivados deste repositório (ex.: SaaS-psi) que o usam como remoto `upstream`. Mantenha o base genérico para que melhorias possam ser puxadas pelos forks.
+
+## Design system: regras duras
+- Só tokens (CSS variables no `@theme`). **Nunca** cor hex, espaçamento ou sombra solta no componente.
+- Cor de marca e logo vêm das configurações do negócio; garanta contraste AA do texto sobre a cor de marca.
+- Detalhes de um registro abrem em **drawer**; **modal** só para confirmação ou ação curta; formulário longo vira página.
+- Toda tela tem estado de **carregando (skeleton), vazio (com ação) e erro**.
+- Página pública é **mobile-first**; painel é desktop-first, mas precisa funcionar no celular (navegação inferior, agenda em visão dia).
+- Micro-interações com Motion, discretas, respeitando `prefers-reduced-motion`.
+- Um único estilo de ícone (Lucide).
+- Novos componentes de domínio entram também no style guide em `/admin/design-system`.
+
+## Glossário do domínio
+- **Business**: o negócio (tenant). **Professional**: quem atende. **Service**: o que é vendido (preço fixo ou "a partir de", duração, buffer). **Client**: cliente final, identificado principalmente pelo **telefone** (deduplicação por telefone). **Appointment**: atendimento marcado. **TimeBlock**: bloqueio de agenda (almoço, folga, férias). **WorkingHours**: padrão semanal em minutos desde meia-noite.
+- **Status do agendamento**: agendado → confirmado → concluído; ou → falta; ou → cancelado. Concluído, falta e cancelado são estados finais (não voltam a agendado/confirmado; para remarcar, cria-se um novo ou usa-se o fluxo de reagendamento).
+- **Pagamento**: o SaaS **não processa pagamentos**. O cliente paga fora (PIX, dinheiro, maquininha) e o sistema só **registra**: valor, desconto, forma, data de recebimento, observação. Suporta parcial e sinal. Status derivado: pendente / parcial / pago. Relatórios financeiros usam a **data de recebimento**.
+- **Comissão**: % por profissional aplicada sobre o recebido no período.
+
+Nunca integrar gateway de pagamento sem pedido explícito.
+
+## Contexto do usuário final (Brasil)
+- Clientes chegam pelo link no WhatsApp ou Instagram, no celular. Ninguém quer baixar app nem criar conta.
+- WhatsApp é o canal principal: mensagens prontas abrem via `wa.me`; a camada de envio fica isolada em `notification/whatsapp` para plugar API oficial no futuro.
+- A prévia do link (Open Graph) no WhatsApp precisa mostrar logo e nome do negócio.
+- Formatos pt-BR: R$ 1.234,56; dd/mm/aaaa; telefone com máscara brasileira; interface inteiramente em português.
 
 ## Standards
-
-- TypeScript estrito (`strict: true`), sem `any` não justificado.
-- Toda rota pública de agendamento busca registros por `manage_token`/`slug`, nunca por ID numérico sequencial.
-- Toda lógica de cálculo de horário disponível deve ter teste unitário cobrindo: sobreposição de horários, timezone, duração variável por serviço, bloqueios manuais.
-- Isolamento multi-tenant: toda query de dados do negócio deve filtrar por `business_id` — nunca confiar apenas no ID do recurso filho.
-- Componentes de UI seguem o design system do shadcn/ui; evitar CSS solto fora do Tailwind.
-- Commits pequenos e descritivos (Conventional Commits: `feat:`, `fix:`, `refactor:`, `test:`).
-- Nunca commitar `.env`, chaves de API ou strings de conexão do banco.
+- TypeScript `strict: true`, sem `any` não justificado.
+- Rotas públicas buscam por `slug`/`manage_token`, nunca por ID sequencial.
+- Isolamento multi-tenant: toda query filtra por `businessId` **derivado da sessão**, nunca de valor vindo do client, nem confiando só no ID do recurso filho.
+- Toda conversão de horário passa por `src/lib/date.ts`. `Appointment`/`TimeBlock` em `timestamptz` UTC.
+- Lógica de disponibilidade com teste unitário cobrindo: sobreposição, timezone, duração variável, buffer, bloqueios, horário por profissional.
+- Lógica de pagamentos, comissões e relatórios com teste unitário.
+- Componentes seguem o design system; nada de CSS solto fora do Tailwind.
+- Commits pequenos, Conventional Commits (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `style:`).
+- Nunca commitar `.env`, chaves ou strings de conexão.
 
 ## Common Commands
-
-```bash
-npm run dev              # servidor de desenvolvimento
-npm run build            # build de produção
-npx prisma migrate dev   # aplicar migrations em dev
-npx prisma studio        # inspecionar dados
-npm run test             # testes unitários
-npm run test:e2e         # testes end-to-end (Playwright)
 ```
+docker compose up -d        # Postgres local
+npx prisma migrate dev      # aplica migrations em dev
+npx prisma db seed          # dados de exemplo
+npx prisma migrate reset    # zera o banco local e roda o seed de novo
+npx prisma studio           # inspecionar dados
+npm run dev                 # http://localhost:3000
+npm run build
+npm run lint
+npm run test                # Vitest
+npm run test:e2e            # Playwright
+```
+Pré-requisitos: Node ≥20.19, Docker.
+
+**Dados de teste (só banco local):** admin `dono@navalhadeouro.com` / `senha123`; página pública `/navalha-de-ouro`. Use-os para testar fluxos e tirar screenshots sozinho.
 
 ## Standard Workflow
+1. Pergunta sobre o código ou mudança? Se for pergunta, investigue antes de propor código.
+2. Mudança de schema, auth ou disponibilidade → plano primeiro, esperar confirmação.
+3. Regra de negócio não descrita nos docs → pergunte antes de assumir.
+4. Defina como validar (unitário ou E2E) antes ou junto da implementação.
+5. Mudança de UI → verificar em desktop (1440px) e mobile (390px).
 
-Para qualquer tarefa não trivial, seguir nesta ordem:
-1. É uma pergunta sobre o estado atual do código, ou uma mudança? Se for dúvida, investigar antes de propor código.
-2. Precisa de plano antes de implementar? Para mudanças de schema, de fluxo de autenticação, ou da lógica de disponibilidade, sim — apresentar o plano e esperar confirmação.
-3. Falta alguma informação? Perguntar antes de assumir regra de negócio não descrita em `docs/escopo-sistema-agendamento.md`.
-4. Como validar? Definir o teste (unitário ou E2E) antes ou junto da implementação, especialmente em `appointment/`.
+## Definition of Done
+- `npm run lint`, `npm run test` e `npm run test:e2e` passando.
+- Mudanças de UI: screenshots desktop e mobile via Playwright em `docs/screenshots/`.
+- Estados de carregando, vazio e erro implementados.
+- Acessibilidade: navegação por teclado, foco visível, labels, contraste AA.
+- Nenhum valor visual fora dos tokens.
+- Docs e este CLAUDE.md atualizados se a mudança alterar estrutura, regra de negócio ou fluxo de clonagem.
 
-Ordem de desenvolvimento recomendada: schema + migrations → API de disponibilidade de horários (com testes) → autenticação do admin → painel admin → página pública do cliente → fluxo de cancelamento por token → polimento de UI → deploy.
+## Decisões intencionais (não "corrigir" sem pedido)
+- Cliente final nunca tem conta; tudo pelo `manage_token` (UUID v4).
+- Token inválido ou expirado retorna mensagem genérica (não revela se o agendamento existe). Token expira 30 dias após o atendimento. Rate limit de 20 req/5min por IP nas rotas com token.
+- Conflito de horário garantido por exclusion constraint no Postgres (`EXCLUDE USING gist`, `btree_gist`); a checagem na aplicação é só otimista. Toda criação/remarcação (inclusive arrastar-e-soltar na agenda) revalida no servidor.
+- Logout e troca de senha incrementam `User.tokenVersion`; access token não é revalidado no banco a cada request (janela curta aceita).
+- Rate limit em memória via `globalThis`: funciona só em instância única. Limitação conhecida; Redis/Upstash só quando pedido.
 
-## Notes
+# This is NOT the Next.js you know
 
-- Cliente final nunca precisa de conta — essa é uma decisão de produto intencional, não uma lacuna a "corrigir".
-- `manage_token` deve ter expiração opcional e a rota que o consome deve responder com erro genérico quando o token é inválido (não revelar se o agendamento existe).
-- Cor de destaque e logo são configuráveis por negócio (personalização usada como diferencial de venda) — ao mexer em tema/estilo, preservar esse ponto de extensão.
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
