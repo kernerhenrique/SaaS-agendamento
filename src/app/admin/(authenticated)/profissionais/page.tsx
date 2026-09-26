@@ -3,6 +3,8 @@ import { requireAdminSession } from "@/server/modules/auth/session";
 
 import { ProfessionalsView } from "./professionals-view";
 
+export const metadata = { title: "Profissionais" };
+
 export default async function ProfissionaisPage() {
   const session = await requireAdminSession();
 

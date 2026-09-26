@@ -30,6 +30,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
+import { NewAppointmentButton } from "@/components/admin/new-appointment-button";
+import { useAdminShell } from "@/components/admin/admin-shell-context";
 import { DetailDrawerContent } from "@/components/detail-drawer";
 import { EmptyState } from "@/components/empty-state";
 import { KpiCard } from "@/components/kpi-card";
@@ -173,6 +175,8 @@ export default function DesignSystemPage() {
         </TabsContent>
 
         <TabsContent value="componentes" className="flex flex-col gap-8 pt-4">
+          <ShellSection />
+
           <Section title="Botões">
             <div className="flex flex-wrap gap-2">
               <Button>Default</Button>
@@ -327,6 +331,23 @@ export default function DesignSystemPage() {
         </TabsContent>
       </Tabs>
     </main>
+  );
+}
+
+function ShellSection() {
+  const { openSearch } = useAdminShell();
+  return (
+    <Section
+      title="Shell do painel"
+      description="Menu lateral recolhível (preferência em cookie), navegação inferior no celular, busca global Ctrl+K e novo agendamento acessível de qualquer tela (src/components/admin/)."
+    >
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" onClick={openSearch}>
+          Abrir busca (Ctrl+K)
+        </Button>
+        <NewAppointmentButton variant="outline" />
+      </div>
+    </Section>
   );
 }
 

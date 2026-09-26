@@ -3,6 +3,8 @@ import { requireAdminSession } from "@/server/modules/auth/session";
 
 import { ServicesView } from "./services-view";
 
+export const metadata = { title: "Serviços" };
+
 export default async function ServicosPage() {
   const session = await requireAdminSession();
 

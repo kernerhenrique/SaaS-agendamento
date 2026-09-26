@@ -3,22 +3,25 @@
 import { useCallback, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import { useAdminShell } from "@/components/admin/admin-shell-context";
 import { Button } from "@/components/ui/button";
 import type { AppointmentStatus } from "@/generated/prisma/enums";
 import { addDaysToIsoDate, formatDateLabel, todayInTimeZone } from "@/lib/date";
 
-import { NewAppointmentDialog } from "./new-appointment-dialog";
 import { ScheduleGrid } from "./schedule-grid";
 import type { AppointmentDto, ProfessionalOption, TimeBlockDto } from "./types";
 
 export function AgendaView({
   timezone,
   professionals,
+  initialDate,
 }: {
   timezone: string;
   professionals: ProfessionalOption[];
+  initialDate?: string;
 }) {
-  const [date, setDate] = useState(() => todayInTimeZone(timezone));
+  const { appointmentsVersion, setContextDate } = useAdminShell();
+  const [date, setDate] = useState(() => initialDate ?? todayInTimeZone(timezone));
   const [appointments, setAppointments] = useState<AppointmentDto[]>([]);
   const [timeBlocks, setTimeBlocks] = useState<TimeBlockDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,7 +38,9 @@ export function AgendaView({
     } finally {
       setIsLoading(false);
     }
-  }, [date]);
+    // appointmentsVersion: recarrega quando um agendamento é criado de qualquer tela.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date, appointmentsVersion]);
 
   useEffect(() => {
     // Busca ao montar/trocar de data; loadAppointments seta isLoading antes do
@@ -43,6 +48,11 @@ export function AgendaView({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAppointments();
   }, [loadAppointments]);
+
+  useEffect(() => {
+    setContextDate(date);
+    return () => setContextDate(undefined);
+  }, [date, setContextDate]);
 
   async function handleStatusChange(appointmentId: string, status: AppointmentStatus) {
     setActionError(null);
@@ -65,9 +75,9 @@ export function AgendaView({
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-4 p-6">
+    <main className="flex flex-1 flex-col gap-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">Agenda</h1>
+        <h1 className="text-page-title font-bold">Agenda</h1>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -92,12 +102,6 @@ export function AgendaView({
             Hoje
           </Button>
         </div>
-        <NewAppointmentDialog
-          professionals={professionals}
-          defaultDate={date}
-          timezone={timezone}
-          onCreated={loadAppointments}
-        />
       </div>
 
       {actionError ? <p className="text-sm text-destructive">{actionError}</p> : null}
