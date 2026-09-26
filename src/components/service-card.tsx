@@ -7,20 +7,21 @@ import { formatPriceFromCents } from "@/lib/currency";
 /**
  * Extraído do card inline de `src/app/[slug]/service-step.tsx`, para reuso
  * também em telas do admin (ex.: seletor de serviço no dialog de novo
- * agendamento). Quando "categoria" e preço "a partir de" existirem no schema
- * (Fase 2/3), este componente ganha os campos correspondentes.
+ * agendamento). Categoria é usada para agrupar (não exibida no próprio card).
  */
 export function ServiceCard({
   name,
   description,
   durationMin,
   priceCents,
+  priceType = "FIXED",
   onSelect,
 }: {
   name: string;
   description?: string | null;
   durationMin: number;
   priceCents: number;
+  priceType?: "FIXED" | "FROM";
   onSelect: () => void;
 }) {
   return (
@@ -32,7 +33,10 @@ export function ServiceCard({
           <Clock className="size-3" />
           {durationMin}min
         </Badge>
-        <Badge variant="outline">{formatPriceFromCents(priceCents)}</Badge>
+        <Badge variant="outline">
+          {formatPriceFromCents(priceCents)}
+          {priceType === "FROM" ? "+" : ""}
+        </Badge>
       </div>
     </SelectableCard>
   );

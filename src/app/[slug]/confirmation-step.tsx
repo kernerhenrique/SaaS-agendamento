@@ -1,16 +1,19 @@
-import { CalendarPlus, CircleCheckBig } from "lucide-react";
+import { CalendarPlus, CircleCheckBig, MessageCircle, SquareArrowOutUpRight } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { buildAppointmentIcs } from "@/lib/ics";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 export interface ConfirmedAppointmentInfo {
   id: string;
+  manageToken: string;
   startAt: string;
   endAt: string;
   serviceName: string;
   professionalName: string;
   businessName: string;
   businessAddress: string | null;
+  businessWhatsapp: string | null;
   timezone: string;
 }
 
@@ -66,19 +69,35 @@ export function ConfirmationStep({ appointment }: { appointment: ConfirmedAppoin
         ) : null}
       </dl>
 
-      {/* Precisa continuar sendo um <a> de verdade (role="link"), não um
+      {/* Precisa continuar sendo <a> de verdade (role="link"), não um
           Button estilizado: o Button do Base UI sempre se anuncia como
           role="button" para leitores de tela, mesmo renderizando outro
           elemento por baixo — então aplicamos os estilos via buttonVariants
           direto no link nativo. */}
-      <a
-        href={icsHref}
-        download="agendamento.ics"
-        className={buttonVariants({ variant: "outline" })}
-      >
-        <CalendarPlus />
-        Adicionar ao calendário (.ics)
-      </a>
+      <div className="flex flex-wrap gap-2">
+        <a href={icsHref} download="agendamento.ics" className={buttonVariants({ variant: "outline" })}>
+          <CalendarPlus />
+          Adicionar ao calendário (.ics)
+        </a>
+        <a
+          href={`/agendamento/${appointment.manageToken}/gerenciar`}
+          className={buttonVariants({ variant: "outline" })}
+        >
+          <SquareArrowOutUpRight />
+          Gerenciar meu agendamento
+        </a>
+        {appointment.businessWhatsapp ? (
+          <a
+            href={buildWhatsAppUrl(appointment.businessWhatsapp)}
+            target="_blank"
+            rel="noreferrer"
+            className={buttonVariants({ variant: "outline" })}
+          >
+            <MessageCircle />
+            Falar no WhatsApp
+          </a>
+        ) : null}
+      </div>
     </div>
   );
 }

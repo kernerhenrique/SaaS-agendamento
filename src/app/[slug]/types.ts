@@ -5,6 +5,10 @@ export interface BusinessInfo {
   timezone: string;
   address: string | null;
   accentColor: string | null;
+  logoUrl: string | null;
+  whatsapp: string | null;
+  instagramUrl: string | null;
+  policyText: string | null;
 }
 
 export interface ServiceOption {
@@ -13,12 +17,16 @@ export interface ServiceOption {
   description: string | null;
   durationMin: number;
   priceCents: number;
+  priceType: "FIXED" | "FROM";
+  categoryName: string | null;
 }
 
 export interface ProfessionalOption {
   id: string;
   name: string;
   photoUrl: string | null;
+  bio: string | null;
+  photoUrls: string[];
   serviceIds: string[];
 }
 

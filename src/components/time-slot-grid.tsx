@@ -35,7 +35,7 @@ export function TimeSlotGrid({ slots, onSelect }: { slots: TimeSlot[]; onSelect:
             <h3 className="text-caption font-medium text-muted-foreground uppercase">{period.label}</h3>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
               {periodSlots.map((slot) => (
-                <Button key={slot.key} variant="outline" onClick={() => onSelect(slot)}>
+                <Button key={slot.key} variant="outline" data-testid="time-slot" onClick={() => onSelect(slot)}>
                   {slot.label}
                 </Button>
               ))}

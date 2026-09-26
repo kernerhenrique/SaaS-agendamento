@@ -1,12 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, MapPin, MessageCircle } from "lucide-react";
 
 import { AccentColorScope } from "@/components/accent-color-scope";
-import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { resolveAccentColor } from "@/lib/accent-color";
+import { Stepper } from "@/components/stepper";
+import { buildGoogleMapsUrl } from "@/lib/maps";
+import { getInitials } from "@/lib/text";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { cn } from "cn";
 
 import { ConfirmationStep, type ConfirmedAppointmentInfo } from "./confirmation-step";
@@ -14,7 +18,6 @@ import { ContactStep, type ContactInfo } from "./contact-step";
 import { DatetimeStep } from "./datetime-step";
 import { ProfessionalStep } from "./professional-step";
 import { ServiceStep } from "./service-step";
-import { StepIndicator } from "./step-indicator";
 import { SummaryPanel } from "./summary-panel";
 import {
   NO_PREFERENCE,
@@ -38,8 +41,6 @@ export function BookingFlow({
   services: ServiceOption[];
   professionals: ProfessionalOption[];
 }) {
-  const accentColor = resolveAccentColor(business.accentColor);
-
   const [step, setStep] = useState(1);
   const [selection, setSelection] = useState<BookingSelection>({
     service: null,
@@ -97,12 +98,14 @@ export function BookingFlow({
 
       setConfirmedAppointment({
         id: data.appointment.id,
+        manageToken: data.appointment.manageToken,
         startAt: data.appointment.startAt,
         endAt: data.appointment.endAt,
         serviceName: data.appointment.service.name,
         professionalName: data.appointment.professional.name,
         businessName: data.appointment.business.name,
         businessAddress: business.address,
+        businessWhatsapp: business.whatsapp,
         timezone: data.appointment.business.timezone,
       });
       setStep(5);
@@ -117,17 +120,48 @@ export function BookingFlow({
         <header className="border-b bg-card p-4 shadow-sm sm:p-6">
           <div className={CONTENT_WIDTH_CLASS}>
             <div className="flex items-start justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold sm:text-3xl">{business.name}</h1>
-                {business.address ? (
-                  <p className="text-sm text-muted-foreground">{business.address}</p>
+              <div className="flex min-w-0 items-start gap-3">
+                {business.logoUrl ? (
+                  <Avatar className="size-12">
+                    <AvatarImage src={business.logoUrl} alt="" />
+                    <AvatarFallback>{getInitials(business.name)}</AvatarFallback>
+                  </Avatar>
                 ) : null}
+                <div className="min-w-0">
+                  <h1 className="text-page-title font-bold">{business.name}</h1>
+                  {business.address ? (
+                    <a
+                      href={buildGoogleMapsUrl(business.address)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground hover:underline"
+                    >
+                      <MapPin className="size-3.5 shrink-0" />
+                      {business.address}
+                    </a>
+                  ) : null}
+                </div>
               </div>
-              <ThemeToggle />
+              <div className="flex shrink-0 items-center gap-1">
+                {business.whatsapp ? (
+                  // <a> nativo (não <Button render>): precisa continuar role="link"
+                  // para leitores de tela, ver comentário em confirmation-step.tsx.
+                  <a
+                    href={buildWhatsAppUrl(business.whatsapp)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={buttonVariants({ variant: "outline", size: "sm" })}
+                  >
+                    <MessageCircle />
+                    WhatsApp
+                  </a>
+                ) : null}
+                <ThemeToggle />
+              </div>
             </div>
             {step <= 4 ? (
               <div className="mt-4">
-                <StepIndicator currentStep={step} accentColor={accentColor} />
+                <Stepper steps={["Serviço", "Profissional", "Horário", "Contato"]} currentStep={step} />
               </div>
             ) : null}
           </div>
@@ -157,7 +191,12 @@ export function BookingFlow({
               ) : null}
 
               {step === 4 ? (
-                <ContactStep isSubmitting={isSubmitting} error={submitError} onSubmit={handleSubmitContact} />
+                <ContactStep
+                  isSubmitting={isSubmitting}
+                  error={submitError}
+                  policyText={business.policyText}
+                  onSubmit={handleSubmitContact}
+                />
               ) : null}
 
               {step === 5 && confirmedAppointment ? (
@@ -187,7 +226,7 @@ export function BookingFlow({
                   professionals={professionals}
                   timezone={business.timezone}
                   compact
-                  className="fixed inset-x-0 bottom-0 border-t bg-background p-4 shadow-[0_-4px_12px_-4px_rgb(0_0_0_/_0.1)] sm:hidden"
+                  className="fixed inset-x-0 bottom-0 border-t bg-background p-4 shadow-fixed-bar sm:hidden"
                 />
               </>
             ) : null}

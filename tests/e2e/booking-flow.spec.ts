@@ -16,13 +16,14 @@ test("cliente consegue agendar um horário do início ao fim", async ({ page }) 
 
   await expect(page.getByRole("heading", { name: "Escolha data e horário" })).toBeVisible();
 
-  // Avança dia a dia até encontrar um horário livre — evita depender de uma
-  // data fixa (que ficaria inválida com o tempo ou colidiria com bloqueios
-  // manuais/feriados do seed).
+  // Avança dia a dia na faixa horizontal até encontrar um horário livre —
+  // evita depender de uma data fixa (que ficaria inválida com o tempo ou
+  // colidiria com bloqueios manuais/feriados do seed).
+  const dateChips = page.getByTestId("date-strip-day");
   const timeSlot = page.getByTestId("time-slot").first();
-  for (let attempt = 0; attempt < 21; attempt++) {
+  for (let dayIndex = 0; dayIndex < 21; dayIndex++) {
     if (await timeSlot.isVisible().catch(() => false)) break;
-    await page.getByLabel("Próximo dia").click();
+    await dateChips.nth(dayIndex).click();
   }
   await expect(timeSlot).toBeVisible();
   await timeSlot.click();
@@ -30,7 +31,7 @@ test("cliente consegue agendar um horário do início ao fim", async ({ page }) 
   await expect(page.getByRole("heading", { name: "Seus dados" })).toBeVisible();
   const uniquePhone = `119${Date.now().toString().slice(-8)}`;
   await page.getByLabel("Nome").fill("Cliente Teste E2E");
-  await page.getByLabel("Telefone").fill(uniquePhone);
+  await page.getByLabel("WhatsApp").fill(uniquePhone);
   await page.getByLabel("E-mail").fill("cliente.e2e@example.com");
   await page.getByRole("button", { name: "Confirmar agendamento" }).click();
 

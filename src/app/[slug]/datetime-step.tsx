@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, SparklesIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { DateStrip } from "@/components/date-strip";
 import { SlotGridSkeleton } from "@/components/slot-grid-skeleton";
-import { addDaysToIsoDate, formatDateLabel, todayInTimeZone, utcToLocalMinutes } from "@/lib/date";
+import { TimeSlotGrid, type TimeSlot } from "@/components/time-slot-grid";
+import { formatDateLabel, todayInTimeZone, utcToLocalMinutes } from "@/lib/date";
 
-import { MonthCalendar } from "./month-calendar";
-import { yearMonthOf } from "./month-grid";
 import { NO_PREFERENCE, type AvailableSlot } from "./types";
 
 function formatTime(dateISO: string, timeZone: string): string {
@@ -17,11 +17,26 @@ function formatTime(dateISO: string, timeZone: string): string {
   );
 }
 
-const PERIODS = [
-  { label: "Manhã", isInPeriod: (minutes: number) => minutes < 12 * 60 },
-  { label: "Tarde", isInPeriod: (minutes: number) => minutes >= 12 * 60 && minutes < 18 * 60 },
-  { label: "Noite", isInPeriod: (minutes: number) => minutes >= 18 * 60 },
-];
+const MAX_DAYS_TO_PROBE = 30;
+
+async function fetchSlotsForDate(params: {
+  businessId: string;
+  serviceId: string;
+  professionalId: string | typeof NO_PREFERENCE;
+  date: string;
+}): Promise<AvailableSlot[]> {
+  const query = new URLSearchParams({
+    businessId: params.businessId,
+    serviceId: params.serviceId,
+    date: params.date,
+  });
+  if (params.professionalId !== NO_PREFERENCE) {
+    query.set("professionalId", params.professionalId);
+  }
+  const response = await fetch(`/api/availability?${query.toString()}`);
+  const data = await response.json();
+  return data.slots ?? [];
+}
 
 export function DatetimeStep({
   businessId,
@@ -38,9 +53,10 @@ export function DatetimeStep({
 }) {
   const [today] = useState(() => todayInTimeZone(timezone));
   const [date, setDate] = useState(today);
-  const [visibleMonth, setVisibleMonth] = useState(() => yearMonthOf(today));
   const [slots, setSlots] = useState<AvailableSlot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSearchingNext, setIsSearchingNext] = useState(false);
+  const [searchNextError, setSearchNextError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,16 +65,9 @@ export function DatetimeStep({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
 
-    const params = new URLSearchParams({ businessId, serviceId, date });
-    if (professionalId !== NO_PREFERENCE) {
-      params.set("professionalId", professionalId);
-    }
-
-    fetch(`/api/availability?${params.toString()}`)
-      .then((response) => response.json())
-      .then((data) => {
-        if (cancelled) return;
-        setSlots(data.slots ?? []);
+    fetchSlotsForDate({ businessId, serviceId, professionalId, date })
+      .then((result) => {
+        if (!cancelled) setSlots(result);
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -79,113 +88,54 @@ export function DatetimeStep({
     }
   }
   const displaySlots = Array.from(uniqueSlotsByTime.values());
+  const timeSlots: TimeSlot[] = displaySlots.map((slot) => ({
+    key: slot.startAt,
+    label: formatTime(slot.startAt, timezone),
+    minutesFromMidnight: utcToLocalMinutes(new Date(slot.startAt), timezone),
+  }));
 
-  // Navegar pelas setas de dia também leva o calendário ao mês da nova data.
-  function changeDate(dateISO: string) {
-    setDate(dateISO);
-    setVisibleMonth(yearMonthOf(dateISO));
+  async function handleFindNextAvailable() {
+    setIsSearchingNext(true);
+    setSearchNextError(null);
+    try {
+      for (let offset = 1; offset <= MAX_DAYS_TO_PROBE; offset++) {
+        const candidateDate = new Date(date);
+        candidateDate.setDate(candidateDate.getDate() + offset);
+        const candidateISO = candidateDate.toISOString().slice(0, 10);
+
+        const candidateSlots = await fetchSlotsForDate({
+          businessId,
+          serviceId,
+          professionalId,
+          date: candidateISO,
+        });
+        if (candidateSlots.length > 0) {
+          setDate(candidateISO);
+          return;
+        }
+      }
+      setSearchNextError(`Nenhum horário livre nos próximos ${MAX_DAYS_TO_PROBE} dias.`);
+    } finally {
+      setIsSearchingNext(false);
+    }
   }
 
   return (
     <div className="flex flex-col gap-4">
       <h2 className="text-lg font-semibold">Escolha data e horário</h2>
 
-      <div className="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
-        <div className="w-full max-w-sm self-start rounded-xl border bg-card p-4 shadow-sm">
-          <MonthCalendar
-            visibleMonth={visibleMonth}
-            selectedDate={date}
-            minDate={today}
-            timezone={timezone}
-            onMonthChange={setVisibleMonth}
-            onSelect={changeDate}
-          />
-        </div>
+      <DateStrip minDate={today} selectedDate={date} timezone={timezone} onSelect={setDate} />
 
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon-sm"
-              aria-label="Dia anterior"
-              disabled={date <= today}
-              onClick={() => changeDate(addDaysToIsoDate(date, -1))}
-            >
-              <ChevronLeft />
-            </Button>
-            <p className="min-w-48 text-center text-sm font-medium first-letter:uppercase">
-              {formatDateLabel(date, timezone)}
-            </p>
-            <Button
-              variant="outline"
-              size="icon-sm"
-              aria-label="Próximo dia"
-              onClick={() => changeDate(addDaysToIsoDate(date, 1))}
-            >
-              <ChevronRight />
-            </Button>
-          </div>
-
-          <DaySlots
-            isLoading={isLoading}
-            displaySlots={displaySlots}
-            timezone={timezone}
-            onSelect={onSelect}
-          />
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-medium first-letter:uppercase">{formatDateLabel(date, timezone)}</p>
+        <Button variant="outline" size="sm" onClick={handleFindNextAvailable} disabled={isSearchingNext}>
+          {isSearchingNext ? <Loader2 className="animate-spin" /> : <SparklesIcon />}
+          Próximo horário disponível
+        </Button>
       </div>
+      {searchNextError ? <p className="text-sm text-muted-foreground">{searchNextError}</p> : null}
+
+      {isLoading ? <SlotGridSkeleton /> : <TimeSlotGrid slots={timeSlots} onSelect={(slot) => onSelect(uniqueSlotsByTime.get(slot.key)!)} />}
     </div>
-  );
-}
-
-function DaySlots({
-  isLoading,
-  displaySlots,
-  timezone,
-  onSelect,
-}: {
-  isLoading: boolean;
-  displaySlots: AvailableSlot[];
-  timezone: string;
-  onSelect: (slot: AvailableSlot) => void;
-}) {
-  return (
-    <>
-      {isLoading ? (
-        <SlotGridSkeleton />
-      ) : displaySlots.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Nenhum horário disponível neste dia. Tente outra data.
-        </p>
-      ) : (
-        <div className="flex flex-col gap-4">
-          {PERIODS.map((period) => {
-            const periodSlots = displaySlots.filter((slot) =>
-              period.isInPeriod(utcToLocalMinutes(new Date(slot.startAt), timezone)),
-            );
-            if (periodSlots.length === 0) return null;
-
-            return (
-              <div key={period.label} className="flex flex-col gap-2">
-                <h3 className="text-xs font-medium text-muted-foreground uppercase">{period.label}</h3>
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
-                  {periodSlots.map((slot) => (
-                    <button
-                      key={slot.startAt}
-                      type="button"
-                      data-testid="time-slot"
-                      className="rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground focus-visible:border-primary focus-visible:bg-primary focus-visible:text-primary-foreground"
-                      onClick={() => onSelect(slot)}
-                    >
-                      {formatTime(slot.startAt, timezone)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </>
   );
 }

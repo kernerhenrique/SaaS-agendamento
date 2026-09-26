@@ -116,6 +116,13 @@ export function formatDateLabel(dateISO: string, timeZone: string): string {
   }).format(noonUtc);
 }
 
+/** Abreviação do dia da semana ("seg", "ter"...) de uma data YYYY-MM-DD no timezone informado. */
+export function formatWeekdayShort(dateISO: string, timeZone: string): string {
+  const { year, month, day } = parseDateOnly(dateISO);
+  const noonUtc = new Date(Date.UTC(year, month - 1, day, 12));
+  return new Intl.DateTimeFormat("pt-BR", { timeZone, weekday: "short" }).format(noonUtc).replace(".", "");
+}
+
 export function rangesOverlap(
   aStart: Date,
   aEnd: Date,

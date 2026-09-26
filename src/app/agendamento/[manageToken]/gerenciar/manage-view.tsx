@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { AppointmentStatus } from "@/generated/prisma/enums";
 import { STATUS_LABELS } from "@/lib/appointment-status";
 
@@ -93,21 +94,12 @@ export function ManageView({
       {canManage ? (
         <div className="flex flex-col gap-4">
           <div className="flex gap-2">
-            <button
-              type="button"
-              className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
-              disabled={isCancelling}
-              onClick={handleCancel}
-            >
+            <Button variant="outline" disabled={isCancelling} onClick={handleCancel}>
               {isCancelling ? "Cancelando..." : "Cancelar agendamento"}
-            </button>
-            <button
-              type="button"
-              className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted"
-              onClick={() => setIsRescheduling((prev) => !prev)}
-            >
+            </Button>
+            <Button variant="outline" onClick={() => setIsRescheduling((prev) => !prev)}>
               {isRescheduling ? "Fechar" : "Reagendar"}
-            </button>
+            </Button>
           </div>
 
           {isRescheduling ? (

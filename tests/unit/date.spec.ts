@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { Weekday } from "@/generated/prisma/enums";
-import { localDayRangeUtc, localMinutesToUtc, utcToLocalMinutes, weekdayOfLocalDate } from "@/lib/date";
+import {
+  formatWeekdayShort,
+  localDayRangeUtc,
+  localMinutesToUtc,
+  utcToLocalMinutes,
+  weekdayOfLocalDate,
+} from "@/lib/date";
 
 describe("utcToLocalMinutes", () => {
   it("converte um instante UTC para minutos no horário local de São Paulo", () => {
@@ -67,5 +73,12 @@ describe("weekdayOfLocalDate", () => {
     expect(weekdayOfLocalDate("2026-09-24")).toBe(Weekday.THURSDAY);
     expect(weekdayOfLocalDate("2026-09-25")).toBe(Weekday.FRIDAY);
     expect(weekdayOfLocalDate("2026-09-27")).toBe(Weekday.SUNDAY);
+  });
+});
+
+describe("formatWeekdayShort", () => {
+  it("retorna a abreviação em português, sem ponto", () => {
+    expect(formatWeekdayShort("2026-09-24", "America/Sao_Paulo")).toBe("qui");
+    expect(formatWeekdayShort("2026-09-27", "America/Sao_Paulo")).toBe("dom");
   });
 });
