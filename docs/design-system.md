@@ -55,11 +55,13 @@ Toda tela busca de dados precisa dos três estados:
 
 ## Componentes de domínio disponíveis
 
-`src/components/`: `status-badge.tsx`, `kpi-card.tsx`, `empty-state.tsx`, `detail-drawer.tsx`, `stepper.tsx`, `service-card.tsx`, `professional-card.tsx`, `selectable-card.tsx` (base dos dois anteriores), `time-slot-grid.tsx`, `table-toolbar.tsx`, `skeletons.tsx`. Todos demonstrados com dados de exemplo em `/admin/design-system`.
+`src/components/`: `status-badge.tsx`, `kpi-card.tsx`, `empty-state.tsx`, `detail-drawer.tsx`, `stepper.tsx`, `service-card.tsx`, `professional-card.tsx`, `selectable-card.tsx` (base dos dois anteriores), `time-slot-grid.tsx`, `table-toolbar.tsx`, `skeletons.tsx`, `date-strip.tsx`. Todos demonstrados com dados de exemplo em `/admin/design-system`.
 
-**Ainda não aplicados às telas reais** — nascem como extração fiel do que já existe (ex.: `KpiCard` replica o `StatTile` hoje local em `relatorios/reports-view.tsx`; `StatusBadge` generaliza o badge hoje montado ad-hoc com `STATUS_BADGE_CLASSES`). Substituir as duplicatas locais pelos componentes compartilhados é o primeiro passo de quando cada tela for revisitada (Fase 2/3), não desta fase.
+**Aplicados na Fase 2** (página pública): `ServiceCard`, `ProfessionalCard`, `Stepper`, `TimeSlotGrid`, `DateStrip` — já em uso real no fluxo de reserva (`src/app/[slug]/`).
 
-**Decisão registrada (2026-09-25)**: o escopo original (`docs/escopo-sistema-agendamento.md`) e o pedido de Fase 1 descreviam um "seletor de data em faixa horizontal" (estilo Fresha), enquanto a implementação atual (`month-calendar.tsx`, commit `a349faa`) usa um calendário de mês inteiro. O usuário confirmou: **trocar para faixa horizontal** — a construir na Fase 2, substituindo `MonthCalendar` no fluxo de reserva (`src/app/[slug]/datetime-step.tsx`).
+**Ainda não aplicados** — `KpiCard` (duplicado localmente em `relatorios/reports-view.tsx` como `StatTile`) e `StatusBadge` (badge de status hoje montado ad-hoc com `STATUS_BADGE_CLASSES` na Agenda/Relatórios) seguem como extração fiel do que já existe. `TableToolbar`, `DetailDrawerContent` e os skeletons compostos também aguardam a Fase 3 (Clientes, Financeiro).
+
+**Decisão registrada (2026-09-25), implementada na Fase 2**: o escopo original (`docs/escopo-sistema-agendamento.md`) e o pedido de Fase 1 descreviam um "seletor de data em faixa horizontal" (estilo Fresha), enquanto a implementação anterior (`month-calendar.tsx`, commit `a349faa`) usava um calendário de mês inteiro. O usuário confirmou a troca; `DateStrip` (`src/components/date-strip.tsx`) substituiu `MonthCalendar` em `src/app/[slug]/datetime-step.tsx`, e os arquivos antigos (`month-calendar.tsx`, `month-grid.ts`, `tests/unit/month-grid.spec.ts`) foram removidos.
 
 ## Como trocar a identidade para um novo cliente
 

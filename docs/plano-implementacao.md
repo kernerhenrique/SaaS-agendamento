@@ -207,6 +207,8 @@ Todas de 2 a 6 são aditivas com `nullable`/`default`, sem backfill. `prisma/see
 
 ## 3. Fase 2 — Página pública mais rica
 
+**Status: implementada (2026-09-26).** Aplicada como uma única migration (`fase2_service_category_portfolio_business_contact`) em vez de duas — ambas eram aditivas e sem risco de dado, então não havia motivo real para separar. Todo o restante saiu como planejado, incluindo a troca do seletor de data.
+
 - Categoria de serviço, preço "a partir de", portfólio do profissional, políticas de reserva exibidas (usa o schema da seção 1.4–1.6, migrations 3–5 aplicadas nesta fase ou na 3, a definir no plano específico da fase).
 - Adicionar o link de gerenciamento na tela de confirmação (gap identificado no diagnóstico — hoje só vai por e-mail).
 - **Trocar o seletor de data**: decisão confirmada com o usuário (2026-09-25) de substituir o calendário mensal (`MonthCalendar`) por um seletor de data em faixa horizontal (estilo Fresha) em `src/app/[slug]/datetime-step.tsx` — novo componente a construir nesta fase, ver `docs/design-system.md`.
