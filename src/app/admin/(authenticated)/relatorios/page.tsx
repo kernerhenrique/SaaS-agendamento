@@ -5,6 +5,8 @@ import { getReportSummary } from "@/server/modules/report/report.service";
 
 import { ReportsView } from "./reports-view";
 
+export const metadata = { title: "Relatórios" };
+
 export default async function RelatoriosPage() {
   const session = await requireAdminSession();
   const business = await prisma.business.findUniqueOrThrow({ where: { id: session.businessId } });

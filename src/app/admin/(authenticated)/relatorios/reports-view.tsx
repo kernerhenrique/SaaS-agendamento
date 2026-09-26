@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarClock, Trophy, UserX, XCircle, type LucideIcon } from "lucide-react";
+import { CalendarClock, Trophy, UserX, XCircle } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
+import { KpiCard } from "@/components/kpi-card";
+import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { STATUS_BADGE_CLASSES, STATUS_LABELS } from "@/lib/appointment-status";
+import { STATUS_LABELS, STATUS_TONE } from "@/lib/appointment-status";
 import type { AppointmentStatus } from "@/generated/prisma/enums";
 import type { ReportSummary } from "@/server/modules/report/report.service";
 import { lowerTerm, mostRequestedLabel } from "@/config/vertical";
@@ -24,14 +24,6 @@ function formatPercent(value: number): string {
 function formatDate(dateISO: string): string {
   const [year, month, day] = dateISO.split("-");
   return `${day}/${month}/${year}`;
-}
-
-function StatusBadge({ status }: { status: AppointmentStatus }) {
-  return (
-    <Badge variant="outline" className={STATUS_BADGE_CLASSES[status]}>
-      {STATUS_LABELS[status]}
-    </Badge>
-  );
 }
 
 export function ReportsView({
@@ -68,8 +60,8 @@ export function ReportsView({
   const statusEntries = Object.entries(summary.byStatus) as [AppointmentStatus, number][];
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6">
-      <h1 className="text-2xl font-bold">Relatórios</h1>
+    <main className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
+      <h1 className="text-page-title font-bold">Relatórios</h1>
 
       <div className="flex flex-wrap items-end gap-4">
         <div className="flex flex-col gap-2">
@@ -89,10 +81,10 @@ export function ReportsView({
       {/* Mantém o conteúdo anterior visível (esmaecido) durante a recarga, sem "piscar". */}
       <div className={cn("flex flex-col gap-6 transition-opacity", isLoading && "opacity-60")}>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <StatTile icon={CalendarClock} label="Agendamentos" value={String(summary.total)} />
-          <StatTile icon={XCircle} label="Taxa de cancelamento" value={formatPercent(summary.cancellationRate)} />
-          <StatTile icon={UserX} label="Taxa de no-show" value={formatPercent(summary.noShowRate)} />
-          <StatTile
+          <KpiCard icon={CalendarClock} label="Agendamentos" value={String(summary.total)} />
+          <KpiCard icon={XCircle} label="Taxa de cancelamento" value={formatPercent(summary.cancellationRate)} />
+          <KpiCard icon={UserX} label="Taxa de no-show" value={formatPercent(summary.noShowRate)} />
+          <KpiCard
             icon={Trophy}
             label={mostRequestedLabel(terms.professional)}
             value={
@@ -144,7 +136,7 @@ export function ReportsView({
               <HorizontalBarChart
                 rows={statusEntries.map(([status, count]) => ({
                   key: status,
-                  label: <StatusBadge status={status} />,
+                  label: <StatusBadge tone={STATUS_TONE[status]}>{STATUS_LABELS[status]}</StatusBadge>,
                   value: count,
                 }))}
               />
@@ -159,19 +151,5 @@ export function ReportsView({
         </div>
       </div>
     </main>
-  );
-}
-
-function StatTile({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
-  return (
-    <Card size="sm">
-      <CardContent className="flex flex-col gap-1">
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <Icon className="size-3.5" />
-          <span className="text-xs">{label}</span>
-        </div>
-        <span className="text-2xl font-bold">{value}</span>
-      </CardContent>
-    </Card>
   );
 }

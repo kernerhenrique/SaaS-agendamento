@@ -1,3 +1,4 @@
+import type { StatusTone } from "@/components/status-badge";
 import { AppointmentStatus } from "@/generated/prisma/enums";
 
 export const STATUS_LABELS: Record<AppointmentStatus, string> = {
@@ -8,12 +9,13 @@ export const STATUS_LABELS: Record<AppointmentStatus, string> = {
   NO_SHOW: "Não compareceu",
 };
 
-export const STATUS_BADGE_CLASSES: Record<AppointmentStatus, string> = {
-  PENDING: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
-  CONFIRMED: "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-400",
-  CANCELLED: "border-muted-foreground/30 bg-muted text-muted-foreground",
-  COMPLETED: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-  NO_SHOW: "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400",
+/** Tom do `StatusBadge` (tokens --status-*) para cada status. */
+export const STATUS_TONE: Record<AppointmentStatus, StatusTone> = {
+  PENDING: "scheduled",
+  CONFIRMED: "confirmed",
+  CANCELLED: "cancelled",
+  COMPLETED: "completed",
+  NO_SHOW: "no-show",
 };
 
 /** Versão "bloco cheio" das cores por status, usada na grade de horários da
