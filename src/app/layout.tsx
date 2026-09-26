@@ -42,7 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">
-        <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
+        <TooltipProvider delay={300}>{children}</TooltipProvider>
         <Toaster position="top-center" />
       </body>
     </html>

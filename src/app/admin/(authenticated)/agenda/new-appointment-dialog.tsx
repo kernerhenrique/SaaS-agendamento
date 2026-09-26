@@ -137,7 +137,14 @@ export function NewAppointmentDialog({
               }}
             >
               <SelectTrigger id="professional">
-                <SelectValue placeholder="Selecione um profissional" />
+                {/* SelectValue não resolve o rótulo do SelectItem sozinho (Base
+                    UI só sabe o `value`) — precisa de função para mapear o texto. */}
+                <SelectValue placeholder="Selecione um profissional">
+                  {(value: string) =>
+                    professionals.find((professional) => professional.id === value)?.name ??
+                    "Selecione um profissional"
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {professionals.map((professional) => (
@@ -157,7 +164,12 @@ export function NewAppointmentDialog({
               disabled={!professionalId}
             >
               <SelectTrigger id="service">
-                <SelectValue placeholder="Selecione um serviço" />
+                <SelectValue placeholder="Selecione um serviço">
+                  {(value: string) => {
+                    const service = availableServices.find((s) => s.id === value);
+                    return service ? `${service.name} (${service.durationMin}min)` : "Selecione um serviço";
+                  }}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {availableServices.map((service) => (
