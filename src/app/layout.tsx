@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Roboto, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+
 const roboto = Roboto({
   variable: "--font-roboto",
   subsets: ["latin"],
@@ -38,7 +41,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
+        <Toaster position="top-center" />
+      </body>
     </html>
   );
 }

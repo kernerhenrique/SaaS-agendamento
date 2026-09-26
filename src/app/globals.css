@@ -47,6 +47,40 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Cores semânticas de feedback (toasts, alertas, validação) — ver docs/design-system.md */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+
+  /* Status de agendamento (agendado/confirmado/concluído/cancelado/falta) — aliases
+     sobre as cores semânticas acima, para o domínio ter nomes próprios sem duplicar
+     valor de cor. Mapeamento e uso: docs/design-system.md. */
+  --color-status-scheduled: var(--status-scheduled);
+  --color-status-confirmed: var(--status-confirmed);
+  --color-status-completed: var(--status-completed);
+  --color-status-cancelled: var(--status-cancelled);
+  --color-status-no-show: var(--status-no-show);
+
+  /* Status de pagamento (pendente/parcial/pago) — módulo Financeiro, Fase 4 */
+  --color-payment-pending: var(--payment-pending);
+  --color-payment-partial: var(--payment-partial);
+  --color-payment-paid: var(--payment-paid);
+
+  /* Escala de tipografia com nome semântico (mesmo tamanho do Tailwind já em uso
+     hoje via text-2xl/text-lg/text-xs — só dá nome ao papel de cada um). */
+  --text-display: 2.5rem;
+  --text-display--line-height: 3rem;
+  --text-page-title: 1.5rem;
+  --text-page-title--line-height: 2rem;
+  --text-section-title: 1.125rem;
+  --text-section-title--line-height: 1.75rem;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+
+  /* Sombra nomeada para elementos fixos flutuantes (ex.: barra de resumo fixa no
+     rodapé mobile do fluxo de reserva) — substitui valor arbitrário solto. */
+  --shadow-fixed-bar: 0 -4px 12px -4px rgb(0 0 0 / 0.1);
 }
 
 :root {
@@ -84,6 +118,22 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Semânticas de feedback (tom com contraste AA sobre fundo claro) */
+  --success: oklch(0.508 0.118 165.612);
+  --warning: oklch(0.555 0.163 48.998);
+  --info: oklch(0.488 0.243 264.376);
+
+  /* Aliases de status — resolvidos via var(), herdam o modo claro/escuro do
+     token semântico automaticamente (não precisam ser redefinidos em .dark). */
+  --status-scheduled: var(--warning);
+  --status-confirmed: var(--info);
+  --status-completed: var(--success);
+  --status-cancelled: var(--muted-foreground);
+  --status-no-show: var(--destructive);
+  --payment-pending: var(--warning);
+  --payment-partial: var(--info);
+  --payment-paid: var(--success);
 }
 
 .dark {
@@ -119,6 +169,11 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Semânticas de feedback (tom com contraste AA sobre fundo escuro) */
+  --success: oklch(0.765 0.177 163.223);
+  --warning: oklch(0.828 0.189 84.429);
+  --info: oklch(0.707 0.165 254.624);
 }
 
 @layer base {
