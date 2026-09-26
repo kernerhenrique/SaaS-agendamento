@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { UserCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,15 @@ export interface NewAppointmentInitial {
   professionalId?: string;
   /** "HH:MM" */
   time?: string;
+  /** Aberto a partir da ficha do cliente: já vem com nome/telefone. */
+  client?: { name: string; phone: string; email?: string | null };
+}
+
+interface KnownClient {
+  id: string;
+  name: string;
+  phone: string;
+  email: string | null;
 }
 
 type WeeklyHours = WorkingHoursWindow & { weekday: Weekday };
@@ -121,9 +131,38 @@ function NewAppointmentForm({
   const [professionalId, setProfessionalId] = useState(initial?.professionalId ?? "");
   const [serviceId, setServiceId] = useState("");
   const [time, setTime] = useState(() => initial?.time ?? defaultTime(initial?.date, timezone));
-  const [clientName, setClientName] = useState("");
-  const [clientPhone, setClientPhone] = useState("");
-  const [clientEmail, setClientEmail] = useState("");
+  const [clientName, setClientName] = useState(initial?.client?.name ?? "");
+  const [clientPhone, setClientPhone] = useState(initial?.client ? formatPhoneBR(initial.client.phone) : "");
+  const [clientEmail, setClientEmail] = useState(initial?.client?.email ?? "");
+  const [knownClient, setKnownClient] = useState<KnownClient | null>(null);
+
+  // Telefone é a chave do cliente: se já existe cadastro, mostra quem é e
+  // preenche o nome, em vez de renomear o cadastro sem avisar.
+  useEffect(() => {
+    const digits = clientPhone.replace(/\D/g, "");
+    if (digits.length < 10) return;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      fetch(`/api/admin/clients/lookup?phone=${digits}`)
+        .then((response) => (response.ok ? response.json() : null))
+        .then((data: { client: KnownClient | null } | null) => {
+          if (cancelled || !data) return;
+          setKnownClient(data.client);
+          if (data.client) {
+            const found = data.client;
+            setClientName((current) => (current.trim() ? current : found.name));
+            setClientEmail((current) => (current.trim() ? current : (found.email ?? "")));
+          }
+        })
+        .catch(() => undefined);
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [clientPhone]);
+  const matchedClient = knownClient && clientPhone.replace(/\D/g, "") === knownClient.phone ? knownClient : null;
+  const willRename = matchedClient != null && clientName.trim() !== "" && clientName.trim() !== matchedClient.name;
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -299,11 +338,6 @@ function NewAppointmentForm({
       ) : null}
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="na-client-name">Nome {ofLabel(terms.client)}</Label>
-        <Input id="na-client-name" value={clientName} onChange={(event) => setClientName(event.target.value)} required />
-      </div>
-
-      <div className="flex flex-col gap-2">
         <Label htmlFor="na-client-phone">WhatsApp {ofLabel(terms.client)}</Label>
         <Input
           id="na-client-phone"
@@ -312,8 +346,38 @@ function NewAppointmentForm({
           placeholder="(11) 91234-5678"
           value={clientPhone}
           onChange={(event) => setClientPhone(formatPhoneBR(event.target.value))}
+          aria-describedby={matchedClient ? "na-client-found" : undefined}
           required
         />
+        {matchedClient ? (
+          <p id="na-client-found" className="flex items-center gap-1.5 text-caption text-muted-foreground">
+            <UserCheck className="size-3.5 shrink-0 text-success" />
+            Já cadastrado: <span className="font-medium text-foreground">{matchedClient.name}</span>
+          </p>
+        ) : null}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="na-client-name">Nome {ofLabel(terms.client)}</Label>
+        <Input
+          id="na-client-name"
+          value={clientName}
+          onChange={(event) => setClientName(event.target.value)}
+          aria-describedby={willRename ? "na-client-rename" : undefined}
+          required
+        />
+        {willRename ? (
+          <p id="na-client-rename" className="text-caption text-muted-foreground">
+            O cadastro será atualizado de “{matchedClient.name}” para “{clientName.trim()}”.{" "}
+            <button
+              type="button"
+              className="font-medium text-primary underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
+              onClick={() => setClientName(matchedClient.name)}
+            >
+              Manter {matchedClient.name}
+            </button>
+          </p>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-2">

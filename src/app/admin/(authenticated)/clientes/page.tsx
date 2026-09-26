@@ -1,25 +1,24 @@
-import { Contact } from "lucide-react";
+import { parseClientFilter } from "@/server/modules/client/client-rules";
 
-import { ComingSoon } from "@/components/admin/coming-soon";
-import { getVertical } from "@/config/vertical";
-import { prisma } from "@/server/db/prisma";
-import { requireAdminSession } from "@/server/modules/auth/session";
+import { ClientsView } from "./clients-view";
 
 export const metadata = { title: "Clientes" };
 
-export default async function ClientesPage() {
-  const session = await requireAdminSession();
-  const business = await prisma.business.findUniqueOrThrow({
-    where: { id: session.businessId },
-    select: { businessType: true },
-  });
-  const { terms } = getVertical(business.businessType);
-
+export default async function ClientesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; filtro?: string; cliente?: string }>;
+}) {
+  const { q, filtro, cliente } = await searchParams;
+  // Os dados vêm da API no cliente (busca e filtro mudam sem recarregar a página);
+  // aqui só a URL inicial — links do Início e da busca Ctrl+K chegam filtrados.
   return (
-    <ComingSoon
-      title={terms.client.plural}
-      icon={Contact}
-      description="Ficha com histórico, notas, tags e filtros como “não volta há 60 dias” — próximo bloco desta fase."
+    <ClientsView
+      // Nova navegação (ex.: Ctrl+K estando já nesta tela) reinicia a partir da URL.
+      key={`${q ?? ""}|${filtro ?? ""}|${cliente ?? ""}`}
+      initialQuery={q ?? ""}
+      initialFilter={parseClientFilter(filtro)}
+      initialClientId={cliente}
     />
   );
 }

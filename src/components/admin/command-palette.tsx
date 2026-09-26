@@ -129,7 +129,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
                   <CommandItem
                     key={client.id}
                     value={`client-${client.id}`}
-                    onSelect={() => go(`/admin/clientes?q=${encodeURIComponent(client.name)}`)}
+                    onSelect={() => go(`/admin/clientes?q=${encodeURIComponent(client.name)}&cliente=${client.id}`)}
                   >
                     <User />
                     <span className="flex-1 truncate">{client.name}</span>

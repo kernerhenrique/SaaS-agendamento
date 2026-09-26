@@ -48,7 +48,7 @@ export function useAdminNav(): AdminNavItem[] {
   return [
     { href: "/admin", label: "Início", icon: House, group: "operacao" },
     { href: "/admin/agenda", label: "Agenda", icon: CalendarDays, group: "operacao" },
-    { href: "/admin/clientes", label: terms.client.plural, icon: Contact, group: "operacao", soon: true },
+    { href: "/admin/clientes", label: terms.client.plural, icon: Contact, group: "operacao" },
     { href: "/admin/profissionais", label: terms.professional.plural, icon: Users, group: "cadastros" },
     { href: "/admin/servicos", label: terms.service.plural, icon: SERVICE_ICONS[serviceIcon], group: "cadastros" },
     { href: "/admin/financeiro", label: "Financeiro", icon: Wallet, group: "gestao", soon: true },
