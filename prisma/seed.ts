@@ -8,9 +8,11 @@ async function main() {
   await prisma.appointment.deleteMany();
   await prisma.client.deleteMany();
   await prisma.professionalService.deleteMany();
+  await prisma.professionalPhoto.deleteMany();
   await prisma.timeBlock.deleteMany();
   await prisma.workingHours.deleteMany();
   await prisma.service.deleteMany();
+  await prisma.serviceCategory.deleteMany();
   await prisma.professional.deleteMany();
   await prisma.user.deleteMany();
   await prisma.business.deleteMany();
@@ -22,6 +24,9 @@ async function main() {
       timezone: "America/Sao_Paulo",
       address: "Rua das Tesouras, 123 - São Paulo/SP",
       accentColor: "#4F46E5",
+      whatsapp: "11988880000",
+      instagramUrl: "https://instagram.com/navalhadeouro",
+      policyText: "Cancelamentos com menos de 2 horas de antecedência podem ser cobrados. Chegue com 10 minutos de antecedência.",
       users: {
         create: {
           email: "dono@navalhadeouro.com",
@@ -32,10 +37,16 @@ async function main() {
     },
   });
 
-  const [corte, barba, comboCorteBarba] = await Promise.all([
+  const [categoriaCabelo, categoriaBarba] = await Promise.all([
+    prisma.serviceCategory.create({ data: { businessId: business.id, name: "Cabelo", position: 0 } }),
+    prisma.serviceCategory.create({ data: { businessId: business.id, name: "Barba", position: 1 } }),
+  ]);
+
+  const [corte, barba, comboCorteBarba, coloracao] = await Promise.all([
     prisma.service.create({
       data: {
         businessId: business.id,
+        categoryId: categoriaCabelo.id,
         name: "Corte de cabelo",
         description: "Corte tradicional na tesoura ou máquina",
         durationMin: 30,
@@ -45,6 +56,7 @@ async function main() {
     prisma.service.create({
       data: {
         businessId: business.id,
+        categoryId: categoriaBarba.id,
         name: "Barba",
         description: "Barba feita na navalha com toalha quente",
         durationMin: 20,
@@ -54,10 +66,22 @@ async function main() {
     prisma.service.create({
       data: {
         businessId: business.id,
+        categoryId: categoriaCabelo.id,
         name: "Combo corte + barba",
         description: "Corte de cabelo e barba com desconto",
         durationMin: 50,
         priceCents: 7500,
+      },
+    }),
+    prisma.service.create({
+      data: {
+        businessId: business.id,
+        categoryId: categoriaCabelo.id,
+        name: "Coloração",
+        description: "Coloração completa, valor varia conforme o comprimento",
+        durationMin: 90,
+        priceCents: 8000,
+        priceType: "FROM",
       },
     }),
   ]);
@@ -91,6 +115,12 @@ async function main() {
           { serviceId: comboCorteBarba.id },
         ],
       },
+      photos: {
+        create: [
+          { url: "https://picsum.photos/seed/joao-corte-1/400/400", position: 0 },
+          { url: "https://picsum.photos/seed/joao-corte-2/400/400", position: 1 },
+        ],
+      },
     },
   });
 
@@ -112,6 +142,12 @@ async function main() {
       },
       professionalServices: {
         create: [{ serviceId: barba.id }, { serviceId: comboCorteBarba.id }],
+      },
+      photos: {
+        create: [
+          { url: "https://picsum.photos/seed/marcos-barba-1/400/400", position: 0 },
+          { url: "https://picsum.photos/seed/marcos-barba-2/400/400", position: 1 },
+        ],
       },
     },
   });
@@ -187,7 +223,8 @@ async function main() {
   console.log("Seed concluído:", {
     business: business.slug,
     professionals: [joao.name, marcos.name],
-    services: [corte.name, barba.name, comboCorteBarba.name],
+    services: [corte.name, barba.name, comboCorteBarba.name, coloracao.name],
+    categories: [categoriaCabelo.name, categoriaBarba.name],
   });
 }
 

@@ -14,8 +14,16 @@ export interface ProfessionalInput {
   name: string;
   bio?: string | null;
   photoUrl?: string | null;
+  photoUrls?: string[];
   serviceIds: string[];
   workingHours: WorkingHoursInput[];
+}
+
+function toPhotoCreateData(photoUrls: string[] | undefined) {
+  return (photoUrls ?? [])
+    .map((url) => url.trim())
+    .filter(Boolean)
+    .map((url, position) => ({ url, position }));
 }
 
 function validateWorkingHours(workingHours: WorkingHoursInput[]): void {
@@ -52,6 +60,7 @@ export function listProfessionals(businessId: string) {
     include: {
       workingHours: true,
       professionalServices: { include: { service: true } },
+      photos: { orderBy: { position: "asc" } },
     },
     orderBy: { name: "asc" },
   });
@@ -64,6 +73,7 @@ export async function getProfessional(businessId: string, id: string) {
       workingHours: true,
       professionalServices: { include: { service: true } },
       timeBlocks: { orderBy: { startAt: "asc" } },
+      photos: { orderBy: { position: "asc" } },
     },
   });
   if (!professional) throw new NotFoundError("Profissional não encontrado");
@@ -84,8 +94,9 @@ export async function createProfessional(businessId: string, input: Professional
       professionalServices: {
         create: input.serviceIds.map((serviceId) => ({ serviceId })),
       },
+      photos: { create: toPhotoCreateData(input.photoUrls) },
     },
-    include: { workingHours: true, professionalServices: true },
+    include: { workingHours: true, professionalServices: true, photos: true },
   });
 }
 
@@ -103,6 +114,7 @@ export async function updateProfessional(
   return prisma.$transaction(async (tx) => {
     await tx.workingHours.deleteMany({ where: { professionalId: id } });
     await tx.professionalService.deleteMany({ where: { professionalId: id } });
+    await tx.professionalPhoto.deleteMany({ where: { professionalId: id } });
 
     return tx.professional.update({
       where: { id },
@@ -114,8 +126,9 @@ export async function updateProfessional(
         professionalServices: {
           create: input.serviceIds.map((serviceId) => ({ serviceId })),
         },
+        photos: { create: toPhotoCreateData(input.photoUrls) },
       },
-      include: { workingHours: true, professionalServices: true },
+      include: { workingHours: true, professionalServices: true, photos: true },
     });
   });
 }

@@ -30,23 +30,32 @@ enum AppointmentStatus {
   NO_SHOW
 }
 
-model Business {
-  id          String    @id @default(cuid())
-  name        String
-  slug        String    @unique
-  timezone    String
-  address     String?
-  logoUrl     String?
-  accentColor String?   @default("#4F46E5")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+enum ServicePriceType {
+  FIXED
+  FROM
+}
 
-  users         User[]
-  professionals Professional[]
-  services      Service[]
-  clients       Client[]
-  appointments  Appointment[]
+model Business {
+  id           String    @id @default(cuid())
+  name         String
+  slug         String    @unique
+  timezone     String
+  address      String?
+  logoUrl      String?
+  accentColor  String?   @default("#4F46E5")
+  whatsapp     String?
+  instagramUrl String?
+  policyText   String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  users             User[]
+  professionals     Professional[]
+  services          Service[]
+  serviceCategories ServiceCategory[]
+  clients           Client[]
+  appointments      Appointment[]
 
   @@index([deletedAt])
 }
@@ -84,8 +93,20 @@ model Professional {
   timeBlocks           TimeBlock[]
   professionalServices ProfessionalService[]
   appointments         Appointment[]
+  photos               ProfessionalPhoto[]
 
   @@index([businessId])
+}
+
+model ProfessionalPhoto {
+  id             String       @id @default(cuid())
+  professionalId String
+  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  url            String
+  position       Int          @default(0)
+  createdAt      DateTime     @default(now())
+
+  @@index([professionalId, position])
 }
 
 model WorkingHours {
@@ -105,21 +126,40 @@ model WorkingHours {
 }
 
 model Service {
-  id          String    @id @default(cuid())
+  id          String           @id @default(cuid())
   businessId  String
-  business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business    Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  categoryId  String?
+  category    ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   name        String
   description String?
   durationMin Int
   priceCents  Int
-  active      Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  priceType   ServicePriceType @default(FIXED)
+  active      Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
   deletedAt   DateTime?
 
   professionalServices ProfessionalService[]
   appointments         Appointment[]
 
+  @@index([businessId])
+  @@index([categoryId])
+}
+
+model ServiceCategory {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name       String
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  services Service[]
+
+  @@unique([businessId, name])
   @@index([businessId])
 }
 

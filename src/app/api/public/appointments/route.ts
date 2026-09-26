@@ -30,15 +30,14 @@ export async function POST(request: NextRequest) {
     if (Number.isNaN(startAt.getTime())) {
       throw new ValidationError("startAt inválido");
     }
+    const email = typeof client?.email === "string" && client.email.trim() ? client.email.trim() : undefined;
     if (
       typeof client?.name !== "string" ||
       !client.name.trim() ||
       typeof client?.phone !== "string" ||
-      !client.phone.trim() ||
-      typeof client?.email !== "string" ||
-      !client.email.trim()
+      !client.phone.trim()
     ) {
-      throw new ValidationError("client.name, client.phone e client.email são obrigatórios");
+      throw new ValidationError("client.name e client.phone são obrigatórios");
     }
 
     const appointment = await createPublicAppointment({
@@ -46,25 +45,29 @@ export async function POST(request: NextRequest) {
       professionalId,
       serviceId,
       startAt,
-      client: { name: client.name, phone: client.phone, email: client.email },
+      client: { name: client.name, phone: client.phone, email },
     });
 
     // O e-mail é uma notificação, não a fonte da verdade: se o envio falhar
     // (ex. credenciais do Gmail não configuradas), o agendamento já foi
-    // criado com sucesso e a resposta deve refletir isso mesmo assim.
-    try {
-      await sendAppointmentConfirmationEmail({
-        clientName: appointment.client.name,
-        clientEmail: client.email,
-        businessName: appointment.business.name,
-        serviceName: appointment.service.name,
-        professionalName: appointment.professional.name,
-        startAt: appointment.startAt,
-        timezone: appointment.business.timezone,
-        manageToken: appointment.manageToken,
-      });
-    } catch (emailError) {
-      console.error("[appointments] falha ao enviar e-mail de confirmação", emailError);
+    // criado com sucesso e a resposta deve refletir isso mesmo assim. Sem
+    // e-mail informado, não há para onde enviar — o link de gerenciar
+    // continua disponível na própria tela de confirmação.
+    if (email) {
+      try {
+        await sendAppointmentConfirmationEmail({
+          clientName: appointment.client.name,
+          clientEmail: email,
+          businessName: appointment.business.name,
+          serviceName: appointment.service.name,
+          professionalName: appointment.professional.name,
+          startAt: appointment.startAt,
+          timezone: appointment.business.timezone,
+          manageToken: appointment.manageToken,
+        });
+      } catch (emailError) {
+        console.error("[appointments] falha ao enviar e-mail de confirmação", emailError);
+      }
     }
 
     return NextResponse.json(

@@ -36,7 +36,7 @@ export function parseProfessionalInput(body: unknown): ProfessionalInput {
   if (typeof body !== "object" || body === null) {
     throw new ValidationError("Corpo da requisição inválido");
   }
-  const { name, bio, photoUrl, serviceIds, workingHours } = body as Record<string, unknown>;
+  const { name, bio, photoUrl, photoUrls, serviceIds, workingHours } = body as Record<string, unknown>;
 
   if (typeof name !== "string") {
     throw new ValidationError("name é obrigatório");
@@ -44,11 +44,15 @@ export function parseProfessionalInput(body: unknown): ProfessionalInput {
   if (!Array.isArray(serviceIds) || !serviceIds.every((id) => typeof id === "string")) {
     throw new ValidationError("serviceIds deve ser uma lista de strings");
   }
+  if (photoUrls !== undefined && (!Array.isArray(photoUrls) || !photoUrls.every((url) => typeof url === "string"))) {
+    throw new ValidationError("photoUrls deve ser uma lista de strings");
+  }
 
   return {
     name,
     bio: typeof bio === "string" ? bio : null,
     photoUrl: typeof photoUrl === "string" ? photoUrl : null,
+    photoUrls: photoUrls as string[] | undefined,
     serviceIds,
     workingHours: parseWorkingHours(workingHours),
   };
