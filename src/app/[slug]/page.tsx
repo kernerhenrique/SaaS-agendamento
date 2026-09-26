@@ -23,7 +23,8 @@ export async function generateMetadata({
     : `Agende seu horário em ${business.name}.`;
 
   return {
-    title,
+    // `absolute`: a página pública é do negócio, sem o sufixo da marca do produto.
+    title: { absolute: title },
     description,
     openGraph: {
       title,
@@ -76,6 +77,7 @@ export default async function PublicBookingPage({
         whatsapp: business.whatsapp,
         instagramUrl: business.instagramUrl,
         policyText: business.policyText,
+        businessType: business.businessType,
       }}
       services={services.map((service) => ({
         id: service.id,
@@ -91,6 +93,7 @@ export default async function PublicBookingPage({
         name: professional.name,
         photoUrl: professional.photoUrl,
         bio: professional.bio,
+        specialty: professional.specialty,
         photoUrls: professional.photos.map((photo) => photo.url),
         serviceIds: professional.professionalServices.map((ps) => ps.serviceId),
       }))}

@@ -1,6 +1,10 @@
+"use client";
+
 import { CalendarPlus, CircleCheckBig, MessageCircle, SquareArrowOutUpRight } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
+import { BRAND } from "@/config/brand";
+import { useVertical } from "@/config/vertical-context";
 import { buildAppointmentIcs } from "@/lib/ics";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
@@ -26,8 +30,9 @@ function formatFullDateTime(dateISO: string, timeZone: string): string {
 }
 
 export function ConfirmationStep({ appointment }: { appointment: ConfirmedAppointmentInfo }) {
+  const { terms } = useVertical();
   const icsContent = buildAppointmentIcs({
-    uid: `${appointment.id}@agendamento-saas`,
+    uid: `${appointment.id}@${BRAND.slug}`,
     startAt: new Date(appointment.startAt),
     endAt: new Date(appointment.endAt),
     summary: `${appointment.serviceName} — ${appointment.businessName}`,
@@ -48,11 +53,11 @@ export function ConfirmationStep({ appointment }: { appointment: ConfirmedAppoin
 
       <dl className="flex w-full flex-col gap-1 rounded-lg bg-card p-4 text-sm shadow-sm ring-1 ring-foreground/10">
         <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Serviço</dt>
+          <dt className="text-muted-foreground">{terms.service.singular}</dt>
           <dd className="font-medium">{appointment.serviceName}</dd>
         </div>
         <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Profissional</dt>
+          <dt className="text-muted-foreground">{terms.professional.singular}</dt>
           <dd className="font-medium">{appointment.professionalName}</dd>
         </div>
         <div className="flex justify-between gap-2">

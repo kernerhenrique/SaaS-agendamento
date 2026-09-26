@@ -36,7 +36,7 @@ export function parseProfessionalInput(body: unknown): ProfessionalInput {
   if (typeof body !== "object" || body === null) {
     throw new ValidationError("Corpo da requisição inválido");
   }
-  const { name, bio, photoUrl, photoUrls, serviceIds, workingHours } = body as Record<string, unknown>;
+  const { name, bio, specialty, photoUrl, photoUrls, serviceIds, workingHours } = body as Record<string, unknown>;
 
   if (typeof name !== "string") {
     throw new ValidationError("name é obrigatório");
@@ -51,6 +51,7 @@ export function parseProfessionalInput(body: unknown): ProfessionalInput {
   return {
     name,
     bio: typeof bio === "string" ? bio : null,
+    specialty: typeof specialty === "string" && specialty.trim() ? specialty.trim() : null,
     photoUrl: typeof photoUrl === "string" ? photoUrl : null,
     photoUrls: photoUrls as string[] | undefined,
     serviceIds,

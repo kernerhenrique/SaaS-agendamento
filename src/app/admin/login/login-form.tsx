@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BRAND } from "@/config/brand";
 
 export function LoginForm() {
   const router = useRouter();
@@ -47,11 +48,18 @@ export function LoginForm() {
     <Card className="w-full max-w-sm shadow-lg">
       <CardHeader className="text-center">
         {/* CardHeader é grid: `mx-auto` centraliza o ícone (items-center não teria efeito). */}
-        <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-          <CalendarClock className="size-6" />
-        </div>
+        {BRAND.logoPath ? (
+          // eslint-disable-next-line @next/next/no-img-element -- logo da marca em /public, dimensões definidas pelo asset
+          <img src={BRAND.logoPath} alt={BRAND.name} className="mx-auto mb-2 h-12 w-auto" />
+        ) : (
+          <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <CalendarClock className="size-6" />
+          </div>
+        )}
         <CardTitle className="text-lg">Entrar</CardTitle>
-        <CardDescription>Painel do negócio</CardDescription>
+        <CardDescription>
+          {BRAND.name} · Painel do negócio
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>

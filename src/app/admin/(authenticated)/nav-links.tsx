@@ -2,23 +2,42 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, CalendarDays, Scissors, Users, type LucideIcon } from "lucide-react";
+import {
+  BarChart3,
+  Briefcase,
+  CalendarDays,
+  PenTool,
+  Scissors,
+  Sparkles,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 
+import type { ServiceIconKey } from "@/config/vertical";
+import { useVertical } from "@/config/vertical-context";
 import { cn } from "cn";
 
-const NAV_ITEMS: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/admin/agenda", label: "Agenda", icon: CalendarDays },
-  { href: "/admin/profissionais", label: "Profissionais", icon: Users },
-  { href: "/admin/servicos", label: "Serviços", icon: Scissors },
-  { href: "/admin/relatorios", label: "Relatórios", icon: BarChart3 },
-];
+const SERVICE_ICONS: Record<ServiceIconKey, LucideIcon> = {
+  scissors: Scissors,
+  sparkles: Sparkles,
+  "pen-tool": PenTool,
+  briefcase: Briefcase,
+};
 
 export function NavLinks({ className, itemClassName }: { className?: string; itemClassName?: string }) {
   const pathname = usePathname();
+  const { terms, serviceIcon } = useVertical();
+
+  const navItems: { href: string; label: string; icon: LucideIcon }[] = [
+    { href: "/admin/agenda", label: "Agenda", icon: CalendarDays },
+    { href: "/admin/profissionais", label: terms.professional.plural, icon: Users },
+    { href: "/admin/servicos", label: terms.service.plural, icon: SERVICE_ICONS[serviceIcon] },
+    { href: "/admin/relatorios", label: "Relatórios", icon: BarChart3 },
+  ];
 
   return (
     <nav className={className}>
-      {NAV_ITEMS.map((item) => {
+      {navItems.map((item) => {
         const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
         const Icon = item.icon;
         return (

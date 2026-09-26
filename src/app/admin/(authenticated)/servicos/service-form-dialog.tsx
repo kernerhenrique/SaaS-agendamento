@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { editLabel, lowerTerm, newLabel } from "@/config/vertical";
+import { useVertical } from "@/config/vertical-context";
 
 import type { ProfessionalOption, ServiceCategoryOption, ServiceListItem } from "./types";
 
@@ -49,6 +51,7 @@ export function ServiceFormDialog({
   onCategoryCreated: (category: ServiceCategoryOption) => void;
   onSaved: () => void | Promise<void>;
 }) {
+  const { terms } = useVertical();
   const [open, setOpen] = useState(false);
 
   return (
@@ -56,8 +59,10 @@ export function ServiceFormDialog({
       <DialogTrigger render={trigger} />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{service ? "Editar serviço" : "Novo serviço"}</DialogTitle>
-          <DialogDescription>Nome, categoria, duração, preço e profissionais que realizam.</DialogDescription>
+          <DialogTitle>{service ? editLabel(terms.service) : newLabel(terms.service)}</DialogTitle>
+          <DialogDescription>
+            Nome, categoria, duração, preço e {lowerTerm(terms.professional.plural)} que realizam.
+          </DialogDescription>
         </DialogHeader>
         {/* Só monta o formulário enquanto o diálogo está aberto: cada
             abertura começa com estado fresco, sem precisar de um efeito para
@@ -92,6 +97,7 @@ function ServiceFormFields({
   onSaved: () => void | Promise<void>;
   onClose: () => void;
 }) {
+  const { terms, features } = useVertical();
   const isEditing = Boolean(service);
   const [name, setName] = useState(service?.name ?? "");
   const [description, setDescription] = useState(service?.description ?? "");
@@ -205,6 +211,7 @@ function ServiceFormFields({
           />
         </div>
 
+        {features.serviceCategories ? (
         <div className="flex flex-col gap-2">
           <Label htmlFor="category">Categoria (opcional)</Label>
           <Select value={categoryId} onValueChange={(value) => setCategoryId(value ?? NO_CATEGORY)}>
@@ -238,6 +245,7 @@ function ServiceFormFields({
             />
           ) : null}
         </div>
+        ) : null}
 
         <div className="flex gap-4">
           <div className="flex flex-1 flex-col gap-2">
@@ -261,6 +269,7 @@ function ServiceFormFields({
               required
             />
           </div>
+          {features.priceFrom ? (
           <div className="flex flex-1 flex-col gap-2">
             <Label htmlFor="priceType">Tipo de preço</Label>
             <Select value={priceType} onValueChange={(value) => setPriceType((value as "FIXED" | "FROM") ?? "FIXED")}>
@@ -273,11 +282,12 @@ function ServiceFormFields({
               </SelectContent>
             </Select>
           </div>
+          ) : null}
         </div>
       </section>
 
       <section className="flex flex-col gap-3">
-        <h3 className="text-sm font-semibold">Profissionais que realizam</h3>
+        <h3 className="text-sm font-semibold">{terms.professional.plural} que realizam</h3>
         <div className="flex flex-col gap-2">
           {professionals.map((professional) => (
             <Label key={professional.id} className="flex items-center gap-2 text-sm font-normal">

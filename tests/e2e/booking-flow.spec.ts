@@ -11,7 +11,7 @@ test("cliente consegue agendar um horário do início ao fim", async ({ page }) 
   await expect(page.getByRole("heading", { name: "Escolha o serviço" })).toBeVisible();
   await page.getByText("Corte de cabelo", { exact: true }).click();
 
-  await expect(page.getByRole("heading", { name: "Escolha o profissional" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Escolha o barbeiro" })).toBeVisible();
   await page.getByText("João Barbeiro", { exact: true }).click();
 
   await expect(page.getByRole("heading", { name: "Escolha data e horário" })).toBeVisible();

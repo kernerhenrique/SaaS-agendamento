@@ -8,6 +8,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Stepper } from "@/components/stepper";
+import { BRAND } from "@/config/brand";
+import { getVertical } from "@/config/vertical";
+import { VerticalProvider } from "@/config/vertical-context";
 import { buildGoogleMapsUrl } from "@/lib/maps";
 import { getInitials } from "@/lib/text";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
@@ -114,7 +117,10 @@ export function BookingFlow({
     }
   }
 
+  const { terms } = getVertical(business.businessType);
+
   return (
+    <VerticalProvider verticalKey={business.businessType}>
     <AccentColorScope accentColor={business.accentColor} className="flex flex-1 flex-col">
       <main className="flex flex-1 flex-col">
         <header className="border-b bg-card p-4 shadow-sm sm:p-6">
@@ -161,13 +167,16 @@ export function BookingFlow({
             </div>
             {step <= 4 ? (
               <div className="mt-4">
-                <Stepper steps={["Serviço", "Profissional", "Horário", "Contato"]} currentStep={step} />
+                <Stepper
+                  steps={[terms.service.singular, terms.professional.singular, "Horário", "Contato"]}
+                  currentStep={step}
+                />
               </div>
             ) : null}
           </div>
         </header>
 
-        <div className="flex flex-1 flex-col p-4 pb-28 sm:p-6 sm:pb-6">
+        <div className="flex flex-1 flex-col p-4 sm:p-6">
           <div className={cn(CONTENT_WIDTH_CLASS, "flex flex-1 flex-col gap-6 sm:flex-row")}>
             <div className="min-w-0 flex-1">
               {step === 1 ? <ServiceStep services={services} onSelect={handleSelectService} /> : null}
@@ -232,7 +241,13 @@ export function BookingFlow({
             ) : null}
           </div>
         </div>
+
+        {/* pb-28 no mobile: deixa espaço para o resumo fixo no rodapé. */}
+        <footer className="px-4 pt-2 pb-28 text-center text-caption text-muted-foreground sm:pb-6">
+          {BRAND.poweredByLabel} {BRAND.name}
+        </footer>
       </main>
     </AccentColorScope>
+    </VerticalProvider>
   );
 }

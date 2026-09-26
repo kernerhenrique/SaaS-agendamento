@@ -1,9 +1,11 @@
+import { getVertical } from "@/config/vertical";
 import { sendEmail } from "@/server/modules/notification/email";
 
 export interface AppointmentConfirmationEmailData {
   clientName: string;
   clientEmail: string;
   businessName: string;
+  businessType: string;
   serviceName: string;
   professionalName: string;
   startAt: Date;
@@ -15,9 +17,20 @@ function getAppBaseUrl(): string {
   return process.env.APP_BASE_URL ?? "http://localhost:3000";
 }
 
+/** Nome do cliente vem do formulário público: nunca interpolar cru no HTML. */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export async function sendAppointmentConfirmationEmail(
   data: AppointmentConfirmationEmailData,
 ): Promise<void> {
+  const { terms } = getVertical(data.businessType);
   const formattedDateTime = new Intl.DateTimeFormat("pt-BR", {
     timeZone: data.timezone,
     dateStyle: "full",
@@ -31,19 +44,19 @@ export async function sendAppointmentConfirmationEmail(
     "",
     `Seu agendamento em ${data.businessName} foi confirmado!`,
     "",
-    `Serviço: ${data.serviceName}`,
-    `Profissional: ${data.professionalName}`,
+    `${terms.service.singular}: ${data.serviceName}`,
+    `${terms.professional.singular}: ${data.professionalName}`,
     `Data/hora: ${formattedDateTime}`,
     "",
     `Para cancelar ou reagendar, acesse: ${manageUrl}`,
   ].join("\n");
 
   const html = `
-    <p>Olá ${data.clientName},</p>
-    <p>Seu agendamento em <strong>${data.businessName}</strong> foi confirmado!</p>
+    <p>Olá ${escapeHtml(data.clientName)},</p>
+    <p>Seu agendamento em <strong>${escapeHtml(data.businessName)}</strong> foi confirmado!</p>
     <ul>
-      <li><strong>Serviço:</strong> ${data.serviceName}</li>
-      <li><strong>Profissional:</strong> ${data.professionalName}</li>
+      <li><strong>${terms.service.singular}:</strong> ${escapeHtml(data.serviceName)}</li>
+      <li><strong>${terms.professional.singular}:</strong> ${escapeHtml(data.professionalName)}</li>
       <li><strong>Data/hora:</strong> ${formattedDateTime}</li>
     </ul>
     <p>Para cancelar ou reagendar, <a href="${manageUrl}">acesse este link</a>.</p>

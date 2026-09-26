@@ -57,7 +57,7 @@ export async function updateService(businessId: string, id: string, input: Servi
   validateServiceInput(input);
 
   const existing = await prisma.service.findFirst({ where: { id, businessId, deletedAt: null } });
-  if (!existing) throw new NotFoundError("Serviço não encontrado");
+  if (!existing) throw new NotFoundError("Cadastro não encontrado");
 
   return prisma.$transaction(async (tx) => {
     await tx.professionalService.deleteMany({ where: { serviceId: id } });
@@ -82,7 +82,7 @@ export async function updateService(businessId: string, id: string, input: Servi
 
 export async function deleteService(businessId: string, id: string) {
   const existing = await prisma.service.findFirst({ where: { id, businessId, deletedAt: null } });
-  if (!existing) throw new NotFoundError("Serviço não encontrado");
+  if (!existing) throw new NotFoundError("Cadastro não encontrado");
 
   await prisma.service.update({
     where: { id },

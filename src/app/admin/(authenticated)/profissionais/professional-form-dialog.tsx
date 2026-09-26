@@ -17,6 +17,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { editLabel, lowerTerm, newLabel } from "@/config/vertical";
+import { useVertical } from "@/config/vertical-context";
 
 import {
   WorkingHoursEditor,
@@ -40,6 +42,7 @@ export function ProfessionalFormDialog({
   timezone: string;
   onSaved: () => void | Promise<void>;
 }) {
+  const { terms } = useVertical();
   const [open, setOpen] = useState(false);
 
   return (
@@ -48,8 +51,10 @@ export function ProfessionalFormDialog({
       {/* `sm:` é necessário: o DialogContent base limita a `sm:max-w-sm`. */}
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{professional ? "Editar profissional" : "Novo profissional"}</DialogTitle>
-          <DialogDescription>Nome, serviços realizados e expediente semanal.</DialogDescription>
+          <DialogTitle>{professional ? editLabel(terms.professional) : newLabel(terms.professional)}</DialogTitle>
+          <DialogDescription>
+            Nome, {lowerTerm(terms.service.plural)} realizados e expediente semanal.
+          </DialogDescription>
         </DialogHeader>
         {/* Só monta o formulário enquanto o diálogo está aberto: cada
             abertura começa com estado fresco (derivado de `professional` na
@@ -82,8 +87,10 @@ function ProfessionalFormFields({
   onSaved: () => void | Promise<void>;
   onClose: () => void;
 }) {
+  const { terms, features } = useVertical();
   const isEditing = Boolean(professional);
   const [name, setName] = useState(professional?.name ?? "");
+  const [specialty, setSpecialty] = useState(professional?.specialty ?? "");
   const [bio, setBio] = useState(professional?.bio ?? "");
   const [selectedServiceIds, setSelectedServiceIds] = useState<Set<string>>(
     new Set(professional?.professionalServices.map((ps) => ps.service.id) ?? []),
@@ -133,9 +140,13 @@ function ProfessionalFormFields({
     try {
       const payload = {
         name,
+        specialty: specialty.trim() || null,
         bio: bio || null,
         photoUrl: professional?.photoUrl ?? null,
-        photoUrls: photoUrls.map((url) => url.trim()).filter(Boolean),
+        // Preset sem portfólio: mantém as fotos já salvas em vez de apagá-las.
+        photoUrls: features.portfolio
+          ? photoUrls.map((url) => url.trim()).filter(Boolean)
+          : (professional?.photos.map((photo) => photo.url) ?? []),
         serviceIds: Array.from(selectedServiceIds),
         workingHours: parsedWorkingHours,
       };
@@ -168,11 +179,21 @@ function ProfessionalFormFields({
           <Input id="name" value={name} onChange={(event) => setName(event.target.value)} required />
         </div>
         <div className="flex flex-col gap-2">
+          <Label htmlFor="specialty">Especialidade (opcional)</Label>
+          <Input
+            id="specialty"
+            placeholder="Ex.: cortes clássicos e degradê"
+            value={specialty}
+            onChange={(event) => setSpecialty(event.target.value)}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
           <Label htmlFor="bio">Bio (opcional)</Label>
           <Textarea id="bio" value={bio} onChange={(event) => setBio(event.target.value)} rows={2} />
         </div>
       </section>
 
+      {features.portfolio ? (
       <section className="flex flex-col gap-3">
         <h3 className="text-sm font-semibold">Portfólio (opcional)</h3>
         <p className="text-caption text-muted-foreground">
@@ -197,9 +218,10 @@ function ProfessionalFormFields({
           </Button>
         </div>
       </section>
+      ) : null}
 
       <section className="flex flex-col gap-3">
-        <h3 className="text-sm font-semibold">Serviços realizados</h3>
+        <h3 className="text-sm font-semibold">{terms.service.plural} realizados</h3>
         <div className="flex flex-col gap-2">
           {services.map((service) => (
             <Label key={service.id} className="flex items-center gap-2 text-sm font-normal">

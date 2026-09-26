@@ -9,6 +9,7 @@ export interface ProfessionalListItem {
   id: string;
   name: string;
   bio: string | null;
+  specialty: string | null;
   photoUrl: string | null;
   workingHours: {
     weekday: Weekday;

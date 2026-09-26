@@ -4,6 +4,7 @@ import "./globals.css";
 
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { BRAND } from "@/config/brand";
 
 const roboto = Roboto({
   variable: "--font-roboto",
@@ -17,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Agendamento online",
-  description: "Sistema de agendamento online para barbearias, salões e clínicas.",
+  title: { default: BRAND.name, template: `%s · ${BRAND.name}` },
+  description: BRAND.tagline,
 };
 
 // Aplica o tema salvo (ou a preferência do sistema) antes da primeira pintura,

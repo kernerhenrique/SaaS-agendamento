@@ -91,7 +91,7 @@ export async function getReportSummary(
   const byProfessional = [...countByProfessional]
     .map(([professionalId, count]) => ({
       professionalId,
-      name: nameById.get(professionalId) ?? "(profissional removido)",
+      name: nameById.get(professionalId) ?? "(cadastro removido)",
       count,
     }))
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));

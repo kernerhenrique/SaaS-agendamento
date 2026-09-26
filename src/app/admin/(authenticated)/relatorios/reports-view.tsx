@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { STATUS_BADGE_CLASSES, STATUS_LABELS } from "@/lib/appointment-status";
 import type { AppointmentStatus } from "@/generated/prisma/enums";
 import type { ReportSummary } from "@/server/modules/report/report.service";
+import { lowerTerm, mostRequestedLabel } from "@/config/vertical";
+import { useVertical } from "@/config/vertical-context";
 import { cn } from "cn";
 
 import { ChartCard, DailyColumnChart, DataTable, HorizontalBarChart } from "./report-charts";
@@ -41,6 +43,7 @@ export function ReportsView({
   startDate: string;
   endDate: string;
 }) {
+  const { terms } = useVertical();
   const [summary, setSummary] = useState(initialSummary);
   const [start, setStart] = useState(startDate);
   const [end, setEnd] = useState(endDate);
@@ -91,7 +94,7 @@ export function ReportsView({
           <StatTile icon={UserX} label="Taxa de no-show" value={formatPercent(summary.noShowRate)} />
           <StatTile
             icon={Trophy}
-            label="Profissional mais requisitado"
+            label={mostRequestedLabel(terms.professional)}
             value={
               summary.mostRequestedProfessional
                 ? `${summary.mostRequestedProfessional.name} (${summary.mostRequestedProfessional.count})`
@@ -113,7 +116,7 @@ export function ReportsView({
 
         <div className="grid gap-6 lg:grid-cols-2">
           <ChartCard
-            title="Agendamentos por profissional"
+            title={`Agendamentos por ${lowerTerm(terms.professional.singular)}`}
             chart={
               summary.byProfessional.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">Nenhum agendamento no período.</p>
@@ -129,7 +132,7 @@ export function ReportsView({
             }
             table={
               <DataTable
-                columns={["Profissional", "Agendamentos"]}
+                columns={[terms.professional.singular, "Agendamentos"]}
                 rows={summary.byProfessional.map((p) => [p.name, p.count])}
               />
             }

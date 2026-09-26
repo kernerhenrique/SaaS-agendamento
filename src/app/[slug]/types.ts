@@ -9,6 +9,7 @@ export interface BusinessInfo {
   whatsapp: string | null;
   instagramUrl: string | null;
   policyText: string | null;
+  businessType: string;
 }
 
 export interface ServiceOption {
@@ -26,6 +27,7 @@ export interface ProfessionalOption {
   name: string;
   photoUrl: string | null;
   bio: string | null;
+  specialty: string | null;
   photoUrls: string[];
   serviceIds: string[];
 }

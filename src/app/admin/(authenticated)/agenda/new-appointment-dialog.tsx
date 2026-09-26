@@ -22,7 +22,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ofLabel, selectLabel } from "@/config/vertical";
+import { useVertical } from "@/config/vertical-context";
 import { localMinutesToUtc } from "@/lib/date";
+import { formatPhoneBR } from "@/lib/phone";
 
 import type { ProfessionalOption } from "./types";
 
@@ -43,6 +46,7 @@ export function NewAppointmentDialog({
   timezone: string;
   onCreated: () => void | Promise<void>;
 }) {
+  const { terms } = useVertical();
   const [open, setOpen] = useState(false);
   const [professionalId, setProfessionalId] = useState<string>("");
   const [serviceId, setServiceId] = useState<string>("");
@@ -128,7 +132,7 @@ export function NewAppointmentDialog({
         </DialogHeader>
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="professional">Profissional</Label>
+            <Label htmlFor="professional">{terms.professional.singular}</Label>
             <Select
               value={professionalId}
               onValueChange={(value) => {
@@ -139,10 +143,10 @@ export function NewAppointmentDialog({
               <SelectTrigger id="professional">
                 {/* SelectValue não resolve o rótulo do SelectItem sozinho (Base
                     UI só sabe o `value`) — precisa de função para mapear o texto. */}
-                <SelectValue placeholder="Selecione um profissional">
+                <SelectValue placeholder={selectLabel(terms.professional)}>
                   {(value: string) =>
                     professionals.find((professional) => professional.id === value)?.name ??
-                    "Selecione um profissional"
+                    selectLabel(terms.professional)
                   }
                 </SelectValue>
               </SelectTrigger>
@@ -157,17 +161,17 @@ export function NewAppointmentDialog({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="service">Serviço</Label>
+            <Label htmlFor="service">{terms.service.singular}</Label>
             <Select
               value={serviceId}
               onValueChange={(value) => setServiceId(value ?? "")}
               disabled={!professionalId}
             >
               <SelectTrigger id="service">
-                <SelectValue placeholder="Selecione um serviço">
+                <SelectValue placeholder={selectLabel(terms.service)}>
                   {(value: string) => {
                     const service = availableServices.find((s) => s.id === value);
-                    return service ? `${service.name} (${service.durationMin}min)` : "Selecione um serviço";
+                    return service ? `${service.name} (${service.durationMin}min)` : selectLabel(terms.service);
                   }}
                 </SelectValue>
               </SelectTrigger>
@@ -193,7 +197,7 @@ export function NewAppointmentDialog({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="clientName">Nome do cliente</Label>
+            <Label htmlFor="clientName">Nome {ofLabel(terms.client)}</Label>
             <Input
               id="clientName"
               value={clientName}
@@ -203,17 +207,20 @@ export function NewAppointmentDialog({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="clientPhone">Telefone do cliente</Label>
+            <Label htmlFor="clientPhone">WhatsApp {ofLabel(terms.client)}</Label>
             <Input
               id="clientPhone"
               value={clientPhone}
-              onChange={(event) => setClientPhone(event.target.value)}
+              type="tel"
+              inputMode="numeric"
+              placeholder="(11) 91234-5678"
+              onChange={(event) => setClientPhone(formatPhoneBR(event.target.value))}
               required
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="clientEmail">E-mail do cliente (opcional)</Label>
+            <Label htmlFor="clientEmail">E-mail {ofLabel(terms.client)} (opcional)</Label>
             <Input
               id="clientEmail"
               type="email"

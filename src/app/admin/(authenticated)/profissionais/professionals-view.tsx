@@ -6,6 +6,8 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { emptyLabel, newLabel } from "@/config/vertical";
+import { useVertical } from "@/config/vertical-context";
 import { cn } from "cn";
 import { getInitials } from "@/lib/text";
 import { WEEKDAY_LABELS, WEEKDAY_ORDER, minutesToTimeInput } from "@/lib/weekday";
@@ -22,6 +24,7 @@ export function ProfessionalsView({
   services: ServiceOption[];
   timezone: string;
 }) {
+  const { terms } = useVertical();
   const [professionals, setProfessionals] = useState(initialProfessionals);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -47,12 +50,12 @@ export function ProfessionalsView({
   return (
     <main className="flex flex-1 flex-col gap-4 p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Profissionais</h1>
+        <h1 className="text-page-title font-bold">{terms.professional.plural}</h1>
         <ProfessionalFormDialog
           trigger={
             <Button>
               <Plus />
-              Novo profissional
+              {newLabel(terms.professional)}
             </Button>
           }
           services={services}
@@ -63,7 +66,7 @@ export function ProfessionalsView({
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {professionals.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhum profissional cadastrado ainda.</p>
+          <p className="text-sm text-muted-foreground">{emptyLabel(terms.professional)}</p>
         ) : (
           professionals.map((professional) => (
             <Card key={professional.id} size="sm">
@@ -79,7 +82,7 @@ export function ProfessionalsView({
               <CardContent className="flex flex-col gap-3 text-sm">
                 {professional.bio ? <p className="text-muted-foreground">{professional.bio}</p> : null}
                 <p>
-                  <span className="font-medium">Serviços: </span>
+                  <span className="font-medium">{terms.service.plural}: </span>
                   {professional.professionalServices.map((ps) => ps.service.name).join(", ") || "—"}
                 </p>
                 <WeeklyMiniGrid workingHours={professional.workingHours} />

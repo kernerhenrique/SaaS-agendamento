@@ -16,6 +16,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { AppointmentStatus, Weekday } from "@/generated/prisma/enums";
 import { NEXT_STATUS_ACTIONS, STATUS_BLOCK_CLASSES, STATUS_LABELS } from "@/lib/appointment-status";
 import { localDayRangeUtc, weekdayOfLocalDate } from "@/lib/date";
+import { emptyLabel } from "@/config/vertical";
+import { useVertical } from "@/config/vertical-context";
 import { getInitials } from "@/lib/text";
 import { minutesToTimeInput } from "@/lib/weekday";
 import { cn } from "cn";
@@ -64,6 +66,7 @@ export function ScheduleGrid({
   pendingActionId: string | null;
   onStatusChange: (appointmentId: string, status: AppointmentStatus) => void;
 }) {
+  const { terms } = useVertical();
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const selectedAppointment = appointments.find((a) => a.id === selectedAppointmentId) ?? null;
 
@@ -98,7 +101,7 @@ export function ScheduleGrid({
   }
 
   if (professionals.length === 0) {
-    return <p className="text-sm text-muted-foreground">Nenhum profissional cadastrado ainda.</p>;
+    return <p className="text-sm text-muted-foreground">{emptyLabel(terms.professional)}</p>;
   }
 
   return (
@@ -261,7 +264,7 @@ export function ScheduleGrid({
                   </dd>
                 </div>
                 <div className="flex justify-between gap-2">
-                  <dt className="text-muted-foreground">Cliente</dt>
+                  <dt className="text-muted-foreground">{terms.client.singular}</dt>
                   <dd className="font-medium">
                     {selectedAppointment.client.name} · {selectedAppointment.client.phone}
                   </dd>

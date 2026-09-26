@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AccentColorScope } from "@/components/accent-color-scope";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { VerticalProvider } from "@/config/vertical-context";
 import { getInitials } from "@/lib/text";
 import { prisma } from "@/server/db/prisma";
 import { getAdminSession } from "@/server/modules/auth/session";
@@ -21,6 +22,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   });
 
   return (
+    <VerticalProvider verticalKey={business.businessType}>
     <AccentColorScope accentColor={business.accentColor} className="flex flex-1 flex-col sm:flex-row">
       {/* Navegação mobile: barra superior + links roláveis na horizontal */}
       <div className="flex flex-col border-b border-sidebar-border bg-sidebar sm:hidden">
@@ -53,6 +55,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         {children}
       </div>
     </AccentColorScope>
+    </VerticalProvider>
   );
 }
 

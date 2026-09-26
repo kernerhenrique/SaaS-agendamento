@@ -6,6 +6,8 @@ import { Clock, Pencil, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { emptyLabel, newLabel } from "@/config/vertical";
+import { useVertical } from "@/config/vertical-context";
 import { formatPriceFromCents } from "@/lib/currency";
 
 import { ServiceFormDialog } from "./service-form-dialog";
@@ -20,6 +22,7 @@ export function ServicesView({
   professionals: ProfessionalOption[];
   initialCategories: ServiceCategoryOption[];
 }) {
+  const { terms, features } = useVertical();
   const [services, setServices] = useState(initialServices);
   const [categories, setCategories] = useState(initialCategories);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -50,12 +53,12 @@ export function ServicesView({
   return (
     <main className="flex flex-1 flex-col gap-4 p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Serviços</h1>
+        <h1 className="text-page-title font-bold">{terms.service.plural}</h1>
         <ServiceFormDialog
           trigger={
             <Button>
               <Plus />
-              Novo serviço
+              {newLabel(terms.service)}
             </Button>
           }
           professionals={professionals}
@@ -67,7 +70,7 @@ export function ServicesView({
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {services.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhum serviço cadastrado ainda.</p>
+          <p className="text-sm text-muted-foreground">{emptyLabel(terms.service)}</p>
         ) : (
           services.map((service) => (
             <Card key={service.id} size="sm">
@@ -75,7 +78,7 @@ export function ServicesView({
                 <CardTitle className="text-base">{service.name}</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-3 text-sm">
-                {service.category ? (
+                {features.serviceCategories && service.category ? (
                   <Badge variant="secondary" className="w-fit">
                     {service.category.name}
                   </Badge>
@@ -90,11 +93,11 @@ export function ServicesView({
                   </Badge>
                   <Badge variant="outline">
                     {formatPriceFromCents(service.priceCents)}
-                    {service.priceType === "FROM" ? "+" : ""}
+                    {features.priceFrom && service.priceType === "FROM" ? "+" : ""}
                   </Badge>
                 </div>
                 <p>
-                  <span className="font-medium">Profissionais: </span>
+                  <span className="font-medium">{terms.professional.plural}: </span>
                   {service.professionalServices.map((ps) => ps.professional.name).join(", ") || "—"}
                 </p>
                 <div className="mt-1 flex gap-2">

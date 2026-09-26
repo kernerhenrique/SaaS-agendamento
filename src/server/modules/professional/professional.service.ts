@@ -13,6 +13,7 @@ export interface WorkingHoursInput {
 export interface ProfessionalInput {
   name: string;
   bio?: string | null;
+  specialty?: string | null;
   photoUrl?: string | null;
   photoUrls?: string[];
   serviceIds: string[];
@@ -76,7 +77,7 @@ export async function getProfessional(businessId: string, id: string) {
       photos: { orderBy: { position: "asc" } },
     },
   });
-  if (!professional) throw new NotFoundError("Profissional não encontrado");
+  if (!professional) throw new NotFoundError("Cadastro não encontrado");
   return professional;
 }
 
@@ -89,6 +90,7 @@ export async function createProfessional(businessId: string, input: Professional
       businessId,
       name: input.name.trim(),
       bio: input.bio ?? null,
+      specialty: input.specialty ?? null,
       photoUrl: input.photoUrl ?? null,
       workingHours: { create: input.workingHours },
       professionalServices: {
@@ -109,7 +111,7 @@ export async function updateProfessional(
   validateWorkingHours(input.workingHours);
 
   const existing = await prisma.professional.findFirst({ where: { id, businessId, deletedAt: null } });
-  if (!existing) throw new NotFoundError("Profissional não encontrado");
+  if (!existing) throw new NotFoundError("Cadastro não encontrado");
 
   return prisma.$transaction(async (tx) => {
     await tx.workingHours.deleteMany({ where: { professionalId: id } });
@@ -121,6 +123,7 @@ export async function updateProfessional(
       data: {
         name: input.name.trim(),
         bio: input.bio ?? null,
+        specialty: input.specialty ?? null,
         photoUrl: input.photoUrl ?? null,
         workingHours: { create: input.workingHours },
         professionalServices: {
@@ -135,7 +138,7 @@ export async function updateProfessional(
 
 export async function deleteProfessional(businessId: string, id: string) {
   const existing = await prisma.professional.findFirst({ where: { id, businessId, deletedAt: null } });
-  if (!existing) throw new NotFoundError("Profissional não encontrado");
+  if (!existing) throw new NotFoundError("Cadastro não encontrado");
 
   await prisma.professional.update({
     where: { id },
@@ -151,7 +154,7 @@ export async function createTimeBlock(
   const professional = await prisma.professional.findFirst({
     where: { id: professionalId, businessId, deletedAt: null },
   });
-  if (!professional) throw new NotFoundError("Profissional não encontrado");
+  if (!professional) throw new NotFoundError("Cadastro não encontrado");
   if (input.startAt >= input.endAt) {
     throw new ValidationError("O fim do bloqueio deve ser depois do início");
   }

@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 
+import { VerticalProvider } from "@/config/vertical-context";
 import { checkRateLimit, getClientIp, MANAGE_TOKEN_RATE_LIMIT } from "@/lib/rate-limit";
 import { NotFoundError } from "@/server/errors";
 import { getAppointmentForManagement } from "@/server/modules/appointment/manage.service";
@@ -37,6 +38,7 @@ export default async function ManageAppointmentPage({
   const initialIsFuture = appointment.startAt.getTime() > Date.now();
 
   return (
+    <VerticalProvider verticalKey={appointment.business.businessType}>
     <ManageView
       token={manageToken}
       initialIsFuture={initialIsFuture}
@@ -62,6 +64,7 @@ export default async function ManageAppointmentPage({
           : null,
       }}
     />
+    </VerticalProvider>
   );
 }
 

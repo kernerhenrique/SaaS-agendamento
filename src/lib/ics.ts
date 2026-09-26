@@ -1,3 +1,5 @@
+import { BRAND } from "@/config/brand";
+
 function toIcsUtc(date: Date): string {
   return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 }
@@ -17,7 +19,7 @@ export function buildAppointmentIcs(params: {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Agendamento SaaS//PT-BR",
+    `PRODID:-//${BRAND.name}//PT-BR`,
     "BEGIN:VEVENT",
     `UID:${params.uid}`,
     `DTSTAMP:${toIcsUtc(new Date())}`,

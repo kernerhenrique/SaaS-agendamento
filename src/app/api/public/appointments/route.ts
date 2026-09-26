@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
           clientName: appointment.client.name,
           clientEmail: email,
           businessName: appointment.business.name,
+          businessType: appointment.business.businessType,
           serviceName: appointment.service.name,
           professionalName: appointment.professional.name,
           startAt: appointment.startAt,

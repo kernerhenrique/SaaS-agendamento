@@ -117,7 +117,7 @@ export async function getAvailableSlots(params: GetAvailableSlotsParams): Promis
     where: { id: serviceId, businessId, active: true, deletedAt: null },
   });
   if (!service) {
-    throw new NotFoundError("Serviço não encontrado");
+    throw new NotFoundError("Cadastro não encontrado");
   }
 
   const professionals = await prisma.professional.findMany({
@@ -132,7 +132,7 @@ export async function getAvailableSlots(params: GetAvailableSlotsParams): Promis
   });
 
   if (professionalId && professionals.length === 0) {
-    throw new NotFoundError("Profissional não encontrado ou não realiza este serviço");
+    throw new NotFoundError("Essa combinação de atendimento não está disponível");
   }
 
   const weekday = weekdayOfLocalDate(dateISO);

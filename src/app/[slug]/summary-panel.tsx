@@ -1,3 +1,6 @@
+"use client";
+
+import { useVertical } from "@/config/vertical-context";
 import { formatPriceFromCents } from "@/lib/currency";
 
 import { NO_PREFERENCE, type BookingSelection, type ProfessionalOption } from "./types";
@@ -29,6 +32,7 @@ export function SummaryPanel({
   /** Versão de uma linha para o rodapé fixo do mobile, que não pode ocupar meia tela. */
   compact?: boolean;
 }) {
+  const { terms } = useVertical();
   const professionalName =
     selection.professionalId === NO_PREFERENCE
       ? "Sem preferência"
@@ -63,7 +67,7 @@ export function SummaryPanel({
       <p className="text-sm font-semibold">Resumo</p>
       <dl className="mt-2 flex flex-col gap-1 text-sm">
         <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Serviço</dt>
+          <dt className="text-muted-foreground">{terms.service.singular}</dt>
           <dd className="text-right font-medium">{selection.service.name}</dd>
         </div>
         <div className="flex justify-between gap-2">
@@ -72,7 +76,7 @@ export function SummaryPanel({
         </div>
         {professionalName ? (
           <div className="flex justify-between gap-2">
-            <dt className="text-muted-foreground">Profissional</dt>
+            <dt className="text-muted-foreground">{terms.professional.singular}</dt>
             <dd className="text-right font-medium">{professionalName}</dd>
           </div>
         ) : null}

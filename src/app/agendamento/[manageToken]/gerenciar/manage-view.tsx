@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useVertical } from "@/config/vertical-context";
 import { AppointmentStatus } from "@/generated/prisma/enums";
 import { STATUS_LABELS } from "@/lib/appointment-status";
 
@@ -37,6 +38,7 @@ export function ManageView({
    */
   initialIsFuture: boolean;
 }) {
+  const { terms } = useVertical();
   const [appointment, setAppointment] = useState(initial);
   const [isCancelling, setIsCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,11 +72,11 @@ export function ManageView({
 
       <dl className="flex flex-col gap-1 rounded-lg border p-4 text-sm">
         <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Serviço</dt>
+          <dt className="text-muted-foreground">{terms.service.singular}</dt>
           <dd className="font-medium">{appointment.service.name}</dd>
         </div>
         <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Profissional</dt>
+          <dt className="text-muted-foreground">{terms.professional.singular}</dt>
           <dd className="font-medium">{appointment.professional.name}</dd>
         </div>
         <div className="flex justify-between gap-2">
