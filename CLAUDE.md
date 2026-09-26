@@ -59,7 +59,7 @@ src/
 │   ├── vertical-context.tsx # VerticalProvider / useVertical() para client components
 │   └── brand.ts             # marca do PRODUTO (nome, logo): login, título, "feito com", .ics
 ├── lib/                     # date.ts (timezone), rate-limit, .ics, formatadores pt-BR
-└── components/              # ui/ (shadcn) + componentes de domínio
+└── components/              # ui/ (shadcn) + componentes de domínio + admin/ (shell do painel)
 tests/
 ├── unit/
 └── e2e/

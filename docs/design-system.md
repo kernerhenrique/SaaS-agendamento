@@ -36,6 +36,14 @@ Raio já era tokenizado (`--radius-sm` a `--radius-4xl`, derivados de `--radius`
 
 `src/lib/motion.ts` exporta `MOTION_DURATION` (fast/base/slow, em segundos) e `MOTION_EASE` (standard/decelerate/accelerate) para uso com a lib `motion`. Sempre checar `prefers-reduced-motion` (hook `useReducedMotion` da lib) antes de animar algo que não seja puramente decorativo.
 
+## Shell do painel (Fase 3B)
+
+`src/components/admin/`: `AdminShellProvider` (contexto com `openNewAppointment`, `openSearch` e `appointmentsVersion` — telas que listam agendamentos recarregam quando ele muda), `AdminSidebar` (recolhível; preferência no cookie `admin-sidebar`, lido no layout para não piscar), `AdminTopbar` (busca, "+ Novo agendamento", tema, conta), `AdminBottomNav` (celular: Início, Agenda, "+", Clientes, Mais), `CommandPalette` (Ctrl/Cmd+K; busca clientes, próximos agendamentos e telas), `NewAppointmentDialog` global e `ComingSoon` para telas ainda não construídas. O menu vem de `useAdminNav()` e usa os termos do preset.
+
+Armadilha registrada: constantes lidas pelo servidor (ex.: nome do cookie) não podem ser exportadas de arquivo `"use client"` — no servidor viram "referência de cliente", não o valor. Ficam em módulo neutro (`sidebar-cookie.ts`).
+
+Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, porque diálogos, gavetas e toasts são renderizados em portal no `<body>` e ficariam fora de uma div com estilo.
+
 ## Quando usar drawer vs. modal vs. página
 
 - **Drawer** (`Sheet` + `DetailDrawerContent`, `src/components/detail-drawer.tsx`): detalhe de um registro existente (agendamento, cliente, profissional) — mantém a lista de fundo visível/no contexto.
