@@ -1,6 +1,7 @@
 import { AppointmentStatus, type Prisma } from "@/generated/prisma/client";
 import { normalizePhoneBR } from "@/lib/phone";
 import { prisma } from "@/server/db/prisma";
+import { checkAdminReschedule } from "./reschedule-rules";
 import { NotFoundError, ValidationError } from "@/server/errors";
 
 /**
@@ -177,4 +178,91 @@ export function isOverlapConstraintViolation(error: unknown): boolean {
       (prismaError as { meta?: { constraint?: string } })?.meta?.constraint ===
         "no_overlapping_appointments",
   );
+}
+
+/**
+ * Remarcação pelo admin: muda horário e/ou profissional. Revalida tudo no
+ * servidor (a checagem da tela é só otimista); conflito com outro agendamento
+ * é barrado pela exclusion constraint do banco.
+ */
+export async function rescheduleAppointmentAsAdmin(
+  businessId: string,
+  appointmentId: string,
+  input: { startAt: Date; professionalId: string },
+) {
+  const appointment = await prisma.appointment.findFirst({
+    where: { id: appointmentId, businessId },
+    include: { service: true },
+  });
+  if (!appointment) throw new NotFoundError("Agendamento não encontrado");
+
+  const professional = await prisma.professional.findFirst({
+    where: { id: input.professionalId, businessId, deletedAt: null },
+    include: { professionalServices: { where: { serviceId: appointment.serviceId } } },
+  });
+  if (!professional) throw new NotFoundError("Cadastro não encontrado");
+
+  const newStartAt = input.startAt;
+  const newEndAt = new Date(newStartAt.getTime() + appointment.service.durationMin * 60_000);
+  const blocks = await prisma.timeBlock.findMany({
+    where: { professionalId: professional.id, startAt: { lt: newEndAt }, endAt: { gt: newStartAt } },
+    select: { startAt: true, endAt: true },
+  });
+
+  const problem = checkAdminReschedule({
+    status: appointment.status,
+    professionalActive: professional.active,
+    professionalOffersService: professional.professionalServices.length > 0,
+    newStartAt,
+    newEndAt,
+    blocks,
+  });
+  if (problem) throw new ValidationError(problem);
+
+  try {
+    return await prisma.appointment.update({
+      where: { id: appointment.id },
+      data: {
+        professionalId: professional.id,
+        startAt: newStartAt,
+        endAt: newEndAt,
+        manageTokenExpiresAt: new Date(
+          newEndAt.getTime() + MANAGE_TOKEN_TTL_DAYS_AFTER_APPOINTMENT * 24 * 60 * 60 * 1000,
+        ),
+      },
+    });
+  } catch (error) {
+    if (isOverlapConstraintViolation(error)) {
+      throw new ValidationError("Esse horário conflita com outro agendamento");
+    }
+    throw error;
+  }
+}
+
+const CLIENT_HISTORY_LIMIT = 5;
+
+/** Detalhe para o drawer da agenda, com o histórico recente do cliente. */
+export async function getAppointmentDetail(businessId: string, appointmentId: string) {
+  const appointment = await prisma.appointment.findFirst({
+    where: { id: appointmentId, businessId },
+    include: {
+      professional: { select: { id: true, name: true } },
+      service: { select: { id: true, name: true, durationMin: true, priceCents: true } },
+      client: { select: { id: true, name: true, phone: true, email: true } },
+    },
+  });
+  if (!appointment) throw new NotFoundError("Agendamento não encontrado");
+
+  const [history, completedCount, noShowCount] = await Promise.all([
+    prisma.appointment.findMany({
+      where: { businessId, clientId: appointment.clientId, id: { not: appointment.id } },
+      select: { id: true, startAt: true, status: true, service: { select: { name: true } } },
+      orderBy: { startAt: "desc" },
+      take: CLIENT_HISTORY_LIMIT,
+    }),
+    prisma.appointment.count({ where: { businessId, clientId: appointment.clientId, status: "COMPLETED" } }),
+    prisma.appointment.count({ where: { businessId, clientId: appointment.clientId, status: "NO_SHOW" } }),
+  ]);
+
+  return { appointment, history, clientStats: { completed: completedCount, noShows: noShowCount } };
 }
