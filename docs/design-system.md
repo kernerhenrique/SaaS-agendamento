@@ -44,6 +44,21 @@ Armadilha registrada: constantes lidas pelo servidor (ex.: nome do cookie) não 
 
 Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, porque diálogos, gavetas e toasts são renderizados em portal no `<body>` e ficariam fora de uma div com estilo.
 
+## Agenda (Fase 3C)
+
+`src/app/admin/(authenticated)/agenda/`:
+- `ScheduleGrid` recebe colunas genéricas (`GridColumn`): visão **Dia** = uma coluna por profissional; visão **Semana** = sete colunas de um profissional.
+- Blocos de agendamento usam `STATUS_BLOCK_CLASSES` (fundo suave opaco + faixa `border-l-4` na cor `--status-*`). Blocos com menos de 56 px viram uma linha só ("hora · cliente").
+- Bloqueios (`TimeBlock`) são hachurados. Fora do expediente e intervalo ficam com fundo `muted`.
+- Linha do "agora" em `--destructive`, só na coluna de hoje, atualizada a cada minuto.
+- Clique no vazio abre "Novo agendamento" já preenchido (profissional, data, hora com snap de 15 min).
+- Arrastar (`@dnd-kit/core`, só desktop) remarca com atualização otimista:
+  - soltar em bloqueio é recusado com toast;
+  - fora do expediente pede confirmação num modal curto;
+  - o servidor revalida tudo (`PATCH /api/admin/appointments/[id]`), e o conflito é garantido pela exclusion constraint.
+- Detalhe do agendamento abre no drawer `AppointmentDrawer`: status, cliente com WhatsApp, histórico, ações de status e "Remarcar" (formulário embutido).
+- No celular, a grade vira `AgendaDayList`: lista do dia com abas por profissional; toque abre o mesmo drawer.
+
 ## Quando usar drawer vs. modal vs. página
 
 - **Drawer** (`Sheet` + `DetailDrawerContent`, `src/components/detail-drawer.tsx`): detalhe de um registro existente (agendamento, cliente, profissional) — mantém a lista de fundo visível/no contexto.
@@ -67,7 +82,7 @@ Toda tela busca de dados precisa dos três estados:
 
 **Aplicados na Fase 2** (página pública): `ServiceCard`, `ProfessionalCard`, `Stepper`, `TimeSlotGrid`, `DateStrip` — já em uso real no fluxo de reserva (`src/app/[slug]/`).
 
-**Ainda não aplicados** — `KpiCard` (duplicado localmente em `relatorios/reports-view.tsx` como `StatTile`) e `StatusBadge` (badge de status hoje montado ad-hoc com `STATUS_BADGE_CLASSES` na Agenda/Relatórios) seguem como extração fiel do que já existe. `TableToolbar`, `DetailDrawerContent` e os skeletons compostos também aguardam a Fase 3 (Clientes, Financeiro).
+**Aplicados na Fase 3**: `KpiCard` e `StatusBadge` (Início, Relatórios, Agenda), `DetailDrawerContent` (drawer do agendamento). `TableToolbar` e os skeletons compostos aguardam Clientes (3D) e Financeiro (Fase 4).
 
 **Decisão registrada (2026-09-25), implementada na Fase 2**: o escopo original (`docs/escopo-sistema-agendamento.md`) e o pedido de Fase 1 descreviam um "seletor de data em faixa horizontal" (estilo Fresha), enquanto a implementação anterior (`month-calendar.tsx`, commit `a349faa`) usava um calendário de mês inteiro. O usuário confirmou a troca; `DateStrip` (`src/components/date-strip.tsx`) substituiu `MonthCalendar` em `src/app/[slug]/datetime-step.tsx`, e os arquivos antigos (`month-calendar.tsx`, `month-grid.ts`, `tests/unit/month-grid.spec.ts`) foram removidos.
 

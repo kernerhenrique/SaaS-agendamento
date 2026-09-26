@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  Ban,
   CalendarClock,
   Inbox,
   MoreHorizontal,
@@ -42,6 +43,7 @@ import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { Stepper } from "@/components/stepper";
 import { TableToolbar } from "@/components/table-toolbar";
 import { TimeSlotGrid } from "@/components/time-slot-grid";
+import { STATUS_BLOCK_CLASSES, STATUS_LABELS } from "@/lib/appointment-status";
 
 const APPOINTMENT_TONES: { tone: StatusTone; label: string }[] = [
   { tone: "scheduled", label: "Agendado" },
@@ -116,6 +118,32 @@ export default function DesignSystemPage() {
                   {label}
                 </StatusBadge>
               ))}
+            </div>
+          </Section>
+
+          <Section
+            title="Blocos da agenda"
+            description="Fundo suave opaco + faixa na cor do status (STATUS_BLOCK_CLASSES). Bloqueio hachurado não aceita arrastar."
+          >
+            <div className="grid gap-2 sm:grid-cols-3">
+              {(Object.keys(STATUS_BLOCK_CLASSES) as (keyof typeof STATUS_BLOCK_CLASSES)[]).map((status) => (
+                <div
+                  key={status}
+                  className={`flex flex-col rounded-md px-2 py-1 text-caption leading-tight shadow-sm ${STATUS_BLOCK_CLASSES[status]}`}
+                >
+                  <span className="font-semibold">09:00–09:30</span>
+                  <span>Cliente exemplo · {STATUS_LABELS[status]}</span>
+                </div>
+              ))}
+              <div
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-caption text-muted-foreground ring-1 ring-border"
+                style={{
+                  backgroundImage:
+                    "repeating-linear-gradient(45deg, var(--color-muted), var(--color-muted) 6px, transparent 6px, transparent 12px)",
+                }}
+              >
+                <Ban className="size-3" /> Almoço (bloqueio)
+              </div>
             </div>
           </Section>
 
