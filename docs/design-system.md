@@ -58,6 +58,14 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
   - o servidor revalida tudo (`PATCH /api/admin/appointments/[id]`), e o conflito é garantido pela exclusion constraint.
 - Detalhe do agendamento abre no drawer `AppointmentDrawer`: status, cliente com WhatsApp, histórico, ações de status e "Remarcar" (formulário embutido).
 - No celular, a grade vira `AgendaDayList`: lista do dia com abas por profissional; toque abre o mesmo drawer.
+- Regras de horário do painel ficam em `src/server/modules/appointment/admin-booking-rules.ts`. É um módulo puro, usado no servidor e na tela.
+  - **Passado**: início até 15 min atrás é aceito (encaixe que acabou de começar); antes disso é recusado.
+  - Na grade, o tempo que já passou fica sombreado. Clique ou arraste para lá dá toast de erro.
+- **Fora do expediente** (dia sem expediente, fora do horário ou no intervalo) só entra com confirmação explícita:
+  - no formulário (novo agendamento e "Remarcar"), `BookingTimeNotice` mostra um alerta `warning` e o botão vira "Agendar/Remarcar mesmo assim";
+  - no arrastar, o modal curto "Fora do expediente";
+  - a API recusa com `code: "OUTSIDE_WORKING_HOURS"` se não vier `allowOutsideHours: true`.
+- **Cancelar** passa por modal de confirmação (estado final). O agendamento cancelado continua visível na agenda, riscado.
 
 ## Quando usar drawer vs. modal vs. página
 
