@@ -7,6 +7,10 @@ import {
   instantRangeToDayMinutes,
   minutesToHeightPx,
   minutesToTopPx,
+  isWithinWorkingHours,
+  pxToMinute,
+  snapDeltaMinutes,
+  weekDates,
 } from "@/app/admin/(authenticated)/agenda/schedule-grid-math";
 import { localDayRangeUtc } from "@/lib/date";
 
@@ -101,5 +105,61 @@ describe("hourMarks", () => {
   it("gera uma marca por hora cheia dentro do intervalo, incluindo as pontas", () => {
     const range = { rangeStartMinute: 8 * 60, rangeEndMinute: 11 * 60 };
     expect(hourMarks(range)).toEqual([8 * 60, 9 * 60, 10 * 60, 11 * 60]);
+  });
+});
+
+describe("pxToMinute / snapDeltaMinutes", () => {
+  const range = { rangeStartMinute: 8 * 60, rangeEndMinute: 20 * 60 };
+
+  it("converte posição em minuto, arredondando para baixo em passos de 15", () => {
+    expect(pxToMinute(0, range, 96)).toBe(8 * 60);
+    expect(pxToMinute(96, range, 96)).toBe(9 * 60);
+    expect(pxToMinute(96 + 30, range, 96)).toBe(9 * 60 + 15); // 18,75 min → 15
+  });
+
+  it("fica dentro da grade", () => {
+    expect(pxToMinute(-50, range, 96)).toBe(8 * 60);
+    expect(pxToMinute(99999, range, 96)).toBe(20 * 60 - 15);
+  });
+
+  it("deslocamento de arrasto vai para o passo mais próximo", () => {
+    expect(snapDeltaMinutes(24, 96)).toBe(15); // 15 min exatos
+    expect(snapDeltaMinutes(10, 96)).toBe(0); // 6,25 min → 0
+    expect(snapDeltaMinutes(-40, 96)).toBe(-30); // -25 min → -30
+  });
+});
+
+describe("weekDates", () => {
+  it("vai de segunda a domingo, atravessando o mês", () => {
+    // 2026-09-30 é quarta-feira.
+    expect(weekDates("2026-09-30")).toEqual([
+      "2026-09-28",
+      "2026-09-29",
+      "2026-09-30",
+      "2026-10-01",
+      "2026-10-02",
+      "2026-10-03",
+      "2026-10-04",
+    ]);
+  });
+
+  it("domingo pertence à semana que começou na segunda anterior", () => {
+    expect(weekDates("2026-09-27")[0]).toBe("2026-09-21");
+  });
+});
+
+describe("isWithinWorkingHours", () => {
+  const wh = { startMinute: 9 * 60, endMinute: 18 * 60, breakStartMinute: 12 * 60, breakEndMinute: 13 * 60 };
+
+  it("dentro do expediente e fora do almoço", () => {
+    expect(isWithinWorkingHours(wh, 10 * 60, 10 * 60 + 30)).toBe(true);
+    expect(isWithinWorkingHours(wh, 11 * 60 + 30, 12 * 60)).toBe(true);
+  });
+
+  it("fora do expediente, invadindo o almoço ou sem expediente", () => {
+    expect(isWithinWorkingHours(wh, 8 * 60 + 30, 9 * 60)).toBe(false);
+    expect(isWithinWorkingHours(wh, 17 * 60 + 45, 18 * 60 + 15)).toBe(false);
+    expect(isWithinWorkingHours(wh, 11 * 60 + 45, 12 * 60 + 15)).toBe(false);
+    expect(isWithinWorkingHours(null, 10 * 60, 10 * 60 + 30)).toBe(false);
   });
 });

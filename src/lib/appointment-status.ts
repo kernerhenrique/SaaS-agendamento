@@ -18,14 +18,18 @@ export const STATUS_TONE: Record<AppointmentStatus, StatusTone> = {
   NO_SHOW: "no-show",
 };
 
-/** Versão "bloco cheio" das cores por status, usada na grade de horários da
- * agenda (fundo sólido, não só borda/texto como STATUS_BADGE_CLASSES). */
+/**
+ * Estilo dos blocos na grade da agenda: fundo suave + faixa à esquerda na cor
+ * do status (tokens --status-*), com texto na cor normal para manter contraste.
+ * A mistura com --color-card é opaca de propósito: as linhas de hora da grade
+ * não podem aparecer através do bloco.
+ */
 export const STATUS_BLOCK_CLASSES: Record<AppointmentStatus, string> = {
-  PENDING: "bg-amber-500 text-white",
-  CONFIRMED: "bg-blue-500 text-white",
-  CANCELLED: "bg-muted text-muted-foreground line-through ring-1 ring-border",
-  COMPLETED: "bg-emerald-500 text-white",
-  NO_SHOW: "bg-red-500 text-white",
+  PENDING: "border-l-4 border-status-scheduled bg-[color-mix(in_oklch,var(--color-status-scheduled)_16%,var(--color-card))] text-foreground",
+  CONFIRMED: "border-l-4 border-status-confirmed bg-[color-mix(in_oklch,var(--color-status-confirmed)_16%,var(--color-card))] text-foreground",
+  CANCELLED: "border-l-4 border-status-cancelled bg-muted text-muted-foreground line-through",
+  COMPLETED: "border-l-4 border-status-completed bg-[color-mix(in_oklch,var(--color-status-completed)_16%,var(--color-card))] text-foreground",
+  NO_SHOW: "border-l-4 border-status-no-show bg-[color-mix(in_oklch,var(--color-status-no-show)_16%,var(--color-card))] text-foreground",
 };
 
 export const NEXT_STATUS_ACTIONS: Record<AppointmentStatus, { status: AppointmentStatus; label: string }[]> = {

@@ -75,3 +75,50 @@ export function hourMarks(range: DayRange): number[] {
   for (let m = range.rangeStartMinute; m <= range.rangeEndMinute; m += 60) marks.push(m);
   return marks;
 }
+
+/** Granularidade do encaixe ao clicar/arrastar na grade (mesma dos horários livres). */
+export const SNAP_MINUTES = 15;
+
+/**
+ * Converte uma posição vertical (px a partir do topo do corpo da coluna) em
+ * minuto do dia, arredondando para baixo no passo de `snap` e mantendo o
+ * resultado dentro da grade visível.
+ */
+export function pxToMinute(y: number, range: DayRange, pixelsPerHour: number, snap = SNAP_MINUTES): number {
+  const raw = range.rangeStartMinute + (y / pixelsPerHour) * 60;
+  const snapped = Math.floor(raw / snap) * snap;
+  return Math.min(Math.max(snapped, range.rangeStartMinute), range.rangeEndMinute - snap);
+}
+
+/** Arredonda um deslocamento em minutos para o passo mais próximo (arrastar). */
+export function snapDeltaMinutes(deltaPx: number, pixelsPerHour: number, snap = SNAP_MINUTES): number {
+  return Math.round(((deltaPx / pixelsPerHour) * 60) / snap) * snap;
+}
+
+/** Datas (YYYY-MM-DD) da semana de segunda a domingo que contém `dateISO`. */
+export function weekDates(dateISO: string): string[] {
+  const [year, month, day] = dateISO.split("-").map(Number);
+  const jsWeekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay(); // 0 = domingo
+  const mondayOffset = (jsWeekday + 6) % 7;
+  return Array.from({ length: 7 }, (_, index) =>
+    new Date(Date.UTC(year, month - 1, day - mondayOffset + index)).toISOString().slice(0, 10),
+  );
+}
+
+/**
+ * O intervalo [start, end) cabe no expediente do dia, sem invadir o almoço?
+ * Sem expediente no dia → false.
+ */
+export function isWithinWorkingHours(
+  workingHours: { startMinute: number; endMinute: number; breakStartMinute: number | null; breakEndMinute: number | null } | null,
+  startMinute: number,
+  endMinute: number,
+): boolean {
+  if (!workingHours) return false;
+  if (startMinute < workingHours.startMinute || endMinute > workingHours.endMinute) return false;
+  const { breakStartMinute, breakEndMinute } = workingHours;
+  if (breakStartMinute != null && breakEndMinute != null) {
+    return endMinute <= breakStartMinute || startMinute >= breakEndMinute;
+  }
+  return true;
+}
