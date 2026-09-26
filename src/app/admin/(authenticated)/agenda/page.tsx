@@ -35,6 +35,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
     id: professional.id,
     name: professional.name,
     photoUrl: professional.photoUrl,
+    color: professional.color,
     services: professional.professionalServices
       .filter((ps) => ps.service.active && !ps.service.deletedAt)
       .map((ps) => ({

@@ -100,6 +100,7 @@ async function main() {
       businessId: business.id,
       name: "João Barbeiro",
       specialty: "Cortes clássicos e degradê",
+      color: "blue",
       bio: "Especialista em cortes clássicos",
       workingHours: {
         create: weekdayWorkingHours.map((weekday) => ({
@@ -131,6 +132,7 @@ async function main() {
       businessId: business.id,
       name: "Marcos Estilista",
       specialty: "Barba e acabamento",
+      color: "orange",
       bio: "Focado em barba e acabamento",
       workingHours: {
         create: [Weekday.TUESDAY, Weekday.WEDNESDAY, Weekday.THURSDAY, Weekday.FRIDAY, Weekday.SATURDAY].map(

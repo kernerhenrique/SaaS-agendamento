@@ -12,6 +12,8 @@ export interface ProfessionalOption {
   id: string;
   name: string;
   photoUrl: string | null;
+  /** Chave da paleta (src/lib/professional-colors.ts). */
+  color: string | null;
   services: { id: string; name: string; durationMin: number }[];
   workingHours: WorkingHoursEntry[];
 }

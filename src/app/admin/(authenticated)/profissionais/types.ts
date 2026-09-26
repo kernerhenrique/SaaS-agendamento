@@ -10,6 +10,8 @@ export interface ProfessionalListItem {
   name: string;
   bio: string | null;
   specialty: string | null;
+  color: string | null;
+  active: boolean;
   photoUrl: string | null;
   workingHours: {
     weekday: Weekday;

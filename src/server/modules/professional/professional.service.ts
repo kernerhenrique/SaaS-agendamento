@@ -14,6 +14,10 @@ export interface ProfessionalInput {
   name: string;
   bio?: string | null;
   specialty?: string | null;
+  /** Chave de PROFESSIONAL_COLORS (src/lib/professional-colors.ts). */
+  color?: string | null;
+  /** Inativo: some da agenda, da página pública e do encaixe; histórico fica. */
+  active?: boolean;
   photoUrl?: string | null;
   photoUrls?: string[];
   serviceIds: string[];
@@ -91,6 +95,8 @@ export async function createProfessional(businessId: string, input: Professional
       name: input.name.trim(),
       bio: input.bio ?? null,
       specialty: input.specialty ?? null,
+      color: input.color ?? null,
+      active: input.active ?? true,
       photoUrl: input.photoUrl ?? null,
       workingHours: { create: input.workingHours },
       professionalServices: {
@@ -124,6 +130,8 @@ export async function updateProfessional(
         name: input.name.trim(),
         bio: input.bio ?? null,
         specialty: input.specialty ?? null,
+        color: input.color ?? null,
+        active: input.active ?? existing.active,
         photoUrl: input.photoUrl ?? null,
         workingHours: { create: input.workingHours },
         professionalServices: {

@@ -67,6 +67,17 @@
   --color-payment-partial: var(--payment-partial);
   --color-payment-paid: var(--payment-paid);
 
+  /* Cor de identificação do profissional na agenda (marcador, não texto) —
+     chave gravada em Professional.color; mapa em src/lib/professional-colors.ts. */
+  --color-pro-blue: var(--pro-blue);
+  --color-pro-violet: var(--pro-violet);
+  --color-pro-pink: var(--pro-pink);
+  --color-pro-orange: var(--pro-orange);
+  --color-pro-amber: var(--pro-amber);
+  --color-pro-green: var(--pro-green);
+  --color-pro-teal: var(--pro-teal);
+  --color-pro-slate: var(--pro-slate);
+
   /* Escala de tipografia com nome semântico (mesmo tamanho do Tailwind já em uso
      hoje via text-2xl/text-lg/text-xs — só dá nome ao papel de cada um). */
   --text-display: 2.5rem;
@@ -134,6 +145,16 @@
   --payment-pending: var(--warning);
   --payment-partial: var(--info);
   --payment-paid: var(--success);
+
+  /* Paleta de profissionais (marcadores 3:1 sobre fundo claro) */
+  --pro-blue: oklch(0.55 0.2 255);
+  --pro-violet: oklch(0.53 0.22 295);
+  --pro-pink: oklch(0.58 0.21 350);
+  --pro-orange: oklch(0.62 0.18 45);
+  --pro-amber: oklch(0.7 0.16 75);
+  --pro-green: oklch(0.58 0.15 150);
+  --pro-teal: oklch(0.58 0.11 190);
+  --pro-slate: oklch(0.5 0.03 255);
 }
 
 .dark {
@@ -174,6 +195,16 @@
   --success: oklch(0.765 0.177 163.223);
   --warning: oklch(0.828 0.189 84.429);
   --info: oklch(0.707 0.165 254.624);
+
+  /* Paleta de profissionais (mais clara para aparecer sobre fundo escuro) */
+  --pro-blue: oklch(0.7 0.15 255);
+  --pro-violet: oklch(0.7 0.16 295);
+  --pro-pink: oklch(0.72 0.16 350);
+  --pro-orange: oklch(0.74 0.15 45);
+  --pro-amber: oklch(0.8 0.14 75);
+  --pro-green: oklch(0.74 0.14 150);
+  --pro-teal: oklch(0.74 0.1 190);
+  --pro-slate: oklch(0.7 0.03 255);
 }
 
 @layer base {

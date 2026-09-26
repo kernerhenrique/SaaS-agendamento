@@ -1,4 +1,5 @@
 import { Weekday } from "@/generated/prisma/enums";
+import { isProfessionalColorKey } from "@/lib/professional-colors";
 import { ValidationError } from "@/server/errors";
 import type { ProfessionalInput, WorkingHoursInput } from "@/server/modules/professional/professional.service";
 
@@ -36,7 +37,16 @@ export function parseProfessionalInput(body: unknown): ProfessionalInput {
   if (typeof body !== "object" || body === null) {
     throw new ValidationError("Corpo da requisição inválido");
   }
-  const { name, bio, specialty, photoUrl, photoUrls, serviceIds, workingHours } = body as Record<string, unknown>;
+  const { name, bio, specialty, color, active, photoUrl, photoUrls, serviceIds, workingHours } = body as Record<
+    string,
+    unknown
+  >;
+  if (color != null && !isProfessionalColorKey(color)) {
+    throw new ValidationError("Cor inválida");
+  }
+  if (active !== undefined && typeof active !== "boolean") {
+    throw new ValidationError("active deve ser verdadeiro ou falso");
+  }
 
   if (typeof name !== "string") {
     throw new ValidationError("name é obrigatório");
@@ -52,6 +62,8 @@ export function parseProfessionalInput(body: unknown): ProfessionalInput {
     name,
     bio: typeof bio === "string" ? bio : null,
     specialty: typeof specialty === "string" && specialty.trim() ? specialty.trim() : null,
+    color: isProfessionalColorKey(color) ? color : null,
+    active: typeof active === "boolean" ? active : undefined,
     photoUrl: typeof photoUrl === "string" ? photoUrl : null,
     photoUrls: photoUrls as string[] | undefined,
     serviceIds,

@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAdminShell } from "@/components/admin/admin-shell-context";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ProfessionalAvatar } from "@/components/admin/professional-avatar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,7 +29,7 @@ import {
   utcToLocalDate,
   weekdayOfLocalDate,
 } from "@/lib/date";
-import { getInitials } from "@/lib/text";
+import { getProfessionalColor } from "@/lib/professional-colors";
 import { minutesToTimeInput } from "@/lib/weekday";
 import { PAST_MESSAGE, isInPast } from "@/server/modules/appointment/admin-booking-rules";
 
@@ -123,14 +123,18 @@ export function AgendaView({
     if (view === "week") {
       const professional = professionals.find((p) => p.id === weekProfessionalId);
       if (!professional) return [];
+      const dotClass = getProfessionalColor(professional.color)?.dotClass;
       return week.map((columnDate) =>
         buildColumn(
           professional,
           columnDate,
-          <span className={columnDate === today ? "text-sm font-semibold text-primary" : "text-sm font-medium"}>
-            <span className="capitalize">{formatWeekdayShort(columnDate, timezone)}</span> {columnDate.slice(8, 10)}/
-            {columnDate.slice(5, 7)}
-          </span>,
+          <>
+            {dotClass ? <span className={`size-2 shrink-0 rounded-full ${dotClass}`} aria-hidden /> : null}
+            <span className={columnDate === today ? "text-sm font-semibold text-primary" : "text-sm font-medium"}>
+              <span className="capitalize">{formatWeekdayShort(columnDate, timezone)}</span> {columnDate.slice(8, 10)}/
+              {columnDate.slice(5, 7)}
+            </span>
+          </>,
         ),
       );
     }
@@ -142,10 +146,12 @@ export function AgendaView({
           professional,
           date,
           <>
-            <Avatar size="sm">
-              <AvatarImage src={professional.photoUrl ?? undefined} alt="" />
-              <AvatarFallback>{getInitials(professional.name)}</AvatarFallback>
-            </Avatar>
+            <ProfessionalAvatar
+              name={professional.name}
+              photoUrl={professional.photoUrl}
+              color={professional.color}
+              size="sm"
+            />
             <span className="truncate text-sm font-medium">{professional.name}</span>
           </>,
         ),

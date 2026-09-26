@@ -1,155 +1,119 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Plus, Users } from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { ProfessionalAvatar } from "@/components/admin/professional-avatar";
+import { EmptyState } from "@/components/empty-state";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { emptyLabel, newLabel } from "@/config/vertical";
 import { useVertical } from "@/config/vertical-context";
-import { cn } from "cn";
-import { getInitials } from "@/lib/text";
 import { WEEKDAY_LABELS, WEEKDAY_ORDER, minutesToTimeInput } from "@/lib/weekday";
+import { cn } from "cn";
 
-import { ProfessionalFormDialog } from "./professional-form-dialog";
-import type { ProfessionalListItem, ServiceOption } from "./types";
+import type { ProfessionalListItem } from "./types";
 
-export function ProfessionalsView({
-  initialProfessionals,
-  services,
-  timezone,
-}: {
-  initialProfessionals: ProfessionalListItem[];
-  services: ServiceOption[];
-  timezone: string;
-}) {
+export function ProfessionalsView({ professionals }: { professionals: ProfessionalListItem[] }) {
   const { terms } = useVertical();
-  const [professionals, setProfessionals] = useState(initialProfessionals);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const refresh = useCallback(async () => {
-    const response = await fetch("/api/admin/professionals");
-    const data = await response.json();
-    if (response.ok) setProfessionals(data.professionals);
-  }, []);
-
-  async function handleDelete(professional: ProfessionalListItem) {
-    if (!window.confirm(`Remover "${professional.name}"? Isso não apaga o histórico de agendamentos.`)) {
-      return;
-    }
-    setDeletingId(professional.id);
-    try {
-      await fetch(`/api/admin/professionals/${professional.id}`, { method: "DELETE" });
-      await refresh();
-    } finally {
-      setDeletingId(null);
-    }
-  }
+  const newButton = (
+    <Link href="/admin/profissionais/novo" className={buttonVariants()}>
+      <Plus />
+      {newLabel(terms.professional)}
+    </Link>
+  );
 
   return (
-    <main className="flex flex-1 flex-col gap-4 p-6">
-      <div className="flex items-center justify-between">
+    <main className="flex flex-1 flex-col gap-4 p-4 sm:p-6">
+      <div className="flex items-center justify-between gap-3">
         <h1 className="text-page-title font-bold">{terms.professional.plural}</h1>
-        <ProfessionalFormDialog
-          trigger={
-            <Button>
-              <Plus />
-              {newLabel(terms.professional)}
-            </Button>
-          }
-          services={services}
-          timezone={timezone}
-          onSaved={refresh}
-        />
+        {newButton}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {professionals.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{emptyLabel(terms.professional)}</p>
-        ) : (
-          professionals.map((professional) => (
-            <Card key={professional.id} size="sm">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarImage src={professional.photoUrl ?? undefined} alt="" />
-                    <AvatarFallback>{getInitials(professional.name)}</AvatarFallback>
-                  </Avatar>
-                  <CardTitle className="text-base">{professional.name}</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3 text-sm">
-                {professional.bio ? <p className="text-muted-foreground">{professional.bio}</p> : null}
-                <p>
-                  <span className="font-medium">{terms.service.plural}: </span>
-                  {professional.professionalServices.map((ps) => ps.service.name).join(", ") || "—"}
-                </p>
-                <WeeklyMiniGrid workingHours={professional.workingHours} />
-                <div className="mt-1 flex gap-2">
-                  <ProfessionalFormDialog
-                    trigger={
-                      <Button variant="outline" size="sm">
-                        <Pencil />
-                        Editar
-                      </Button>
-                    }
-                    professional={professional}
-                    services={services}
-                    timezone={timezone}
-                    onSaved={refresh}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={deletingId === professional.id}
-                    onClick={() => handleDelete(professional)}
-                  >
-                    <Trash2 />
-                    Remover
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+      {professionals.length === 0 ? (
+        <EmptyState icon={Users} title={emptyLabel(terms.professional)} action={newButton} />
+      ) : (
+        <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {professionals.map((professional) => (
+            <li key={professional.id}>
+              <Link
+                href={`/admin/profissionais/${professional.id}`}
+                className="block h-full rounded-xl focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+              >
+                <Card
+                  size="sm"
+                  className={cn("h-full transition-colors hover:bg-muted/50", !professional.active && "opacity-70")}
+                >
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <ProfessionalAvatar
+                        name={professional.name}
+                        photoUrl={professional.photoUrl}
+                        color={professional.color}
+                      />
+                      <div className="flex min-w-0 flex-col">
+                        <CardTitle className="truncate text-base">{professional.name}</CardTitle>
+                        {professional.specialty ? (
+                          <span className="truncate text-caption text-muted-foreground">{professional.specialty}</span>
+                        ) : null}
+                      </div>
+                      {!professional.active ? (
+                        <Badge variant="outline" className="ml-auto">
+                          Inativo
+                        </Badge>
+                      ) : null}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-3 text-sm">
+                    <p className="line-clamp-2">
+                      <span className="font-medium">{terms.service.plural}: </span>
+                      {professional.professionalServices.map((ps) => ps.service.name).join(", ") || "—"}
+                    </p>
+                    <WeeklyMiniGrid workingHours={professional.workingHours} />
+                  </CardContent>
+                </Card>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }
 
-function WeeklyMiniGrid({
-  workingHours,
-}: {
-  workingHours: ProfessionalListItem["workingHours"];
-}) {
+function WeeklyMiniGrid({ workingHours }: { workingHours: ProfessionalListItem["workingHours"] }) {
   const byWeekday = new Map(workingHours.map((wh) => [wh.weekday, wh]));
 
   return (
     <div>
       <span className="font-medium">Expediente</span>
-      <div className="mt-1 grid grid-cols-7 gap-1">
-        {WEEKDAY_ORDER.map((weekday) => {
-          const wh = byWeekday.get(weekday);
-          const label = WEEKDAY_LABELS[weekday];
-          return (
-            <div
-              key={weekday}
-              title={
-                wh
-                  ? `${label}: ${minutesToTimeInput(wh.startMinute)}–${minutesToTimeInput(wh.endMinute)}`
-                  : `${label}: fechado`
-              }
-              className={cn(
-                "flex flex-col items-center gap-0.5 rounded-md py-1.5 text-xs font-semibold",
-                wh ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground/70",
-              )}
-            >
-              <span>{label.slice(0, 1)}</span>
-            </div>
-          );
-        })}
-      </div>
+      {workingHours.length === 0 ? (
+        <p className="mt-1 text-caption text-warning">Sem expediente configurado — não recebe agendamentos.</p>
+      ) : (
+        <div className="mt-1 grid grid-cols-7 gap-1">
+          {WEEKDAY_ORDER.map((weekday) => {
+            const wh = byWeekday.get(weekday);
+            const label = WEEKDAY_LABELS[weekday];
+            return (
+              <div
+                key={weekday}
+                title={
+                  wh
+                    ? `${label}: ${minutesToTimeInput(wh.startMinute)}–${minutesToTimeInput(wh.endMinute)}`
+                    : `${label}: fechado`
+                }
+                className={cn(
+                  "flex flex-col items-center gap-0.5 rounded-md py-1.5 text-xs font-semibold",
+                  wh ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground/70",
+                )}
+              >
+                <span>{label.slice(0, 1)}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
