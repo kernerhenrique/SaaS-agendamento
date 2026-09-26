@@ -55,7 +55,9 @@ src/
 │   │   └── notification/    # e-mail; whatsapp/ isolado para trocar provedor
 │   └── db/prisma.ts         # singleton do PrismaClient
 ├── config/
-│   └── vertical.ts          # preset do nicho: terminologia + feature flags
+│   ├── vertical.ts          # preset do nicho: terminologia + feature flags (ativo = Business.businessType)
+│   ├── vertical-context.tsx # VerticalProvider / useVertical() para client components
+│   └── brand.ts             # marca do PRODUTO (nome, logo): login, título, "feito com", .ics
 ├── lib/                     # date.ts (timezone), rate-limit, .ics, formatadores pt-BR
 └── components/              # ui/ (shadcn) + componentes de domínio
 tests/
@@ -67,7 +69,8 @@ docs/
 
 ## Projeto base e clonagem
 **Customizável por cliente** (sem tocar em lógica):
-- Preset de vertical em `src/config/vertical.ts`: terminologia (Profissional → Barbeiro/Tatuador/Especialista; Serviço → Procedimento; Cliente → Paciente) e feature flags (portfólio, sinal, comissões, preço "a partir de", etc.)
+- Preset de vertical em `src/config/vertical.ts`, escolhido por `Business.businessType`: terminologia (Profissional → Barbeiro/Tatuador/Especialista; Serviço → Procedimento; Cliente → Paciente) e feature flags (portfólio, preço "a partir de", categorias; sinal e comissões na Fase 4). Textos visíveis usam os helpers com concordância (`newLabel`, `emptyLabel`, `selectLabel`…), nunca string fixa com o termo. Mensagens de erro da API ficam neutras ("Cadastro não encontrado").
+- Marca do produto em `src/config/brand.ts` (placeholder até a identidade existir) — separada da marca do negócio cliente (`Business.accentColor`/`logoUrl`).
 - Identidade: logo, capa, cor de marca, textos (via Configurações do negócio no painel)
 - Tokens do design system
 - Seed de exemplo do nicho
@@ -90,7 +93,7 @@ Regras:
 - Novos componentes de domínio entram também no style guide em `/admin/design-system`.
 
 ## Glossário do domínio
-- **Business**: o negócio (tenant). **Professional**: quem atende. **Service**: o que é vendido (preço fixo ou "a partir de", duração, buffer). **Client**: cliente final, identificado principalmente pelo **telefone** (deduplicação por telefone). **Appointment**: atendimento marcado. **TimeBlock**: bloqueio de agenda (almoço, folga, férias). **WorkingHours**: padrão semanal em minutos desde meia-noite.
+- **Business**: o negócio (tenant). **Professional**: quem atende. **Service**: o que é vendido (preço fixo ou "a partir de", duração, buffer). **Client**: cliente final, identificado principalmente pelo **telefone** (deduplicação por telefone, gravado **só com dígitos** via `normalizePhoneBR` em `insertAppointment`; exibição com `formatPhoneBR`). **Appointment**: atendimento marcado. **TimeBlock**: bloqueio de agenda (almoço, folga, férias). **WorkingHours**: padrão semanal em minutos desde meia-noite.
 - **Status do agendamento**: agendado → confirmado → concluído; ou → falta; ou → cancelado. Concluído, falta e cancelado são estados finais (não voltam a agendado/confirmado; para remarcar, cria-se um novo ou usa-se o fluxo de reagendamento).
 - **Pagamento**: o SaaS **não processa pagamentos**. O cliente paga fora (PIX, dinheiro, maquininha) e o sistema só **registra**: valor, desconto, forma, data de recebimento, observação. Suporta parcial e sinal. Status derivado: pendente / parcial / pago. Relatórios financeiros usam a **data de recebimento**.
 - **Comissão**: % por profissional aplicada sobre o recebido no período.

@@ -68,4 +68,10 @@ Toda tela busca de dados precisa dos três estados:
 Hoje (antes da Fase 7 formalizar o processo completo em `docs/como-clonar.md`):
 1. `Business.name`, `Business.accentColor`, `Business.logoUrl` — únicos campos de identidade que já existem no banco. Ainda sem tela de Configurações; editar via seed ou Prisma Studio.
 2. Contraste do texto sobre a cor de marca é calculado automaticamente (`getAccentForeground`, `src/lib/accent-color.ts`) — não precisa ajustar manualmente.
-3. Terminologia por vertical (Profissional→Barbeiro, Serviço→Procedimento etc.) ainda não existe (`src/config/vertical.ts` é trabalho da Fase 6/7) — hoje todo texto é fixo em português para o caso "barbearia".
+3. Terminologia e recursos do nicho: `Business.businessType` escolhe o preset em `src/config/vertical.ts` (barbershop, beauty_clinic, tattoo_studio, generic). Troca "Profissional/Serviço/Cliente" em todas as telas, no e-mail e no menu, e liga/desliga portfólio, preço "a partir de" e categorias.
+
+## Marca do produto (a plataforma) vs. marca do cliente
+
+Duas camadas independentes:
+- **Marca do produto** — `src/config/brand.ts` (nome, logo, "feito com") + tokens de `globals.css` (cores neutras, fonte, raio). Aparece no login, no título da aba do painel, no rodapé "feito com" da página pública e nos `.ics`. Para aplicar a identidade final: trocar `BRAND`, os tokens base (claro e escuro), a fonte em `src/app/layout.tsx`, `DEFAULT_ACCENT_COLOR` em `src/lib/accent-color.ts` e o favicon; conferir tudo em `/admin/design-system`.
+- **Marca do cliente** — `Business.accentColor`/`logoUrl`, aplicada via `AccentColorScope` sobre `--primary` no painel e na página pública.

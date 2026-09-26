@@ -215,6 +215,8 @@ Todas de 2 a 6 são aditivas com `nullable`/`default`, sem backfill. `prisma/see
 
 ## 4. Fase 3 — Admin completo
 
+**Replanejada em 2026-09-26** em 4 blocos com parada entre eles: 3A fundação (preset de vertical, marca do produto, campos de schema, telefone padronizado), 3B menu + Início, 3C agenda (visões dia/semana, arrastar, drawer), 3D clientes/profissionais/serviços. Configurações ficou na Fase 6; preço/duração por profissional, depois da Fase 4. **3A: implementado.**
+
 - Navegação de 9 itens; telas novas de **Clientes** (mini-CRM) e **Configurações** (identidade, contato, políticas, horário geral, vertical).
 - `BusinessWorkingHours` como informativo (ver 1.6).
 
