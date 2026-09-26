@@ -198,7 +198,12 @@ export async function createManualAppointment(
 }
 
 /** Reserva feita pelo cliente final na página pública, sem login. */
-export function createPublicAppointment(params: InsertAppointmentParams) {
+export async function createPublicAppointment(params: InsertAppointmentParams) {
+  // Serviço oculto da página pública não pode ser reservado nem chamando a API direto.
+  const bookable = await prisma.service.count({
+    where: { id: params.serviceId, businessId: params.businessId, visibleOnline: true, active: true, deletedAt: null },
+  });
+  if (bookable === 0) throw new NotFoundError("Cadastro não encontrado");
   return insertAppointment(params);
 }
 

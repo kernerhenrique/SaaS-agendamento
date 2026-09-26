@@ -43,20 +43,27 @@ export function ServiceFormDialog({
   categories,
   onCategoryCreated,
   onSaved,
+  open: controlledOpen,
+  onOpenChange,
 }: {
-  trigger: React.ReactElement;
+  /** Sem `trigger`, o diálogo é controlado por `open`/`onOpenChange` (ex.: aberto pelo menu "…" da linha). */
+  trigger?: React.ReactElement;
   service?: ServiceListItem;
   professionals: ProfessionalOption[];
   categories: ServiceCategoryOption[];
   onCategoryCreated: (category: ServiceCategoryOption) => void;
   onSaved: () => void | Promise<void>;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const { terms } = useVertical();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = onOpenChange ?? setInternalOpen;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={trigger} />
+      {trigger ? <DialogTrigger render={trigger} /> : null}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{service ? editLabel(terms.service) : newLabel(terms.service)}</DialogTitle>

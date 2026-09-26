@@ -16,6 +16,7 @@ export interface ServiceListItem {
   priceCents: number;
   priceType: "FIXED" | "FROM";
   categoryId: string | null;
+  visibleOnline: boolean;
   category: ServiceCategoryOption | null;
   professionalServices: { professional: { id: string; name: string } }[];
 }

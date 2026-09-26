@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { prisma } from "@/server/db/prisma";
+import { SERVICE_ORDER_BY } from "@/server/modules/service/service.service";
 
 import { BookingFlow } from "./booking-flow";
 
@@ -50,8 +51,8 @@ export default async function PublicBookingPage({
 
   const [services, professionals] = await Promise.all([
     prisma.service.findMany({
-      where: { businessId: business.id, active: true, deletedAt: null },
-      orderBy: { name: "asc" },
+      where: { businessId: business.id, active: true, visibleOnline: true, deletedAt: null },
+      orderBy: SERVICE_ORDER_BY,
       include: { category: true },
     }),
     prisma.professional.findMany({
