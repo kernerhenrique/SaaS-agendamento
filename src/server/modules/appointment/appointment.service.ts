@@ -1,6 +1,7 @@
 import { AppointmentStatus, type Prisma } from "@/generated/prisma/client";
 import { normalizePhoneBR } from "@/lib/phone";
 import { prisma } from "@/server/db/prisma";
+import { checkAdminBookingTime } from "./admin-booking-rules";
 import { checkAdminReschedule } from "./reschedule-rules";
 import { NotFoundError, ValidationError } from "@/server/errors";
 
@@ -133,9 +134,67 @@ async function insertAppointment(params: InsertAppointmentParams) {
   }
 }
 
-/** Encaixe manual pelo admin, direto na agenda (sem passar pela página pública). */
-export function createManualAppointment(params: InsertAppointmentParams) {
-  return insertAppointment(params);
+/**
+ * Regras de horário do painel (passado + expediente) para um profissional do
+ * negócio. `allowOutsideHours`: o dono confirmou que está cobrindo fora do
+ * expediente.
+ */
+async function assertAdminBookingTime(
+  businessId: string,
+  professionalId: string,
+  startAt: Date,
+  durationMin: number,
+  allowOutsideHours: boolean,
+) {
+  const [business, weeklyHours] = await Promise.all([
+    prisma.business.findUniqueOrThrow({ where: { id: businessId }, select: { timezone: true } }),
+    prisma.workingHours.findMany({ where: { professionalId, professional: { businessId } } }),
+  ]);
+  const problem = checkAdminBookingTime({
+    startAt,
+    durationMin,
+    now: new Date(),
+    timeZone: business.timezone,
+    weeklyHours,
+    allowOutsideHours,
+  });
+  if (problem) throw new ValidationError(problem.message, problem.code);
+}
+
+/**
+ * Encaixe manual pelo admin, direto na agenda (sem passar pela página
+ * pública). Não usa a disponibilidade (o dono pode encaixar), mas recusa
+ * passado, bloqueio e serviço que o profissional não faz; fora do expediente
+ * só com confirmação explícita.
+ */
+export async function createManualAppointment(
+  params: InsertAppointmentParams & { allowOutsideHours?: boolean },
+) {
+  const { allowOutsideHours = false, ...insertParams } = params;
+  const service = await prisma.service.findFirst({
+    where: { id: params.serviceId, businessId: params.businessId, active: true, deletedAt: null },
+    include: { professionalServices: { where: { professionalId: params.professionalId } } },
+  });
+  if (!service) throw new NotFoundError("Cadastro não encontrado");
+  if (service.professionalServices.length === 0) {
+    throw new ValidationError("Esse cadastro não realiza este serviço");
+  }
+
+  await assertAdminBookingTime(
+    params.businessId,
+    params.professionalId,
+    params.startAt,
+    service.durationMin,
+    allowOutsideHours,
+  );
+
+  const endAt = new Date(params.startAt.getTime() + service.durationMin * 60_000);
+  const blocked = await prisma.timeBlock.count({
+    where: { professionalId: params.professionalId, startAt: { lt: endAt }, endAt: { gt: params.startAt } },
+  });
+  if (blocked > 0) throw new ValidationError("Esse horário está bloqueado na agenda");
+
+  return insertAppointment(insertParams);
 }
 
 /** Reserva feita pelo cliente final na página pública, sem login. */
@@ -188,7 +247,7 @@ export function isOverlapConstraintViolation(error: unknown): boolean {
 export async function rescheduleAppointmentAsAdmin(
   businessId: string,
   appointmentId: string,
-  input: { startAt: Date; professionalId: string },
+  input: { startAt: Date; professionalId: string; allowOutsideHours?: boolean },
 ) {
   const appointment = await prisma.appointment.findFirst({
     where: { id: appointmentId, businessId },
@@ -218,6 +277,14 @@ export async function rescheduleAppointmentAsAdmin(
     blocks,
   });
   if (problem) throw new ValidationError(problem);
+
+  await assertAdminBookingTime(
+    businessId,
+    professional.id,
+    newStartAt,
+    appointment.service.durationMin,
+    input.allowOutsideHours ?? false,
+  );
 
   try {
     return await prisma.appointment.update({

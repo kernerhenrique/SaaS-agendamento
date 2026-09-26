@@ -105,20 +105,6 @@ export function weekDates(dateISO: string): string[] {
   );
 }
 
-/**
- * O intervalo [start, end) cabe no expediente do dia, sem invadir o almoço?
- * Sem expediente no dia → false.
- */
-export function isWithinWorkingHours(
-  workingHours: { startMinute: number; endMinute: number; breakStartMinute: number | null; breakEndMinute: number | null } | null,
-  startMinute: number,
-  endMinute: number,
-): boolean {
-  if (!workingHours) return false;
-  if (startMinute < workingHours.startMinute || endMinute > workingHours.endMinute) return false;
-  const { breakStartMinute, breakEndMinute } = workingHours;
-  if (breakStartMinute != null && breakEndMinute != null) {
-    return endMinute <= breakStartMinute || startMinute >= breakEndMinute;
-  }
-  return true;
-}
+// Regra de expediente mora com as demais regras de agendamento do painel
+// (usada também no servidor); reexportada aqui para a grade.
+export { isWithinWorkingHours } from "@/server/modules/appointment/admin-booking-rules";

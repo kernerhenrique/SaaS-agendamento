@@ -86,6 +86,7 @@ export async function POST(request: NextRequest) {
         email: typeof client.email === "string" ? client.email : undefined,
       },
       notes: typeof notes === "string" ? notes : undefined,
+      allowOutsideHours: record?.allowOutsideHours === true,
     });
 
     return NextResponse.json({ appointment }, { status: 201 });

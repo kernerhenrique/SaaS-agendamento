@@ -19,7 +19,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   }
 }
 
-/** Remarcar: `{ startAt: ISO, professionalId }`. */
+/** Remarcar: `{ startAt: ISO, professionalId, allowOutsideHours? }`. */
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await requireAdminSession();
@@ -34,7 +34,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const startAt = new Date(startAtRaw);
     if (Number.isNaN(startAt.getTime())) throw new ValidationError("startAt inválido");
 
-    const appointment = await rescheduleAppointmentAsAdmin(session.businessId, id, { startAt, professionalId });
+    const appointment = await rescheduleAppointmentAsAdmin(session.businessId, id, {
+      startAt,
+      professionalId,
+      allowOutsideHours: body?.allowOutsideHours === true,
+    });
     return NextResponse.json({ appointment });
   } catch (error) {
     return handleApiError(error);

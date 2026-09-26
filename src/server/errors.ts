@@ -6,9 +6,13 @@ export class NotFoundError extends Error {
 }
 
 export class ValidationError extends Error {
-  constructor(message: string) {
+  /** Código estável para a tela reagir a um erro específico (ex.: oferecer "mesmo assim"). */
+  readonly code?: string;
+
+  constructor(message: string, code?: string) {
     super(message);
     this.name = "ValidationError";
+    this.code = code;
   }
 }
 
