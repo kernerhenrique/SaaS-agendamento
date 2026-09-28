@@ -116,6 +116,15 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
 - Clicar num recebimento ou em "Receber" abre o **mesmo drawer do agendamento**. A lista de profissionais vem de `agenda/professional-options.ts`, compartilhado com a Agenda.
 - **Comissão no cadastro do profissional**: campo "%" (0–100) na aba Dados, só com o flag. O texto explica que mudar vale só para os próximos pagamentos.
 
+## Financeiro nas outras telas (Fase 4D)
+
+- **Início:**
+  - KPIs "Recebido no mês" e "A receber (N)" são clicáveis e levam ao Financeiro;
+  - alerta "N atendimentos concluídos sem pagamento registrado" (só os sem nenhum recebimento; parcial não conta) leva a Financeiro › A receber.
+- **Ficha do cliente:** "Total gasto" (soma do que foi recebido) em grade 2×2 com Atendimentos, Faltas e Última visita.
+- **Perfil do profissional › Desempenho:** "Recebido no mês" e "Comissão do mês" (só com `features.commissions`), pela data de recebimento e com a % congelada de cada pagamento.
+- A regra de "a receber" é uma só (`listReceivables` em `payment.service.ts`), usada pelo Início e pelo Financeiro.
+
 ## Quando usar drawer vs. modal vs. página
 
 - **Drawer** (`Sheet` + `DetailDrawerContent`, `src/components/detail-drawer.tsx`): detalhe de um registro existente (agendamento, cliente, profissional) — mantém a lista de fundo visível/no contexto.

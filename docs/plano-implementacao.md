@@ -249,6 +249,8 @@ Todas de 2 a 6 são aditivas com `nullable`/`default`, sem backfill. `prisma/see
 
 **4C: implementado** (2026-09-27): tela Financeiro (período na URL, KPIs, barras por forma, abas Recebimentos, A receber e Comissões, drawer compartilhado) e % de comissão no cadastro. E2E `tests/e2e/financeiro.spec.ts`.
 
+**4D: implementado** (2026-09-28). Financeiro no Início (KPIs e alerta de concluído sem pagamento), "Total gasto" na ficha do cliente, recebido e comissão no perfil do profissional. E2E `tests/e2e/financeiro-integracoes.spec.ts`. **Fase 4 concluída.**
+
 **Decisões do usuário (2026-09-27):**
 - comissão congelada em cada pagamento;
 - valor do atendimento ajustável ao receber;
