@@ -53,12 +53,13 @@ export async function login(
 }
 
 /**
- * Emite um novo access token a partir de um refresh token válido. O
- * `tokenVersion` do refresh precisa bater com o do banco: um logout ou troca
- * de senha incrementa `User.tokenVersion`, invalidando de uma vez todos os
- * refresh tokens emitidos antes disso.
+ * Emite um par novo (access + refresh) a partir de um refresh token válido.
+ * Rotacionar o refresh a cada uso dá a sessão deslizante: quem usa o painel
+ * ao menos uma vez a cada 7 dias nunca precisa entrar de novo. O
+ * `tokenVersion` do refresh precisa bater com o do banco: logout ou troca de
+ * senha incrementa `User.tokenVersion` e invalida todos os refresh anteriores.
  */
-export async function refreshAccessToken(refreshToken: string): Promise<string> {
+export async function refreshTokens(refreshToken: string): Promise<AuthTokens> {
   const payload = await verifyRefreshToken(refreshToken).catch(() => null);
   if (!payload) {
     throw new ValidationError("Refresh token inválido ou expirado");
@@ -69,7 +70,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<string> 
     throw new ValidationError("Refresh token inválido ou expirado");
   }
 
-  return signAccessToken({ userId: user.id, businessId: user.businessId, role: user.role });
+  return issueTokens(user);
 }
 
 /** Invalida todos os refresh tokens já emitidos para o usuário. */

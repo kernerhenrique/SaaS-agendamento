@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { refreshAccessToken } from "@/server/modules/auth/auth.service";
-import { clearAuthCookies, REFRESH_TOKEN_COOKIE, setAccessTokenCookie } from "@/server/modules/auth/cookies";
+import { refreshTokens } from "@/server/modules/auth/auth.service";
+import { clearAuthCookies, REFRESH_TOKEN_COOKIE, setAuthCookies } from "@/server/modules/auth/cookies";
 import { ValidationError } from "@/server/errors";
 
+/**
+ * Renovação explícita (o proxy já renova sozinho em qualquer rota do painel;
+ * esta rota fica para clientes que queiram renovar sem navegar).
+ */
 export async function POST(request: NextRequest) {
   const refreshToken = request.cookies.get(REFRESH_TOKEN_COOKIE)?.value;
   if (!refreshToken) {
@@ -11,9 +15,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const accessToken = await refreshAccessToken(refreshToken);
+    const tokens = await refreshTokens(refreshToken);
     const response = NextResponse.json({ ok: true });
-    setAccessTokenCookie(response, accessToken);
+    setAuthCookies(response, tokens);
     return response;
   } catch (error) {
     if (error instanceof ValidationError) {
