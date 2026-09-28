@@ -3,7 +3,7 @@ import { requireAdminSession } from "@/server/modules/auth/session";
 
 import { getProfessionalOptions } from "../agenda/professional-options";
 import { FinanceView, type FinanceTab } from "./finance-view";
-import { parsePeriodPreset } from "./period";
+import { parsePeriodPreset } from "@/lib/period";
 
 export const metadata = { title: "Financeiro" };
 

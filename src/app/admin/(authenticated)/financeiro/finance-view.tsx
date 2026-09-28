@@ -28,7 +28,7 @@ import type {
 
 import { AppointmentDrawer } from "../agenda/appointment-drawer";
 import type { ProfessionalOption } from "../agenda/types";
-import { PERIOD_LABELS, PERIOD_PRESETS, resolvePeriod, type PeriodPreset } from "./period";
+import { PERIOD_LABELS, PERIOD_PRESETS, resolvePeriod, type PeriodPreset } from "@/lib/period";
 
 export type FinanceTab = "recebimentos" | "a-receber" | "comissoes";
 

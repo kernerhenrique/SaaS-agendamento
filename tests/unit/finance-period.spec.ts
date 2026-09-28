@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parsePeriodPreset, resolvePeriod } from "@/app/admin/(authenticated)/financeiro/period";
+import { parsePeriodPreset, previousRange, resolvePeriod } from "@/lib/period";
 
 const TODAY = "2026-09-27";
 
@@ -26,6 +26,13 @@ describe("resolvePeriod (Financeiro)", () => {
       endDate: "2026-09-30",
     });
     expect(resolvePeriod("personalizado", TODAY, { startDate: "lixo", endDate: null }).startDate).toBe("2026-09-01");
+  });
+
+  it("período anterior tem o mesmo tamanho e termina na véspera do início", () => {
+    expect(previousRange("2026-09-27", "2026-09-27")).toEqual({ startDate: "2026-09-26", endDate: "2026-09-26" });
+    expect(previousRange("2026-09-21", "2026-09-27")).toEqual({ startDate: "2026-09-14", endDate: "2026-09-20" });
+    // Setembro (30 dias) compara com os 30 dias anteriores, atravessando a virada de mês.
+    expect(previousRange("2026-09-01", "2026-09-30")).toEqual({ startDate: "2026-08-02", endDate: "2026-08-31" });
   });
 
   it("preset desconhecido na URL vira 'este mês'", () => {

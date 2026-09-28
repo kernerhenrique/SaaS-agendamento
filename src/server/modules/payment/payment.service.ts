@@ -3,6 +3,7 @@ import { localDayRangeUtc, todayInTimeZone } from "@/lib/date";
 import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
 import { canTransition } from "@/server/modules/appointment/appointment.service";
+import { summarizeRevenue } from "@/server/modules/report/report-rules";
 
 import {
   commissionFor,
@@ -242,27 +243,11 @@ export async function getFinanceSummary(businessId: string, range: FinanceRange)
     listReceivables(businessId),
   ]);
 
-  const receivedCents = payments.reduce((sum, p) => sum + p.amountCents, 0);
-  const paidAppointments = new Set(payments.filter((p) => p.amountCents > 0).map((p) => p.appointmentId)).size;
-  const byMethod = new Map<PaymentMethod, { amountCents: number; count: number }>();
-  for (const p of payments) {
-    if (p.amountCents === 0) continue;
-    const entry = byMethod.get(p.method) ?? { amountCents: 0, count: 0 };
-    entry.amountCents += p.amountCents;
-    entry.count += 1;
-    byMethod.set(p.method, entry);
-  }
-
+  // Mesma regra dos Relatórios (ticket médio, formas de pagamento).
   return {
-    receivedCents,
-    discountCents: payments.reduce((sum, p) => sum + p.discountCents, 0),
-    paymentsCount: payments.length,
-    averageTicketCents: paidAppointments > 0 ? Math.round(receivedCents / paidAppointments) : null,
+    ...summarizeRevenue(payments),
     receivableCents: receivables.reduce((sum, r) => sum + r.summary.balanceCents, 0),
     receivableCount: receivables.length,
-    byMethod: [...byMethod.entries()]
-      .map(([method, entry]) => ({ method, ...entry }))
-      .sort((a, b) => b.amountCents - a.amountCents),
   };
 }
 
