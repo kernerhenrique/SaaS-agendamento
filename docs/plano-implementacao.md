@@ -231,7 +231,19 @@ Todas de 2 a 6 são aditivas com `nullable`/`default`, sem backfill. `prisma/see
 - Navegação de 9 itens; telas novas de **Clientes** (mini-CRM) e **Configurações** (identidade, contato, políticas, horário geral, vertical).
 - `BusinessWorkingHours` como informativo (ver 1.6).
 
+## 4.1 Correções antes da Fase 4 (2026-09-27)
+
+**Implementadas:**
+- **Sessão**: renovação transparente no `proxy.ts`, com janela deslizante de 7 dias (decisão do usuário). Antes, o dono caía no login a cada 15 min.
+- **Reserva pública e reagendamento pelo link** passam a revalidar a disponibilidade na gravação. Antes, só a exclusion constraint protegia, e dava para reservar fora do expediente pela API.
+- A rota `/api/availability` continua mostrando horários de serviço oculto: o reagendamento pelo link de quem já tinha reservado depende dela. A reserva nova de serviço oculto segue recusada na criação.
+
 ## 5. Fase 4 — Pagamentos e Financeiro
+
+**Decisões do usuário (2026-09-27):**
+- comissão congelada em cada pagamento;
+- valor do atendimento ajustável ao receber;
+- "Concluir" abre o recebimento, com opção "Só concluir".
 
 - Módulo `src/server/modules/payment/` (padrão dos módulos existentes).
 - Migrations 1 e 2 da seção 1.8. Tela Financeiro, registro de pagamento ao concluir atendimento, cálculo de comissão por profissional no período.

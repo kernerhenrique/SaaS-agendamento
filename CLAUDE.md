@@ -157,6 +157,8 @@ Pré-requisitos: Node ≥20.19, Docker.
 - Token inválido ou expirado retorna mensagem genérica (não revela se o agendamento existe). Token expira 30 dias após o atendimento. Rate limit de 20 req/5min por IP nas rotas com token.
 - Conflito de horário garantido por exclusion constraint no Postgres (`EXCLUDE USING gist`, `btree_gist`); a checagem na aplicação é só otimista. Toda criação/remarcação (inclusive arrastar-e-soltar na agenda) revalida no servidor.
 - Logout e troca de senha incrementam `User.tokenVersion`; access token não é revalidado no banco a cada request (janela curta aceita).
+- Sessão deslizante de 7 dias: o `proxy.ts` renova em silêncio quando o access (15 min) some, usando o refresh (checado no banco e rotacionado a cada uso). Só pede senha após 7 dias sem uso. Lógica em `src/server/modules/auth/proxy-session.ts`.
+- Reserva pública e reagendamento pelo link revalidam no servidor com `assertSlotAvailable` (`availability.ts`): só aceitam um horário que a própria disponibilidade ofereceria. O encaixe pelo painel segue outra regra (`admin-booking-rules.ts`: pode encaixar fora do expediente com confirmação).
 - Rate limit em memória via `globalThis`: funciona só em instância única. Limitação conhecida; Redis/Upstash só quando pedido.
 
 # This is NOT the Next.js you know

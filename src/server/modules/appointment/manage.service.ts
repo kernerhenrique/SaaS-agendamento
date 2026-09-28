@@ -3,6 +3,7 @@ import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
 
 import { isOverlapConstraintViolation, MANAGE_TOKEN_TTL_DAYS_AFTER_APPOINTMENT } from "./appointment.service";
+import { assertSlotAvailable } from "./availability";
 
 /**
  * Mensagem sempre genérica: nunca revela se o token é inválido, já expirou,
@@ -61,6 +62,14 @@ export async function rescheduleAppointmentByToken(token: string, newStartAt: Da
   if (newStartAt.getTime() <= Date.now()) {
     throw new ValidationError("Escolha um horário no futuro");
   }
+  // Mesmo profissional e serviço; o horário atual deste agendamento não conta como ocupado.
+  await assertSlotAvailable({
+    businessId: appointment.businessId,
+    serviceId: appointment.serviceId,
+    professionalId: appointment.professionalId,
+    startAt: newStartAt,
+    excludeAppointmentId: appointment.id,
+  });
 
   const newEndAt = new Date(newStartAt.getTime() + appointment.service.durationMin * 60_000);
   const newManageTokenExpiresAt = new Date(

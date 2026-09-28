@@ -1,5 +1,5 @@
 import { AppointmentStatus, type Weekday } from "@/generated/prisma/enums";
-import { localDayRangeUtc, localMinutesToUtc, rangesOverlap, weekdayOfLocalDate } from "@/lib/date";
+import { localDayRangeUtc, localMinutesToUtc, rangesOverlap, utcToLocalDate, weekdayOfLocalDate } from "@/lib/date";
 import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
 
@@ -95,6 +95,8 @@ export interface GetAvailableSlotsParams {
   serviceId: string;
   professionalId?: string;
   dateISO: string;
+  /** Reagendamento: o próprio agendamento não conta como horário ocupado. */
+  excludeAppointmentId?: string;
 }
 
 /**
@@ -104,7 +106,7 @@ export interface GetAvailableSlotsParams {
  * serviço ("sem preferência") e retorna um slot por profissional disponível.
  */
 export async function getAvailableSlots(params: GetAvailableSlotsParams): Promise<Slot[]> {
-  const { businessId, serviceId, professionalId, dateISO } = params;
+  const { businessId, serviceId, professionalId, dateISO, excludeAppointmentId } = params;
 
   const business = await prisma.business.findFirst({
     where: { id: businessId, deletedAt: null },
@@ -151,6 +153,7 @@ export async function getAvailableSlots(params: GetAvailableSlotsParams): Promis
       where: {
         professionalId: { in: professionalIds },
         status: { not: AppointmentStatus.CANCELLED },
+        ...(excludeAppointmentId ? { id: { not: excludeAppointmentId } } : {}),
         startAt: { lt: dayEnd },
         endAt: { gt: dayStart },
       },
@@ -191,4 +194,43 @@ export async function getAvailableSlots(params: GetAvailableSlotsParams): Promis
 
   allSlots.sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
   return allSlots;
+}
+
+/** O início pedido é exatamente um dos horários oferecidos para esse profissional? */
+export function isOfferedSlot(slots: Slot[], professionalId: string, startAt: Date): boolean {
+  return slots.some((slot) => slot.professionalId === professionalId && slot.startAt.getTime() === startAt.getTime());
+}
+
+export const SLOT_UNAVAILABLE_MESSAGE = "Esse horário não está mais disponível. Escolha outro.";
+
+/**
+ * Revalidação no servidor para quem agenda sem login (reserva pública e
+ * reagendamento pelo link): o horário precisa ser um dos que a própria
+ * disponibilidade ofereceria agora — expediente, intervalo, bloqueios,
+ * passado e grade. A exclusion constraint segue como garantia final contra
+ * duas reservas simultâneas.
+ */
+export async function assertSlotAvailable(params: {
+  businessId: string;
+  serviceId: string;
+  professionalId: string;
+  startAt: Date;
+  excludeAppointmentId?: string;
+}): Promise<void> {
+  const business = await prisma.business.findFirst({
+    where: { id: params.businessId, deletedAt: null },
+    select: { timezone: true },
+  });
+  if (!business) throw new NotFoundError("Negócio não encontrado");
+
+  const slots = await getAvailableSlots({
+    businessId: params.businessId,
+    serviceId: params.serviceId,
+    professionalId: params.professionalId,
+    dateISO: utcToLocalDate(params.startAt, business.timezone),
+    excludeAppointmentId: params.excludeAppointmentId,
+  });
+  if (!isOfferedSlot(slots, params.professionalId, params.startAt)) {
+    throw new ValidationError(SLOT_UNAVAILABLE_MESSAGE);
+  }
 }

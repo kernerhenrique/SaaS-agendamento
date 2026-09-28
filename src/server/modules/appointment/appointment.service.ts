@@ -2,6 +2,7 @@ import { AppointmentStatus, type Prisma } from "@/generated/prisma/client";
 import { normalizePhoneBR } from "@/lib/phone";
 import { prisma } from "@/server/db/prisma";
 import { checkAdminBookingTime } from "./admin-booking-rules";
+import { assertSlotAvailable } from "./availability";
 import { checkAdminReschedule } from "./reschedule-rules";
 import { NotFoundError, ValidationError } from "@/server/errors";
 
@@ -204,6 +205,12 @@ export async function createPublicAppointment(params: InsertAppointmentParams) {
     where: { id: params.serviceId, businessId: params.businessId, visibleOnline: true, active: true, deletedAt: null },
   });
   if (bookable === 0) throw new NotFoundError("Cadastro não encontrado");
+  await assertSlotAvailable({
+    businessId: params.businessId,
+    serviceId: params.serviceId,
+    professionalId: params.professionalId,
+    startAt: params.startAt,
+  });
   return insertAppointment(params);
 }
 
