@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { loginAsOwner } from "./helpers";
+import { findFreeSlot, loginAsOwner } from "./helpers";
 
 /**
  * Bloco 4A (API): sinal, "concluir e receber", valor ajustado, comissão
@@ -30,7 +30,11 @@ test("recebimentos: sinal, concluir e receber, comissão congelada e financeiro"
     }[];
   }[];
   const joao = professionals.find((p) => p.name === "João Barbeiro")!;
-  const services = (await (await api.get("/api/admin/services")).json()).services as { id: string; name: string }[];
+  const services = (await (await api.get("/api/admin/services")).json()).services as {
+    id: string;
+    name: string;
+    businessId: string;
+  }[];
   const corte = services.find((s) => s.name === "Corte de cabelo")!;
 
   // Comissão do João em 40% durante o teste (restaurada no fim).
@@ -58,17 +62,18 @@ test("recebimentos: sinal, concluir e receber, comissão congelada e financeiro"
   expect((await saveJoao(40)).status()).toBe(200);
 
   try {
-    // Segunda-feira distante, horário aleatório entre 09:00 e 11:15.
-    const monday = new Date();
-    monday.setUTCDate(monday.getUTCDate() + 7 * (10 + Math.floor(Math.random() * 30)));
-    monday.setUTCDate(monday.getUTCDate() + ((8 - monday.getUTCDay()) % 7));
-    const minute = 9 * 60 + 15 * Math.floor(Math.random() * 10);
-    const hhmm = `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+    // Um horário livre de verdade numa quinta distante.
+    const slot = await findFreeSlot(api, {
+      businessId: corte.businessId,
+      serviceId: corte.id,
+      professionalId: joao.id,
+      weekday: 4,
+    });
     const created = await api.post("/api/admin/appointments", {
       data: {
         professionalId: joao.id,
         serviceId: corte.id,
-        startAt: `${monday.toISOString().slice(0, 10)}T${hhmm}:00-03:00`,
+        startAt: slot.startAt,
         client: { name: `Financeiro E2E ${Date.now()}`, phone: `119${Date.now().toString().slice(-8)}` },
       },
     });

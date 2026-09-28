@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { loginAsOwner } from "./helpers";
+import { findFreeSlot, loginAsOwner } from "./helpers";
 
 /**
  * Agenda do painel: drawer de detalhes, mudança de status e remarcação.
@@ -18,28 +18,41 @@ test("dono abre o agendamento no drawer, remarca e cancela", async ({ page }) =>
   const services = (await (await page.request.get("/api/admin/services")).json()).services as {
     id: string;
     name: string;
+    businessId: string;
   }[];
   const corte = services.find((s) => s.name === "Corte de cabelo")!;
 
-  // Uma segunda-feira entre 5 e 40 semanas à frente, num horário aleatório de
-  // 09:00 a 10:45 — evita colidir com execuções anteriores e com o seed.
-  const date = new Date();
-  date.setUTCDate(date.getUTCDate() + 7 * (5 + Math.floor(Math.random() * 35)));
-  date.setUTCDate(date.getUTCDate() + ((8 - date.getUTCDay()) % 7));
-  const isoDate = date.toISOString().slice(0, 10);
-  const minute = 9 * 60 + 15 * Math.floor(Math.random() * 8);
-  const hhmm = `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+  // Horário livre de verdade numa segunda distante (não colide com outros testes nem com o seed).
+  const slot = await findFreeSlot(page.request, {
+    businessId: corte.businessId,
+    serviceId: corte.id,
+    professionalId: joao.id,
+    weekday: 1,
+  });
+  const isoDate = slot.date;
 
   const clientName = `Agenda E2E ${Date.now()}`;
   const created = await page.request.post("/api/admin/appointments", {
     data: {
       professionalId: joao.id,
       serviceId: corte.id,
-      startAt: `${isoDate}T${hhmm}:00-03:00`,
+      startAt: slot.startAt,
       client: { name: clientName, phone: `119${Date.now().toString().slice(-8)}` },
     },
   });
   expect(created.status()).toBe(201);
+
+  // Outro horário livre no mesmo dia, para a remarcação.
+  const { slots } = await (
+    await page.request.get(
+      `/api/availability?businessId=${corte.businessId}&serviceId=${corte.id}&professionalId=${joao.id}&date=${isoDate}`,
+    )
+  ).json();
+  const newTime = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(slots[slots.length - 1].startAt));
 
   await page.goto(`/admin/agenda?date=${isoDate}`);
   await page.getByRole("button", { name: new RegExp(clientName) }).click();
@@ -50,10 +63,10 @@ test("dono abre o agendamento no drawer, remarca e cancela", async ({ page }) =>
   await expect(drawer.getByText("Confirmado")).toBeVisible();
 
   await drawer.getByRole("button", { name: "Remarcar" }).click();
-  await drawer.getByLabel("Horário").fill("15:00");
+  await drawer.getByLabel("Horário").fill(newTime);
   await drawer.getByRole("button", { name: "Confirmar novo horário" }).click();
   await expect(page.getByText("Agendamento remarcado.")).toBeVisible();
-  await expect(drawer.getByText(/15:00/)).toBeVisible();
+  await expect(drawer.getByText(new RegExp(newTime))).toBeVisible();
 
   // Cancelar pede confirmação; "Voltar" não muda nada.
   const confirmCancel = page.getByRole("dialog", { name: "Cancelar agendamento?" });

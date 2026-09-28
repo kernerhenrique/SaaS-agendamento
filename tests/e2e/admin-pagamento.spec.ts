@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { loginAsOwner } from "./helpers";
+import { findFreeSlot, loginAsOwner } from "./helpers";
 
 /** Bloco 4B: recebimento no drawer do agendamento (concluir e receber, saldo, remover). */
 test("dono conclui e recebe no drawer, completa o saldo e remove um recebimento", async ({ page }) => {
@@ -12,23 +12,25 @@ test("dono conclui e recebe no drawer, completa o saldo e remove um recebimento"
   const services = (await (await page.request.get("/api/admin/services")).json()).services as {
     id: string;
     name: string;
+    businessId: string;
   }[];
   const joao = professionals.find((p) => p.name === "João Barbeiro")!;
   const corte = services.find((s) => s.name === "Corte de cabelo")!;
 
-  // Segunda-feira distante, horário aleatório de 14:00 a 16:15.
-  const monday = new Date();
-  monday.setUTCDate(monday.getUTCDate() + 7 * (10 + Math.floor(Math.random() * 30)));
-  monday.setUTCDate(monday.getUTCDate() + ((8 - monday.getUTCDay()) % 7));
-  const isoDate = monday.toISOString().slice(0, 10);
-  const minute = 14 * 60 + 15 * Math.floor(Math.random() * 10);
-  const hhmm = `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+  // Um horário livre de verdade numa sexta distante.
+  const slot = await findFreeSlot(page.request, {
+    businessId: corte.businessId,
+    serviceId: corte.id,
+    professionalId: joao.id,
+    weekday: 5,
+  });
+  const isoDate = slot.date;
   const clientName = `Pagamento E2E ${Date.now()}`;
   const created = await page.request.post("/api/admin/appointments", {
     data: {
       professionalId: joao.id,
       serviceId: corte.id,
-      startAt: `${isoDate}T${hhmm}:00-03:00`,
+      startAt: slot.startAt,
       client: { name: clientName, phone: `119${Date.now().toString().slice(-8)}` },
     },
   });

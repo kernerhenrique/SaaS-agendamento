@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { loginAsOwner } from "./helpers";
+import { findFreeSlot, loginAsOwner } from "./helpers";
 
 /** Bloco 4C: tela Financeiro (recebimentos, filtros, a receber → drawer, comissões). */
 test("financeiro mostra recebimentos do dia, filtra, recebe o que falta e lista comissões", async ({ page }) => {
@@ -10,25 +10,29 @@ test("financeiro mostra recebimentos do dia, filtra, recebe o que falta e lista 
     id: string;
     name: string;
   }[];
-  const services = (await (await api.get("/api/admin/services")).json()).services as { id: string; name: string }[];
+  const services = (await (await api.get("/api/admin/services")).json()).services as {
+    id: string;
+    name: string;
+    businessId: string;
+  }[];
   const joao = professionals.find((p) => p.name === "João Barbeiro")!;
   const barba = services.find((s) => s.name === "Barba")!;
 
-  // Dois atendimentos numa segunda distante: um pago no Débito hoje, outro concluído sem pagamento.
-  const monday = new Date();
-  monday.setUTCDate(monday.getUTCDate() + 7 * (10 + Math.floor(Math.random() * 30)));
-  monday.setUTCDate(monday.getUTCDate() + ((8 - monday.getUTCDay()) % 7));
-  const isoDate = monday.toISOString().slice(0, 10);
-  const base = 9 * 60 + 30 * Math.floor(Math.random() * 4);
+  // Dois atendimentos em horários livres (quarta): um pago no Débito hoje, outro concluído sem pagamento.
   const stamp = Date.now();
-  const create = async (minute: number, name: string) => {
-    const hhmm = `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+  const create = async (name: string, offset: number) => {
+    const slot = await findFreeSlot(api, {
+      businessId: barba.businessId,
+      serviceId: barba.id,
+      professionalId: joao.id,
+      weekday: 3,
+    });
     const response = await api.post("/api/admin/appointments", {
       data: {
         professionalId: joao.id,
         serviceId: barba.id,
-        startAt: `${isoDate}T${hhmm}:00-03:00`,
-        client: { name, phone: `119${String(stamp + minute).slice(-8)}` },
+        startAt: slot.startAt,
+        client: { name, phone: `119${String(stamp + offset).slice(-8)}` },
       },
     });
     expect(response.status()).toBe(201);
@@ -36,8 +40,8 @@ test("financeiro mostra recebimentos do dia, filtra, recebe o que falta e lista 
   };
   const paidName = `Fin Pago ${stamp}`;
   const openName = `Fin Aberto ${stamp}`;
-  const paidId = await create(base, paidName);
-  const openId = await create(base + 30, openName);
+  const paidId = await create(paidName, 1);
+  const openId = await create(openName, 2);
   const now = new Date().toISOString();
   await api.post(`/api/admin/appointments/${paidId}/complete`, {
     data: { payment: { amountCents: 3500, method: "DEBIT_CARD", receivedAt: now } },
