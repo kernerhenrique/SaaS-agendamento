@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 
 import { ValidationError } from "@/server/errors";
 import { handleApiError } from "@/server/http";
@@ -53,22 +53,26 @@ export async function POST(request: NextRequest) {
     // criado com sucesso e a resposta deve refletir isso mesmo assim. Sem
     // e-mail informado, não há para onde enviar — o link de gerenciar
     // continua disponível na própria tela de confirmação.
+    // `after`: envia DEPOIS de responder — o cliente vê a confirmação na hora,
+    // sem esperar o SMTP (que pode levar segundos ou dar timeout).
     if (email) {
-      try {
-        await sendAppointmentConfirmationEmail({
-          clientName: appointment.client.name,
-          clientEmail: email,
-          businessName: appointment.business.name,
-          businessType: appointment.business.businessType,
-          serviceName: appointment.service.name,
-          professionalName: appointment.professional.name,
-          startAt: appointment.startAt,
-          timezone: appointment.business.timezone,
-          manageToken: appointment.manageToken,
-        });
-      } catch (emailError) {
-        console.error("[appointments] falha ao enviar e-mail de confirmação", emailError);
-      }
+      after(async () => {
+        try {
+          await sendAppointmentConfirmationEmail({
+            clientName: appointment.client.name,
+            clientEmail: email,
+            businessName: appointment.business.name,
+            businessType: appointment.business.businessType,
+            serviceName: appointment.service.name,
+            professionalName: appointment.professional.name,
+            startAt: appointment.startAt,
+            timezone: appointment.business.timezone,
+            manageToken: appointment.manageToken,
+          });
+        } catch (emailError) {
+          console.error("[appointments] falha ao enviar e-mail de confirmação", emailError);
+        }
+      });
     }
 
     return NextResponse.json(

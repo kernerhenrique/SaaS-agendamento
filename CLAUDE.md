@@ -28,7 +28,7 @@ Se algum desses arquivos ainda não existir, crie-o quando a tarefa tocar no ass
 - Backend: Route Handlers do próprio Next.js (sem servidor separado)
 - PostgreSQL + Prisma
 - Auth: JWT (access 15min + refresh 7 dias) com bcrypt, em cookies `httpOnly`; só para usuários do negócio
-- E-mail: Nodemailer (Gmail SMTP); sem credenciais, o e-mail é apenas logado no console
+- E-mail: Nodemailer (Gmail SMTP); sem credenciais, o e-mail é apenas logado no console. A confirmação da reserva é enviada com `after()` (depois da resposta): o cliente não espera o SMTP.
 - Testes: Vitest (unitário) + Playwright (E2E)
 - Deploy: Vercel + Postgres gerenciado (Supabase, Neon, Railway)
 
