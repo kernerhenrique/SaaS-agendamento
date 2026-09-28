@@ -3,7 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarCheck, CalendarPlus, CalendarX, ChevronLeft, Gauge, Trash2, UserX } from "lucide-react";
+import {
+  CalendarCheck,
+  CalendarPlus,
+  CalendarX,
+  ChevronLeft,
+  Gauge,
+  HandCoins,
+  Trash2,
+  UserX,
+  Wallet,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { useAdminShell } from "@/components/admin/admin-shell-context";
@@ -26,6 +36,7 @@ import { lowerTerm } from "@/config/vertical";
 import { useVertical } from "@/config/vertical-context";
 import type { AppointmentStatus } from "@/generated/prisma/enums";
 import { STATUS_LABELS, STATUS_TONE } from "@/lib/appointment-status";
+import { formatPriceFromCents } from "@/lib/currency";
 import { formatDateLabel } from "@/lib/date";
 
 import { ProfessionalForm } from "../professional-form";
@@ -47,6 +58,8 @@ interface MonthStats {
   noShows: number;
   noShowRate: number | null;
   occupancyRate: number | null;
+  receivedCents: number;
+  commissionCents: number;
 }
 
 const formatPercent = (rate: number | null) =>
@@ -65,7 +78,7 @@ export function ProfessionalProfile({
   services: ServiceOption[];
   timezone: string;
 }) {
-  const { terms } = useVertical();
+  const { terms, features } = useVertical();
   const router = useRouter();
   const { openNewAppointment } = useAdminShell();
   const [isConfirmingRemove, setIsConfirmingRemove] = useState(false);
@@ -202,9 +215,18 @@ export function ProfessionalProfile({
               value={month.noShows > 0 ? `${month.noShows} (${formatPercent(month.noShowRate)})` : "0"}
             />
             <KpiCard icon={Gauge} label="Ocupação" value={formatPercent(month.occupancyRate)} />
+            <KpiCard icon={Wallet} label="Recebido no mês" value={formatPriceFromCents(month.receivedCents)} />
+            {features.commissions ? (
+              <KpiCard
+                icon={HandCoins}
+                label={`Comissão do mês${professional.commissionPercent != null ? ` (atual ${professional.commissionPercent}%)` : ""}`}
+                value={formatPriceFromCents(month.commissionCents)}
+              />
+            ) : null}
           </div>
           <p className="text-caption text-muted-foreground">
-            Ocupação = minutos agendados ÷ minutos de expediente do mês (sem intervalo e bloqueios).
+            Ocupação = minutos agendados ÷ minutos de expediente do mês (sem intervalo e bloqueios). Recebido e comissão
+            contam pela data de recebimento, com a % que valia em cada pagamento.
           </p>
         </TabsContent>
 

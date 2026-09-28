@@ -9,6 +9,8 @@ import {
   workingWindows,
 } from "@/server/modules/dashboard/metrics";
 
+import { commissionFor } from "@/server/modules/payment/payment-rules";
+
 import { getProfessional } from "./professional.service";
 
 const UPCOMING_LIMIT = 30;
@@ -26,7 +28,7 @@ export async function getProfessionalProfile(businessId: string, professionalId:
   const monthStart = localDayRangeUtc(startDate, timeZone).start;
   const monthEnd = localDayRangeUtc(endDate, timeZone).end;
 
-  const [upcoming, monthAppointments] = await Promise.all([
+  const [upcoming, monthAppointments, monthPayments] = await Promise.all([
     prisma.appointment.findMany({
       where: { businessId, professionalId, status: { in: ["PENDING", "CONFIRMED"] }, startAt: { gte: now } },
       select: {
@@ -43,6 +45,11 @@ export async function getProfessionalProfile(businessId: string, professionalId:
     prisma.appointment.findMany({
       where: { businessId, professionalId, startAt: { gte: monthStart, lt: monthEnd } },
       select: { status: true, startAt: true, endAt: true },
+    }),
+    // Financeiro do mês pela data de recebimento (mesma regra da tela Financeiro).
+    prisma.payment.findMany({
+      where: { businessId, deletedAt: null, receivedAt: { gte: monthStart, lt: monthEnd }, appointment: { professionalId } },
+      select: { amountCents: true, commissionPercent: true },
     }),
   ]);
 
@@ -63,6 +70,8 @@ export async function getProfessionalProfile(businessId: string, professionalId:
       noShows: monthAppointments.filter((a) => a.status === "NO_SHOW").length,
       noShowRate: computeNoShowRate(monthAppointments, now),
       occupancyRate: computeOccupancyRate(bookedMinutes, available),
+      receivedCents: monthPayments.reduce((sum, p) => sum + p.amountCents, 0),
+      commissionCents: monthPayments.reduce((sum, p) => sum + commissionFor(p), 0),
     },
   };
 }

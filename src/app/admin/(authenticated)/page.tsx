@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, CalendarCheck, CalendarDays, Gauge, UserPlus, UserX } from "lucide-react";
+import { AlertTriangle, CalendarCheck, CalendarDays, Gauge, HandCoins, UserPlus, UserX, Wallet } from "lucide-react";
 
 import { NewAppointmentButton } from "@/components/admin/new-appointment-button";
 import { EmptyState } from "@/components/empty-state";
@@ -9,6 +9,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getVertical, lowerTerm } from "@/config/vertical";
 import { STATUS_LABELS, STATUS_TONE } from "@/lib/appointment-status";
+import { formatPriceFromCents } from "@/lib/currency";
 import { formatDateLabel } from "@/lib/date";
 import { prisma } from "@/server/db/prisma";
 import { requireAdminSession } from "@/server/modules/auth/session";
@@ -32,7 +33,10 @@ export default async function InicioPage() {
     new Intl.DateTimeFormat("pt-BR", { timeZone: business.timezone, hour: "2-digit", minute: "2-digit" }).format(
       new Date(iso),
     );
-  const hasAlerts = data.alerts.professionalsWithoutHours.length > 0 || data.alerts.inactiveClients > 0;
+  const hasAlerts =
+    data.alerts.professionalsWithoutHours.length > 0 ||
+    data.alerts.inactiveClients > 0 ||
+    data.alerts.completedWithoutPayment > 0;
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
@@ -43,7 +47,17 @@ export default async function InicioPage() {
         </p>
       </div>
 
-      <section aria-label="Resumo do mês" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <section aria-label="Resumo do mês" className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+        <KpiLink href="/admin/financeiro?periodo=mes&aba=recebimentos">
+          <KpiCard icon={Wallet} label="Recebido no mês" value={formatPriceFromCents(data.month.receivedCents)} />
+        </KpiLink>
+        <KpiLink href="/admin/financeiro?aba=a-receber">
+          <KpiCard
+            icon={HandCoins}
+            label={`A receber (${data.receivable.count})`}
+            value={formatPriceFromCents(data.receivable.cents)}
+          />
+        </KpiLink>
         <KpiCard icon={CalendarCheck} label="Atendimentos no mês" value={String(data.month.appointments)} />
         <KpiCard icon={Gauge} label="Ocupação da agenda" value={formatRate(data.month.occupancyRate)} />
         <KpiCard icon={UserX} label="Taxa de faltas" value={formatRate(data.month.noShowRate)} />
@@ -102,6 +116,14 @@ export default async function InicioPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             {!hasAlerts ? <p className="text-sm text-muted-foreground">Tudo certo por aqui.</p> : null}
+            {data.alerts.completedWithoutPayment > 0 ? (
+              <Alert href="/admin/financeiro?aba=a-receber">
+                <strong>{data.alerts.completedWithoutPayment}</strong>{" "}
+                {data.alerts.completedWithoutPayment === 1
+                  ? "atendimento concluído está sem pagamento registrado."
+                  : "atendimentos concluídos estão sem pagamento registrado."}
+              </Alert>
+            ) : null}
             {data.alerts.professionalsWithoutHours.map((professional) => (
               <Alert key={professional.id} href="/admin/profissionais">
                 <strong>{professional.name}</strong> está sem expediente configurado e não recebe reservas.
@@ -120,6 +142,18 @@ export default async function InicioPage() {
         </Card>
       </div>
     </main>
+  );
+}
+
+/** KPI clicável que leva ao Financeiro (mantém o visual do KpiCard). */
+function KpiLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="rounded-xl transition-opacity hover:opacity-90 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+    >
+      {children}
+    </Link>
   );
 }
 

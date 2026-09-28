@@ -1,6 +1,7 @@
 import type { AppointmentStatus } from "@/generated/prisma/enums";
 import { localDayRangeUtc, todayInTimeZone } from "@/lib/date";
 import { prisma } from "@/server/db/prisma";
+import { listReceivables } from "@/server/modules/payment/payment.service";
 
 import {
   availableMinutes,
@@ -34,10 +35,16 @@ export interface DashboardData {
     noShowRate: number | null;
     occupancyRate: number | null;
     newClients: number;
+    /** Recebido no mês (data de recebimento). */
+    receivedCents: number;
   };
+  /** Concluídos com saldo em aberto, de qualquer data (mesma regra do Financeiro). */
+  receivable: { cents: number; count: number };
   alerts: {
     professionalsWithoutHours: { id: string; name: string }[];
     inactiveClients: number;
+    /** Concluídos sem NENHUM recebimento registrado (provável esquecimento). */
+    completedWithoutPayment: number;
   };
 }
 
@@ -49,7 +56,7 @@ export async function getDashboard(businessId: string, timeZone: string, now = n
   const monthEnd = localDayRangeUtc(endDate, timeZone).end;
   const inactiveSince = new Date(now.getTime() - INACTIVE_CLIENT_DAYS * 24 * 60 * 60 * 1000);
 
-  const [todayAppointments, monthAppointments, professionals, blocks, firstVisits, inactiveClients] =
+  const [todayAppointments, monthAppointments, professionals, blocks, firstVisits, inactiveClients, received, receivables] =
     await Promise.all([
       prisma.appointment.findMany({
         where: { businessId, status: { not: "CANCELLED" }, startAt: { gte: todayRange.start, lt: todayRange.end } },
@@ -90,6 +97,11 @@ export async function getDashboard(businessId: string, timeZone: string, now = n
           },
         },
       }),
+      prisma.payment.aggregate({
+        where: { businessId, deletedAt: null, receivedAt: { gte: monthStart, lt: monthEnd } },
+        _sum: { amountCents: true },
+      }),
+      listReceivables(businessId),
     ]);
 
   const dates = datesInRange(startDate, endDate);
@@ -124,12 +136,18 @@ export async function getDashboard(businessId: string, timeZone: string, now = n
       occupancyRate: computeOccupancyRate(bookedMinutes, available),
       newClients: firstVisits.filter((v) => v._min.startAt && v._min.startAt >= monthStart && v._min.startAt < monthEnd)
         .length,
+      receivedCents: received._sum.amountCents ?? 0,
+    },
+    receivable: {
+      cents: receivables.reduce((sum, r) => sum + r.summary.balanceCents, 0),
+      count: receivables.length,
     },
     alerts: {
       professionalsWithoutHours: professionals
         .filter((p) => p.workingHours.length === 0)
         .map((p) => ({ id: p.id, name: p.name })),
       inactiveClients,
+      completedWithoutPayment: receivables.filter((r) => r.summary.status === "PENDING").length,
     },
   };
 }

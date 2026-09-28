@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import type { AppointmentStatus } from "@/generated/prisma/enums";
 import { STATUS_LABELS, STATUS_TONE } from "@/lib/appointment-status";
+import { formatPriceFromCents } from "@/lib/currency";
 import { formatPhoneBR } from "@/lib/phone";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { MAX_TAGS, normalizeTags } from "@/server/modules/client/client-rules";
@@ -30,6 +31,7 @@ interface ClientDetail {
     createdAt: string;
   };
   summary: { completed: number; noShows: number; lastVisitAt: string | null; nextAppointmentAt: string | null };
+  totalSpentCents: number;
   history: {
     id: string;
     status: AppointmentStatus;
@@ -217,7 +219,8 @@ function ClientDrawerBody({
           </a>
         </section>
 
-        <dl className="grid grid-cols-3 gap-2 text-center">
+        <dl className="grid grid-cols-2 gap-2 text-center">
+          <Stat label="Total gasto" value={formatPriceFromCents(detail.totalSpentCents)} />
           <Stat label="Atendimentos" value={String(summary.completed)} />
           <Stat label="Faltas" value={String(summary.noShows)} tone={summary.noShows > 0 ? "danger" : undefined} />
           <Stat

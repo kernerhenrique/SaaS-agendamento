@@ -81,10 +81,17 @@ export async function getClientDetail(businessId: string, clientId: string, now 
   });
   if (!client) throw new NotFoundError("Cadastro não encontrado");
 
+  // Total gasto = tudo que foi efetivamente recebido nos atendimentos dele.
+  const spent = await prisma.payment.aggregate({
+    where: { businessId, deletedAt: null, appointment: { clientId } },
+    _sum: { amountCents: true },
+  });
+
   const { appointments, ...data } = client;
   return {
     client: data,
     summary: summarizeClient(appointments, now),
+    totalSpentCents: spent._sum.amountCents ?? 0,
     history: appointments.slice(0, CLIENT_HISTORY_LIMIT),
   };
 }
