@@ -53,7 +53,7 @@ src/
 │   │   ├── professional/
 │   │   ├── search/          # busca Ctrl+K
 │   │   ├── service/
-│   │   ├── payment/         # registro de pagamentos externos
+│   │   ├── payment/         # registro de pagamentos externos: regras puras (payment-rules.ts) + financeiro/comissões
 │   │   ├── report/
 │   │   └── notification/    # e-mail; whatsapp/ isolado para trocar provedor
 │   └── db/prisma.ts         # singleton do PrismaClient
@@ -99,7 +99,8 @@ Regras:
 - **Business**: o negócio (tenant). **Professional**: quem atende. **Service**: o que é vendido (preço fixo ou "a partir de", duração, buffer). **Client**: cliente final, identificado principalmente pelo **telefone** (deduplicação por telefone, gravado **só com dígitos** via `normalizePhoneBR` em `insertAppointment`; exibição com `formatPhoneBR`). **Appointment**: atendimento marcado. **TimeBlock**: bloqueio de agenda (almoço, folga, férias). **WorkingHours**: padrão semanal em minutos desde meia-noite.
 - **Status do agendamento**: agendado → confirmado → concluído; ou → falta; ou → cancelado. Concluído, falta e cancelado são estados finais (não voltam a agendado/confirmado; para remarcar, cria-se um novo ou usa-se o fluxo de reagendamento).
 - **Pagamento**: o SaaS **não processa pagamentos**. O cliente paga fora (PIX, dinheiro, maquininha) e o sistema só **registra**: valor, desconto, forma, data de recebimento, observação. Suporta parcial e sinal. Status derivado: pendente / parcial / pago. Relatórios financeiros usam a **data de recebimento**.
-- **Comissão**: % por profissional aplicada sobre o recebido no período.
+- **Comissão**: % por profissional aplicada sobre o recebido no período. A % é **congelada em cada pagamento** (`Payment.commissionPercent`): mudar a % do profissional não reescreve o passado.
+- **Valor do atendimento** (`Appointment.priceCents`): gravado na marcação a partir do preço do serviço; pode ser ajustado ao receber (ex.: preço "a partir de"). Status pago/parcial/pendente usa esse valor menos os descontos.
 
 Nunca integrar gateway de pagamento sem pedido explícito.
 

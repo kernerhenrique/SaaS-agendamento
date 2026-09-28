@@ -18,6 +18,11 @@ export interface ProfessionalInput {
   color?: string | null;
   /** Inativo: some da agenda, da página pública e do encaixe; histórico fica. */
   active?: boolean;
+  /**
+   * Comissão em % inteiro (0–100); null = sem comissão; undefined = não mexe.
+   * Mudar a % não altera pagamentos já registrados (cada um congela a sua).
+   */
+  commissionPercent?: number | null;
   photoUrl?: string | null;
   photoUrls?: string[];
   serviceIds: string[];
@@ -97,6 +102,7 @@ export async function createProfessional(businessId: string, input: Professional
       specialty: input.specialty ?? null,
       color: input.color ?? null,
       active: input.active ?? true,
+      commissionPercent: input.commissionPercent ?? null,
       photoUrl: input.photoUrl ?? null,
       workingHours: { create: input.workingHours },
       professionalServices: {
@@ -132,6 +138,8 @@ export async function updateProfessional(
         specialty: input.specialty ?? null,
         color: input.color ?? null,
         active: input.active ?? existing.active,
+        // Formulário sem o campo (preset sem comissões) preserva o valor atual.
+        commissionPercent: input.commissionPercent === undefined ? existing.commissionPercent : input.commissionPercent,
         photoUrl: input.photoUrl ?? null,
         workingHours: { create: input.workingHours },
         professionalServices: {

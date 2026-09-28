@@ -240,6 +240,11 @@ Todas de 2 a 6 são aditivas com `nullable`/`default`, sem backfill. `prisma/see
 
 ## 5. Fase 4 — Pagamentos e Financeiro
 
+**4A: implementado** (2026-09-27).
+- Migrations `add_appointment_price` (backfill manual, 34/34 agendamentos preenchidos no banco local) e `add_payment_module`.
+- `src/server/modules/payment/` com regras puras testadas e as rotas de pagamentos, concluir, financeiro e comissões.
+- Flag `commissions` no preset (desligado no `generic`).
+
 **Decisões do usuário (2026-09-27):**
 - comissão congelada em cada pagamento;
 - valor do atendimento ajustável ao receber;

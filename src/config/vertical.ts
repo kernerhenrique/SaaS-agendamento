@@ -25,6 +25,8 @@ export interface VerticalFeatures {
   priceFrom: boolean;
   /** Agrupar serviços por categoria. */
   serviceCategories: boolean;
+  /** Comissão por profissional (% no cadastro, aba Comissões no Financeiro). */
+  commissions: boolean;
 }
 
 /** Ícone do item de serviços no menu; mapeado para Lucide no client. */
@@ -45,7 +47,7 @@ export const VERTICAL_PRESETS = {
     key: "barbershop",
     label: "Barbearia",
     terms: { professional: m("Barbeiro", "Barbeiros"), service: m("Serviço", "Serviços"), client: m("Cliente", "Clientes") },
-    features: { portfolio: true, priceFrom: true, serviceCategories: true },
+    features: { portfolio: true, priceFrom: true, serviceCategories: true, commissions: true },
     serviceIcon: "scissors",
   },
   beauty_clinic: {
@@ -56,14 +58,14 @@ export const VERTICAL_PRESETS = {
       service: m("Procedimento", "Procedimentos"),
       client: m("Cliente", "Clientes"),
     },
-    features: { portfolio: true, priceFrom: true, serviceCategories: true },
+    features: { portfolio: true, priceFrom: true, serviceCategories: true, commissions: true },
     serviceIcon: "sparkles",
   },
   tattoo_studio: {
     key: "tattoo_studio",
     label: "Estúdio de tatuagem",
     terms: { professional: m("Tatuador", "Tatuadores"), service: m("Serviço", "Serviços"), client: m("Cliente", "Clientes") },
-    features: { portfolio: true, priceFrom: true, serviceCategories: true },
+    features: { portfolio: true, priceFrom: true, serviceCategories: true, commissions: true },
     serviceIcon: "pen-tool",
   },
   generic: {
@@ -74,7 +76,8 @@ export const VERTICAL_PRESETS = {
       service: m("Serviço", "Serviços"),
       client: m("Cliente", "Clientes"),
     },
-    features: { portfolio: true, priceFrom: true, serviceCategories: true },
+    // Genérico (ex.: consultório de uma pessoa só): sem comissão por padrão.
+    features: { portfolio: true, priceFrom: true, serviceCategories: true, commissions: false },
     serviceIcon: "briefcase",
   },
 } satisfies Record<string, VerticalPreset>;

@@ -22,6 +22,11 @@ const ALLOWED_TRANSITIONS: Record<AppointmentStatus, AppointmentStatus[]> = {
   [AppointmentStatus.NO_SHOW]: [],
 };
 
+/** A transição de status é permitida? (mesma regra para a agenda e o "concluir e receber"). */
+export function canTransition(from: AppointmentStatus, to: AppointmentStatus): boolean {
+  return ALLOWED_TRANSITIONS[from].includes(to);
+}
+
 export interface ListAppointmentsParams {
   businessId: string;
   professionalId?: string;
@@ -124,6 +129,8 @@ async function insertAppointment(params: InsertAppointmentParams) {
         status: AppointmentStatus.CONFIRMED,
         notes,
         manageTokenExpiresAt,
+        // Valor do atendimento congelado na marcação (ajustável ao receber).
+        priceCents: service.priceCents,
       },
       include: { professional: true, service: true, client: true, business: true },
     });

@@ -1,6 +1,7 @@
 import { Weekday } from "@/generated/prisma/enums";
 import { isProfessionalColorKey } from "@/lib/professional-colors";
 import { ValidationError } from "@/server/errors";
+import { validateCommissionPercent } from "@/server/modules/payment/payment-rules";
 import type { ProfessionalInput, WorkingHoursInput } from "@/server/modules/professional/professional.service";
 
 const WEEKDAY_VALUES = new Set<string>(Object.values(Weekday));
@@ -47,6 +48,12 @@ export function parseProfessionalInput(body: unknown): ProfessionalInput {
   if (active !== undefined && typeof active !== "boolean") {
     throw new ValidationError("active deve ser verdadeiro ou falso");
   }
+  const { commissionPercent } = body as Record<string, unknown>;
+  if (commissionPercent !== undefined && commissionPercent !== null && typeof commissionPercent !== "number") {
+    throw new ValidationError("commissionPercent deve ser número ou null");
+  }
+  const commissionProblem = validateCommissionPercent((commissionPercent as number | null | undefined) ?? null);
+  if (commissionProblem) throw new ValidationError(commissionProblem);
 
   if (typeof name !== "string") {
     throw new ValidationError("name é obrigatório");
@@ -64,6 +71,7 @@ export function parseProfessionalInput(body: unknown): ProfessionalInput {
     specialty: typeof specialty === "string" && specialty.trim() ? specialty.trim() : null,
     color: isProfessionalColorKey(color) ? color : null,
     active: typeof active === "boolean" ? active : undefined,
+    commissionPercent: commissionPercent as number | null | undefined,
     photoUrl: typeof photoUrl === "string" ? photoUrl : null,
     photoUrls: photoUrls as string[] | undefined,
     serviceIds,
