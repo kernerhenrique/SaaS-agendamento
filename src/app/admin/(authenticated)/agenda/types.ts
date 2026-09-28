@@ -1,4 +1,5 @@
 import type { AppointmentStatus, Weekday } from "@/generated/prisma/enums";
+import type { PaymentStatus } from "@/server/modules/payment/payment-rules";
 
 export interface WorkingHoursEntry {
   weekday: Weekday;
@@ -26,6 +27,8 @@ export interface AppointmentDto {
   professional: { id: string; name: string };
   service: { id: string; name: string; durationMin: number };
   client: { id: string; name: string; phone: string };
+  /** Só para concluídos; null nos demais. */
+  paymentStatus: PaymentStatus | null;
 }
 
 export interface TimeBlockDto {

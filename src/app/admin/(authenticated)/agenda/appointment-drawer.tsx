@@ -23,7 +23,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useVertical } from "@/config/vertical-context";
 import type { AppointmentStatus } from "@/generated/prisma/enums";
 import { NEXT_STATUS_ACTIONS, STATUS_LABELS, STATUS_TONE } from "@/lib/appointment-status";
-import { formatPriceFromCents } from "@/lib/currency";
 import { localMinutesToUtc, utcToLocalDate, utcToLocalMinutes } from "@/lib/date";
 import { formatPhoneBR } from "@/lib/phone";
 import { minutesToTimeInput, timeInputToMinutes } from "@/lib/weekday";
@@ -31,6 +30,8 @@ import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { BookingTimeNotice, useNow } from "@/components/admin/booking-time-notice";
 import { evaluateLocalSlot } from "@/server/modules/appointment/admin-booking-rules";
 import { RESCHEDULABLE_STATUSES } from "@/server/modules/appointment/reschedule-rules";
+
+import { AppointmentPayments } from "./appointment-payments";
 
 import type { ProfessionalOption } from "./types";
 
@@ -99,6 +100,8 @@ function DrawerBody({
   const [pendingStatus, setPendingStatus] = useState<AppointmentStatus | null>(null);
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [isConfirmingCancel, setIsConfirmingCancel] = useState(false);
+  /** "Concluir" abre o recebimento já preenchido (com "Só concluir"). */
+  const [isCompleting, setIsCompleting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -180,9 +183,16 @@ function DrawerBody({
                 key={action.status}
                 variant={action.status === "CANCELLED" || action.status === "NO_SHOW" ? "outline" : "default"}
                 size="sm"
-                disabled={pendingStatus != null}
-                // Cancelar é estado final: passa por confirmação (modal curto).
-                onClick={() => (action.status === "CANCELLED" ? setIsConfirmingCancel(true) : changeStatus(action.status))}
+                disabled={pendingStatus != null || (action.status === "COMPLETED" && isCompleting)}
+                onClick={() => {
+                  // Cancelar é estado final: passa por confirmação (modal curto).
+                  if (action.status === "CANCELLED") setIsConfirmingCancel(true);
+                  // Concluir abre o "Concluir e receber" na seção Pagamento.
+                  else if (action.status === "COMPLETED") {
+                    setIsRescheduling(false);
+                    setIsCompleting(true);
+                  } else void changeStatus(action.status);
+                }}
               >
                 {pendingStatus === action.status ? "Salvando…" : action.label}
               </Button>
@@ -217,6 +227,18 @@ function DrawerBody({
           />
         ) : null}
 
+        <AppointmentPayments
+          appointmentId={appointment.id}
+          timezone={timezone}
+          reloadKey={reloadKey}
+          completing={isCompleting}
+          onCompletingChange={setIsCompleting}
+          onChanged={() => {
+            setReloadKey((k) => k + 1);
+            onChanged();
+          }}
+        />
+
         <section className="flex flex-col gap-1">
           <h3 className="text-caption font-medium text-muted-foreground uppercase">{terms.client.singular}</h3>
           <p className="font-medium">{appointment.client.name}</p>
@@ -242,8 +264,6 @@ function DrawerBody({
           <dd className="font-medium">{appointment.professional.name}</dd>
           <dt className="text-muted-foreground">Duração</dt>
           <dd>{appointment.service.durationMin} min</dd>
-          <dt className="text-muted-foreground">Valor de tabela</dt>
-          <dd>{formatPriceFromCents(appointment.service.priceCents)}</dd>
           {appointment.notes ? (
             <>
               <dt className="text-muted-foreground">Observação</dt>

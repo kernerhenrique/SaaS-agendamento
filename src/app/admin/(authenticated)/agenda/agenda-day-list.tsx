@@ -2,6 +2,7 @@
 
 import { Ban, CalendarX } from "lucide-react";
 
+import { PaymentIndicator } from "@/components/admin/payment-indicator";
 import { EmptyState } from "@/components/empty-state";
 import { StatusBadge } from "@/components/status-badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -93,9 +94,12 @@ export function AgendaDayList({
                             {item.appointment.service.name}
                           </span>
                         </span>
-                        <StatusBadge tone={STATUS_TONE[item.appointment.status]}>
-                          {STATUS_LABELS[item.appointment.status]}
-                        </StatusBadge>
+                        <span className="flex shrink-0 items-center gap-1.5">
+                          <PaymentIndicator status={item.appointment.paymentStatus} />
+                          <StatusBadge tone={STATUS_TONE[item.appointment.status]}>
+                            {STATUS_LABELS[item.appointment.status]}
+                          </StatusBadge>
+                        </span>
                       </button>
                     </li>
                   ),

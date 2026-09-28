@@ -12,6 +12,7 @@ import {
 } from "@dnd-kit/core";
 import { Ban } from "lucide-react";
 
+import { PaymentIndicator } from "@/components/admin/payment-indicator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { STATUS_BLOCK_CLASSES, STATUS_LABELS } from "@/lib/appointment-status";
 import { localDayRangeUtc, utcToLocalMinutes } from "@/lib/date";
@@ -337,8 +338,10 @@ function AppointmentBlock({
     <button
       ref={setNodeRef}
       type="button"
-      {...listeners}
-      {...attributes}
+      // Só blocos arrastáveis recebem os atributos do dnd-kit: nos demais
+      // (concluído, cancelado...) ele poria aria-disabled="true", e o bloco
+      // continua clicável (abre o drawer) — leitor de tela diria "desativado".
+      {...(canDrag ? { ...listeners, ...attributes } : {})}
       title={`${timeLabel} · ${appointment.client.name} · ${appointment.service.name} (${STATUS_LABELS[appointment.status]})${canDrag ? " — arraste para remarcar" : ""}`}
       className={cn(
         "absolute inset-x-1 flex flex-col overflow-hidden rounded-md px-2 py-1 text-left text-caption leading-tight shadow-sm transition-shadow hover:z-20 hover:shadow-md focus-visible:z-20 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
@@ -358,12 +361,19 @@ function AppointmentBlock({
     >
       {isCompact ? (
         <span className="truncate">
-          <span className="font-semibold">{formatTime(appointment.startAt, timezone)}</span> · {appointment.client.name}
+          <span className="inline-flex items-center gap-1 align-middle">
+            <PaymentIndicator status={appointment.paymentStatus} />
+            <span className="font-semibold">{formatTime(appointment.startAt, timezone)}</span>
+          </span>{" "}
+          · {appointment.client.name}
           <span className="block truncate opacity-80">{appointment.service.name}</span>
         </span>
       ) : (
         <>
-          <span className="truncate font-semibold">{timeLabel}</span>
+          <span className="flex items-center gap-1 truncate font-semibold">
+            {timeLabel}
+            <PaymentIndicator status={appointment.paymentStatus} />
+          </span>
           <span className="truncate">{appointment.client.name}</span>
           <span className="truncate opacity-80">{appointment.service.name}</span>
         </>

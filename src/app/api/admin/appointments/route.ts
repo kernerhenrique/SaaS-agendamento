@@ -5,6 +5,7 @@ import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
 import { handleApiError } from "@/server/http";
 import { requireAdminSession } from "@/server/modules/auth/session";
+import { summarizePayments } from "@/server/modules/payment/payment-rules";
 import {
   createManualAppointment,
   listAppointments,
@@ -38,7 +39,15 @@ export async function GET(request: NextRequest) {
       listTimeBlocksInRange({ businessId: session.businessId, professionalId, startAt, endAt }),
     ]);
 
-    return NextResponse.json({ appointments, timeBlocks });
+    return NextResponse.json({
+      appointments: appointments.map(({ payments, ...appointment }) => ({
+        ...appointment,
+        // Só faz sentido cobrar o que já foi atendido.
+        paymentStatus:
+          appointment.status === "COMPLETED" ? summarizePayments(appointment.priceCents, payments).status : null,
+      })),
+      timeBlocks,
+    });
   } catch (error) {
     return handleApiError(error);
   }

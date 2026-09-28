@@ -47,6 +47,8 @@ export function listAppointments(params: ListAppointmentsParams) {
       professional: { select: { id: true, name: true } },
       service: { select: { id: true, name: true, durationMin: true } },
       client: { select: { id: true, name: true, phone: true } },
+      // Para o indicador pago/pendente dos concluídos na agenda.
+      payments: { where: { deletedAt: null }, select: { amountCents: true, discountCents: true } },
     },
     orderBy: { startAt: "asc" },
   });

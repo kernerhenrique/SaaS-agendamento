@@ -32,6 +32,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { BookingTimeNotice } from "@/components/admin/booking-time-notice";
+import { PaymentIndicator } from "@/components/admin/payment-indicator";
+import { MoneyInput } from "@/components/money-input";
 import { ProfessionalAvatar } from "@/components/admin/professional-avatar";
 import { PROFESSIONAL_COLORS } from "@/lib/professional-colors";
 import { NewAppointmentButton } from "@/components/admin/new-appointment-button";
@@ -84,6 +86,7 @@ const COLOR_SWATCHES: { className: string; label: string; token: string }[] = [
 ];
 
 export default function DesignSystemPage() {
+  const [demoCents, setDemoCents] = useState(4500);
   return (
     <main className="flex flex-1 flex-col gap-6 p-6">
       <div>
@@ -147,6 +150,24 @@ export default function DesignSystemPage() {
               >
                 <Ban className="size-3" /> Almoço (bloqueio)
               </div>
+            </div>
+          </Section>
+
+          <Section
+            title="Valor em reais e pagamento (MoneyInput, PaymentIndicator)"
+            description="MoneyInput guarda centavos e digita como maquininha. PaymentIndicator marca concluídos na agenda: pago ou falta receber."
+          >
+            <div className="flex flex-wrap items-center gap-6">
+              <div className="flex w-48 flex-col gap-1.5">
+                <span className="text-sm font-medium">Valor recebido</span>
+                <MoneyInput aria-label="Exemplo de valor" valueCents={demoCents} onValueChange={setDemoCents} />
+              </div>
+              <span className="flex items-center gap-2 text-sm">
+                <PaymentIndicator status="PAID" /> Pago
+              </span>
+              <span className="flex items-center gap-2 text-sm">
+                <PaymentIndicator status="PARTIAL" /> Falta receber
+              </span>
             </div>
           </Section>
 
