@@ -12,6 +12,7 @@ export interface ProfessionalListItem {
   specialty: string | null;
   color: string | null;
   active: boolean;
+  commissionPercent: number | null;
   photoUrl: string | null;
   workingHours: {
     weekday: Weekday;

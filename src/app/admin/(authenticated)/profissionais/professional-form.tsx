@@ -45,6 +45,9 @@ export function ProfessionalForm({
   const [bio, setBio] = useState(professional?.bio ?? "");
   const [color, setColor] = useState<string | null>(professional?.color ?? null);
   const [active, setActive] = useState(professional?.active ?? true);
+  const [commission, setCommission] = useState(
+    professional?.commissionPercent != null ? String(professional.commissionPercent) : "",
+  );
   const [selectedServiceIds, setSelectedServiceIds] = useState<Set<string>>(
     new Set(professional?.professionalServices.map((ps) => ps.service.id) ?? []),
   );
@@ -81,9 +84,21 @@ export function ProfessionalForm({
       return;
     }
 
+    const commissionPercent = commission.trim() === "" ? null : Number(commission);
+    if (
+      features.commissions &&
+      commissionPercent != null &&
+      (!Number.isInteger(commissionPercent) || commissionPercent < 0 || commissionPercent > 100)
+    ) {
+      setError("A comissão deve ser um número inteiro de 0 a 100");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const payload = {
+        // Preset sem comissões: não manda o campo e o servidor preserva o valor.
+        ...(features.commissions ? { commissionPercent } : {}),
         name,
         specialty: specialty.trim() || null,
         bio: bio || null,
@@ -165,6 +180,32 @@ export function ProfessionalForm({
             Aparece nas colunas da agenda e no perfil. Clique de novo para tirar.
           </p>
         </fieldset>
+        {features.commissions ? (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="commission">Comissão (opcional)</Label>
+            <div className="relative w-32">
+              <Input
+                id="commission"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={100}
+                step={1}
+                placeholder="0"
+                className="pr-7 text-right tabular-nums"
+                value={commission}
+                onChange={(event) => setCommission(event.target.value)}
+                aria-describedby="commission-help"
+              />
+              <span className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-sm text-muted-foreground">
+                %
+              </span>
+            </div>
+            <p id="commission-help" className="text-caption text-muted-foreground">
+              Sobre o valor recebido. Mudar vale para os próximos pagamentos; o que já foi recebido mantém a % da época.
+            </p>
+          </div>
+        ) : null}
         <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
           <div className="flex flex-col gap-0.5">
             <Label htmlFor="active">Ativo</Label>

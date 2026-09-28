@@ -51,7 +51,7 @@ export function useAdminNav(): AdminNavItem[] {
     { href: "/admin/clientes", label: terms.client.plural, icon: Contact, group: "operacao" },
     { href: "/admin/profissionais", label: terms.professional.plural, icon: Users, group: "cadastros" },
     { href: "/admin/servicos", label: terms.service.plural, icon: SERVICE_ICONS[serviceIcon], group: "cadastros" },
-    { href: "/admin/financeiro", label: "Financeiro", icon: Wallet, group: "gestao", soon: true },
+    { href: "/admin/financeiro", label: "Financeiro", icon: Wallet, group: "gestao" },
     { href: "/admin/relatorios", label: "Relatórios", icon: BarChart3, group: "gestao" },
     { href: "/admin/mensagens", label: "Mensagens", icon: MessageCircle, group: "gestao", soon: true },
     { href: "/admin/configuracoes", label: "Configurações", icon: Settings, group: "rodape", soon: true },

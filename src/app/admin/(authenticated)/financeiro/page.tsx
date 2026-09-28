@@ -1,15 +1,33 @@
-import { Wallet } from "lucide-react";
+import { prisma } from "@/server/db/prisma";
+import { requireAdminSession } from "@/server/modules/auth/session";
 
-import { ComingSoon } from "@/components/admin/coming-soon";
+import { getProfessionalOptions } from "../agenda/professional-options";
+import { FinanceView, type FinanceTab } from "./finance-view";
+import { parsePeriodPreset } from "./period";
 
 export const metadata = { title: "Financeiro" };
 
-export default function FinanceiroPage() {
+const TABS: FinanceTab[] = ["recebimentos", "a-receber", "comissoes"];
+
+export default async function FinanceiroPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ periodo?: string; inicio?: string; fim?: string; aba?: string }>;
+}) {
+  const session = await requireAdminSession();
+  const params = await searchParams;
+  const [business, professionals] = await Promise.all([
+    prisma.business.findUniqueOrThrow({ where: { id: session.businessId }, select: { timezone: true } }),
+    getProfessionalOptions(session.businessId),
+  ]);
+
   return (
-    <ComingSoon
-      title="Financeiro"
-      icon={Wallet}
-      description="Registro de pagamentos (PIX, dinheiro, cartão), recebido e a receber, comissões e exportação para o contador."
+    <FinanceView
+      timezone={business.timezone}
+      professionals={professionals}
+      initialPreset={parsePeriodPreset(params.periodo)}
+      initialCustom={{ startDate: params.inicio ?? null, endDate: params.fim ?? null }}
+      initialTab={TABS.includes(params.aba as FinanceTab) ? (params.aba as FinanceTab) : "recebimentos"}
     />
   );
 }
