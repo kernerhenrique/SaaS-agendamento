@@ -35,6 +35,16 @@ enum ServicePriceType {
   FROM
 }
 
+// Forma do pagamento registrado (o SaaS não processa pagamento, só registra).
+enum PaymentMethod {
+  PIX
+  CASH
+  DEBIT_CARD
+  CREDIT_CARD
+  BANK_TRANSFER
+  OTHER
+}
+
 model Business {
   id           String    @id @default(cuid())
   name         String
@@ -59,6 +69,7 @@ model Business {
   serviceCategories ServiceCategory[]
   clients           Client[]
   appointments      Appointment[]
+  payments          Payment[]
 
   @@index([deletedAt])
 }
@@ -81,19 +92,21 @@ model User {
 }
 
 model Professional {
-  id         String    @id @default(cuid())
-  businessId String
-  business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  name       String
-  photoUrl   String?
-  bio        String?
-  specialty  String?
+  id                String    @id @default(cuid())
+  businessId        String
+  business          Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name              String
+  photoUrl          String?
+  bio               String?
+  specialty         String?
   // Chave da paleta de cores da agenda (src/lib/professional-colors.ts), nunca hex livre.
-  color      String?
-  active     Boolean   @default(true)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  deletedAt  DateTime?
+  color             String?
+  // Comissão em % inteiro (0–100); null = sem comissão. Congelada em cada pagamento.
+  commissionPercent Int?
+  active            Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
 
   workingHours         WorkingHours[]
   timeBlocks           TimeBlock[]
@@ -230,13 +243,43 @@ model Appointment {
   manageToken          String            @unique @default(uuid())
   manageTokenExpiresAt DateTime?         @db.Timestamptz(6)
   notes                String?
+  // Valor do atendimento em centavos: nasce com o preço do serviço na marcação
+  // (editar o serviço depois não reescreve o passado) e pode ser ajustado ao
+  // receber (ex.: serviço "a partir de").
+  priceCents           Int
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
 
-  review Review?
+  review   Review?
+  payments Payment[]
 
   @@index([businessId, startAt])
   @@index([professionalId, startAt, endAt])
+}
+
+// Recebimento registrado de um atendimento (1:N — sinal + saldo, formas
+// diferentes). Status pendente/parcial/pago é derivado, nunca gravado.
+model Payment {
+  id                String        @id @default(cuid())
+  businessId        String
+  business          Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointmentId     String
+  appointment       Appointment   @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  // Quanto entrou de fato (centavos) e desconto concedido (centavos).
+  amountCents       Int
+  discountCents     Int           @default(0)
+  method            PaymentMethod
+  // Data que vale para o financeiro e as comissões.
+  receivedAt        DateTime      @db.Timestamptz(6)
+  note              String?
+  // % de comissão do profissional congelada no momento do registro.
+  commissionPercent Int?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deletedAt         DateTime?
+
+  @@index([businessId, receivedAt])
+  @@index([appointmentId])
 }
 
 model Review {

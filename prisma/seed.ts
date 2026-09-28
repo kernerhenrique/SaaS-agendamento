@@ -1,9 +1,10 @@
 import bcrypt from "bcryptjs";
-import { PrismaClient, Weekday, AppointmentStatus } from "../src/generated/prisma/client.js";
+import { PrismaClient, Weekday, AppointmentStatus, PaymentMethod } from "../src/generated/prisma/client.js";
 
 const prisma = new PrismaClient();
 
 async function main() {
+  await prisma.payment.deleteMany();
   await prisma.review.deleteMany();
   await prisma.appointment.deleteMany();
   await prisma.client.deleteMany();
@@ -101,6 +102,7 @@ async function main() {
       name: "João Barbeiro",
       specialty: "Cortes clássicos e degradê",
       color: "blue",
+      commissionPercent: 40,
       bio: "Especialista em cortes clássicos",
       workingHours: {
         create: weekdayWorkingHours.map((weekday) => ({
@@ -133,6 +135,7 @@ async function main() {
       name: "Marcos Estilista",
       specialty: "Barba e acabamento",
       color: "orange",
+      commissionPercent: 50,
       bio: "Focado em barba e acabamento",
       workingHours: {
         create: [Weekday.TUESDAY, Weekday.WEDNESDAY, Weekday.THURSDAY, Weekday.FRIDAY, Weekday.SATURDAY].map(
@@ -192,9 +195,11 @@ async function main() {
       startAt: new Date("2026-09-25T10:00:00-03:00"),
       endAt: new Date("2026-09-25T10:30:00-03:00"),
       status: AppointmentStatus.CONFIRMED,
+      priceCents: corte.priceCents,
     },
   });
 
+  // Concluído e pago no PIX (comissão do Marcos congelada em 50%).
   await prisma.appointment.create({
     data: {
       businessId: business.id,
@@ -204,10 +209,20 @@ async function main() {
       startAt: new Date("2026-09-20T14:00:00-03:00"),
       endAt: new Date("2026-09-20T14:20:00-03:00"),
       status: AppointmentStatus.COMPLETED,
+      priceCents: barba.priceCents,
       review: {
         create: {
           rating: 5,
           comment: "Ótimo atendimento, recomendo!",
+        },
+      },
+      payments: {
+        create: {
+          businessId: business.id,
+          amountCents: 3500,
+          method: PaymentMethod.PIX,
+          receivedAt: new Date("2026-09-20T14:25:00-03:00"),
+          commissionPercent: 50,
         },
       },
     },
@@ -222,6 +237,69 @@ async function main() {
       startAt: new Date("2026-09-18T09:00:00-03:00"),
       endAt: new Date("2026-09-18T09:50:00-03:00"),
       status: AppointmentStatus.NO_SHOW,
+      priceCents: comboCorteBarba.priceCents,
+    },
+  });
+
+  // Concluído, pago em dinheiro com R$ 5,00 de desconto.
+  await prisma.appointment.create({
+    data: {
+      businessId: business.id,
+      professionalId: joao.id,
+      serviceId: corte.id,
+      clientId: clienteMaria.id,
+      startAt: new Date("2026-09-15T11:00:00-03:00"),
+      endAt: new Date("2026-09-15T11:30:00-03:00"),
+      status: AppointmentStatus.COMPLETED,
+      priceCents: corte.priceCents,
+      payments: {
+        create: {
+          businessId: business.id,
+          amountCents: 4500,
+          discountCents: 500,
+          method: PaymentMethod.CASH,
+          receivedAt: new Date("2026-09-15T11:35:00-03:00"),
+          commissionPercent: 40,
+        },
+      },
+    },
+  });
+
+  // Concluído com sinal no PIX e saldo ainda em aberto (parcial → "a receber").
+  await prisma.appointment.create({
+    data: {
+      businessId: business.id,
+      professionalId: joao.id,
+      serviceId: comboCorteBarba.id,
+      clientId: clienteMaria.id,
+      startAt: new Date("2026-09-22T15:00:00-03:00"),
+      endAt: new Date("2026-09-22T15:50:00-03:00"),
+      status: AppointmentStatus.COMPLETED,
+      priceCents: comboCorteBarba.priceCents,
+      payments: {
+        create: {
+          businessId: business.id,
+          amountCents: 3000,
+          method: PaymentMethod.PIX,
+          receivedAt: new Date("2026-09-21T19:00:00-03:00"),
+          note: "Sinal",
+          commissionPercent: 40,
+        },
+      },
+    },
+  });
+
+  // Concluído sem nenhum pagamento registrado (alerta "concluídos sem pagamento").
+  await prisma.appointment.create({
+    data: {
+      businessId: business.id,
+      professionalId: marcos.id,
+      serviceId: comboCorteBarba.id,
+      clientId: clienteMaria.id,
+      startAt: new Date("2026-09-23T16:00:00-03:00"),
+      endAt: new Date("2026-09-23T16:50:00-03:00"),
+      status: AppointmentStatus.COMPLETED,
+      priceCents: comboCorteBarba.priceCents,
     },
   });
 
