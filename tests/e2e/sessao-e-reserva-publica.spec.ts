@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { loginAsOwner } from "./helpers";
+import { loginAsOwner, weekdayInWeeks } from "./helpers";
 
 /**
  * Parte A: a sessão renova sozinha quando o access token (15 min) some.
@@ -55,12 +55,9 @@ test("reserva pública e reagendamento pelo link recusam horário fora da dispon
       },
     });
 
-  // Uma segunda-feira distante (João atende seg–sex, 09–18, almoço 12–13).
-  const monday = new Date();
-  monday.setUTCDate(monday.getUTCDate() + 7 * (8 + Math.floor(Math.random() * 30)));
-  monday.setUTCDate(monday.getUTCDate() + ((8 - monday.getUTCDay()) % 7));
-  const mondayIso = monday.toISOString().slice(0, 10);
-  const sundayIso = new Date(monday.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  // Uma segunda-feira dentro da janela de reserva (João atende seg–sex, 09–18, almoço 12–13).
+  const mondayIso = weekdayInWeeks(1, 2 + Math.floor(Math.random() * 5));
+  const sundayIso = new Date(Date.parse(`${mondayIso}T12:00:00Z`) - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
   for (const startAt of [
     `${mondayIso}T03:00:00-03:00`, // madrugada

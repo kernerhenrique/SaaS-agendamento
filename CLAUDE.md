@@ -46,8 +46,9 @@ src/
 │   └── api/                 # route handlers (admin, público, availability)
 ├── server/
 │   ├── modules/             # lógica de negócio por domínio
-│   │   ├── appointment/     # disponibilidade, criação, status, cancelamento, regras de horário do painel
-│   │   ├── auth/
+│   │   ├── appointment/     # disponibilidade, criação, status, cancelamento, regras de horário do painel, políticas de reserva (booking-policy.ts)
+│   │   ├── auth/            # login, sessão, troca de senha (password-rules.ts)
+│   │   ├── business/        # Configurações do negócio: validação pura (business-rules.ts) + leitura/gravação por seção
 │   │   ├── client/          # mini-CRM: lista/filtros, ficha, notas e tags, busca por telefone
 │   │   ├── dashboard/       # métricas do Início (reusadas no perfil do profissional)
 │   │   ├── professional/
@@ -160,6 +161,9 @@ Pré-requisitos: Node ≥20.19, Docker.
 - Logout e troca de senha incrementam `User.tokenVersion`; access token não é revalidado no banco a cada request (janela curta aceita).
 - Sessão deslizante de 7 dias: o `proxy.ts` renova em silêncio quando o access (15 min) some, usando o refresh (checado no banco e rotacionado a cada uso). Só pede senha após 7 dias sem uso. Lógica em `src/server/modules/auth/proxy-session.ts`.
 - Reserva pública e reagendamento pelo link revalidam no servidor com `assertSlotAvailable` (`availability.ts`): só aceitam um horário que a própria disponibilidade ofereceria. O encaixe pelo painel segue outra regra (`admin-booking-rules.ts`: pode encaixar fora do expediente com confirmação).
+- Políticas de reserva (`Business.minBookingNoticeMinutes`, `maxBookingWindowDays` padrão 60, `cancellationDeadlineHours`) valem só para quem agenda sem login: entram em `getAvailableSlots` (antecedência vira o "agora", datas além da janela não têm horário) e o prazo de cancelamento é checado no link de gerenciar (`booking-policy.ts`). O painel não passa por elas. Os E2E buscam horário livre dentro da janela (`findFreeSlot`).
+- Slug e fuso do negócio não são editáveis em Configurações: trocar o slug quebra links já compartilhados; trocar o fuso deslocaria a agenda gravada. `BusinessWorkingHours` é só informativo (página pública); a disponibilidade vem do expediente de cada profissional.
+- Troca de senha exige a senha atual, derruba as outras sessões (`tokenVersion`) e reemite os cookies da sessão atual.
 - Rate limit em memória via `globalThis`: funciona só em instância única. Limitação conhecida; Redis/Upstash só quando pedido.
 
 # This is NOT the Next.js you know

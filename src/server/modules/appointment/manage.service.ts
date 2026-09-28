@@ -4,6 +4,7 @@ import { NotFoundError, ValidationError } from "@/server/errors";
 
 import { isOverlapConstraintViolation, MANAGE_TOKEN_TTL_DAYS_AFTER_APPOINTMENT } from "./appointment.service";
 import { assertSlotAvailable } from "./availability";
+import { canClientChange, clientChangeDeadlineMessage } from "./booking-policy";
 
 /**
  * Mensagem sempre genérica: nunca revela se o token é inválido, já expirou,
@@ -34,6 +35,23 @@ export async function getAppointmentForManagement(token: string) {
   return appointment;
 }
 
+type ManagedAppointment = Awaited<ReturnType<typeof getAppointmentForManagement>>;
+
+/** Dentro do prazo de cancelamento do negócio o cliente precisa falar com o estabelecimento. */
+export function clientCanChange(appointment: ManagedAppointment, now = new Date()): boolean {
+  return (
+    RESCHEDULABLE_STATUSES.includes(appointment.status) &&
+    canClientChange(appointment.startAt, now, appointment.business.cancellationDeadlineHours)
+  );
+}
+
+function assertOutsideDeadline(appointment: ManagedAppointment): void {
+  const deadlineHours = appointment.business.cancellationDeadlineHours;
+  if (deadlineHours > 0 && !canClientChange(appointment.startAt, new Date(), deadlineHours)) {
+    throw new ValidationError(clientChangeDeadlineMessage(deadlineHours));
+  }
+}
+
 export async function cancelAppointmentByToken(token: string) {
   const appointment = await getAppointmentForManagement(token);
 
@@ -43,6 +61,7 @@ export async function cancelAppointmentByToken(token: string) {
   if (appointment.startAt.getTime() <= Date.now()) {
     throw new ValidationError("Não é possível cancelar um agendamento que já passou");
   }
+  assertOutsideDeadline(appointment);
 
   return prisma.appointment.update({
     where: { id: appointment.id },
@@ -59,6 +78,7 @@ export async function rescheduleAppointmentByToken(token: string, newStartAt: Da
   if (appointment.startAt.getTime() <= Date.now()) {
     throw new ValidationError("Não é possível reagendar um agendamento que já passou");
   }
+  assertOutsideDeadline(appointment);
   if (newStartAt.getTime() <= Date.now()) {
     throw new ValidationError("Escolha um horário no futuro");
   }

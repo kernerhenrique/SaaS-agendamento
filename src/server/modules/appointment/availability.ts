@@ -3,6 +3,8 @@ import { localDayRangeUtc, localMinutesToUtc, rangesOverlap, utcToLocalDate, wee
 import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
 
+import { bookingWindow } from "./booking-policy";
+
 export const DEFAULT_SLOT_GRANULARITY_MINUTES = 15;
 
 export interface WorkingHoursWindow {
@@ -115,6 +117,18 @@ export async function getAvailableSlots(params: GetAvailableSlotsParams): Promis
     throw new NotFoundError("Negócio não encontrado");
   }
 
+  // Políticas de reserva: antecedência mínima vira o "agora" do cálculo e
+  // datas além da janela máxima não têm horário.
+  const { earliestStart, lastDate } = bookingWindow({
+    now: new Date(),
+    timeZone: business.timezone,
+    minNoticeMinutes: business.minBookingNoticeMinutes,
+    maxWindowDays: business.maxBookingWindowDays,
+  });
+  if (dateISO > lastDate) {
+    return [];
+  }
+
   const service = await prisma.service.findFirst({
     where: { id: serviceId, businessId, active: true, deletedAt: null },
   });
@@ -172,7 +186,6 @@ export async function getAvailableSlots(params: GetAvailableSlotsParams): Promis
     busyByProfessional.set(appointment.professionalId, list);
   }
 
-  const now = new Date();
   const allSlots: Slot[] = [];
 
   for (const professional of professionals) {
@@ -187,7 +200,7 @@ export async function getAvailableSlots(params: GetAvailableSlotsParams): Promis
         workingHours: workingHoursForDay,
         busyIntervals: busyByProfessional.get(professional.id) ?? [],
         durationMin: service.durationMin,
-        now,
+        now: earliestStart,
       }),
     );
   }

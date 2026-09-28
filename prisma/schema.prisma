@@ -59,9 +59,17 @@ model Business {
   // Chave do preset de vertical (src/config/vertical.ts). String livre, não
   // enum: novos verticais não devem exigir migration.
   businessType String    @default("barbershop")
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
+  coverUrl     String?
+
+  // Políticas de reserva: valem para a página pública e o link do cliente;
+  // o encaixe feito pelo painel não passa por elas.
+  minBookingNoticeMinutes   Int @default(0)
+  maxBookingWindowDays      Int @default(60)
+  cancellationDeadlineHours Int @default(0)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   users             User[]
   professionals     Professional[]
@@ -70,8 +78,60 @@ model Business {
   clients           Client[]
   appointments      Appointment[]
   payments          Payment[]
+  workingHours      BusinessWorkingHours[]
+  messageTemplates  MessageTemplate[]
+  messageLogs       MessageLog[]
 
   @@index([deletedAt])
+}
+
+// Horário de funcionamento do negócio, só informativo (página pública). A
+// disponibilidade continua vindo do expediente de cada profissional.
+model BusinessWorkingHours {
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  weekday     Weekday
+  startMinute Int
+  endMinute   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([businessId, weekday])
+}
+
+enum MessageKind {
+  CONFIRMATION
+  REMINDER
+  FOLLOW_UP
+}
+
+// Modelo de mensagem editado pelo dono. Sem registro, vale o padrão do código
+// (src/server/modules/notification/whatsapp/templates.ts).
+model MessageTemplate {
+  id         String      @id @default(cuid())
+  businessId String
+  business   Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  kind       MessageKind
+  body       String
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@unique([businessId, kind])
+}
+
+// Marca que uma mensagem foi enviada (hoje pelo WhatsApp do próprio dono, via wa.me).
+model MessageLog {
+  id            String      @id @default(cuid())
+  businessId    String
+  business      Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  kind          MessageKind
+  sentAt        DateTime    @default(now()) @db.Timestamptz(6)
+
+  @@unique([appointmentId, kind])
+  @@index([businessId])
 }
 
 model User {
@@ -250,8 +310,9 @@ model Appointment {
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
 
-  review   Review?
-  payments Payment[]
+  review      Review?
+  payments    Payment[]
+  messageLogs MessageLog[]
 
   @@index([businessId, startAt])
   @@index([professionalId, startAt, endAt])

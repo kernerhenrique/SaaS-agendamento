@@ -9,22 +9,31 @@ export async function loginAsOwner(page: Page) {
   await expect(page).toHaveURL(/\/admin$/);
 }
 
+/** Janela de reserva do seed (Business.maxBookingWindowDays): além dela a disponibilidade pública não oferece horário. */
+export const BOOKING_WINDOW_DAYS = 60;
+
+/** Uma data (YYYY-MM-DD) no dia da semana pedido, `weeks` semanas à frente. `weekday`: 0 = domingo … 6 = sábado. */
+export function weekdayInWeeks(weekday: number, weeks: number): string {
+  const day = new Date();
+  day.setUTCDate(day.getUTCDate() + 7 * weeks);
+  day.setUTCDate(day.getUTCDate() + ((weekday + 7 - day.getUTCDay()) % 7));
+  return day.toISOString().slice(0, 10);
+}
+
 /**
  * Um horário LIVRE de verdade (pergunta à própria disponibilidade), num dia
- * da semana a partir de `minWeeks` semanas à frente. Evita que testes que
- * deixam atendimentos no banco local colidam entre si com horários sorteados.
- * `weekday`: 0 = domingo … 6 = sábado.
+ * da semana dentro da janela de reserva — primeiro no fim da janela, para
+ * sujar menos a agenda próxima do banco local, depois nas semanas mais perto.
+ * Evita que testes que deixam atendimentos no banco colidam entre si.
  */
 export async function findFreeSlot(
   request: APIRequestContext,
-  params: { businessId: string; serviceId: string; professionalId: string; weekday: number; minWeeks?: number },
+  params: { businessId: string; serviceId: string; professionalId: string; weekday: number },
 ): Promise<{ date: string; startAt: string }> {
-  const minWeeks = params.minWeeks ?? 8;
-  for (let week = 0; week < 60; week++) {
-    const day = new Date();
-    day.setUTCDate(day.getUTCDate() + 7 * (minWeeks + week));
-    day.setUTCDate(day.getUTCDate() + ((params.weekday + 7 - day.getUTCDay()) % 7));
-    const date = day.toISOString().slice(0, 10);
+  const lastWeek = Math.floor(BOOKING_WINDOW_DAYS / 7) - 1;
+  const weeks = [...Array.from({ length: lastWeek - 3 }, (_, i) => 4 + i), 3, 2, 1];
+  for (const week of weeks) {
+    const date = weekdayInWeeks(params.weekday, week);
     const response = await request.get(
       `/api/availability?businessId=${params.businessId}&serviceId=${params.serviceId}&professionalId=${params.professionalId}&date=${date}`,
     );
@@ -33,5 +42,5 @@ export async function findFreeSlot(
       return { date, startAt: slots[Math.floor(Math.random() * slots.length)].startAt };
     }
   }
-  throw new Error("Nenhum horário livre encontrado para o teste");
+  throw new Error("Nenhum horário livre na janela de reserva; rode npx prisma migrate reset para limpar o banco local");
 }

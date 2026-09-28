@@ -3,6 +3,7 @@ import { prisma } from "@/server/db/prisma";
 import { ValidationError } from "@/server/errors";
 
 import { hashPassword, verifyPassword } from "./password";
+import { newPasswordProblem } from "./password-rules";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "./tokens";
 
 export interface AuthenticatedUser {
@@ -81,12 +82,34 @@ export async function logout(userId: string): Promise<void> {
   });
 }
 
-export async function changePassword(userId: string, newPassword: string): Promise<void> {
+export async function changePassword(userId: string, newPassword: string): Promise<{ tokenVersion: number }> {
   const passwordHash = await hashPassword(newPassword);
-  await prisma.user.update({
+  return prisma.user.update({
     where: { id: userId },
     data: { passwordHash, tokenVersion: { increment: 1 } },
+    select: { tokenVersion: true },
   });
+}
+
+/**
+ * Troca de senha pelo próprio dono (Configurações → Conta). Exige a senha
+ * atual. `changePassword` incrementa o `tokenVersion`, o que derruba as
+ * outras sessões; esta recebe tokens novos e continua logada.
+ */
+export async function changeOwnPassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<AuthTokens> {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || !(await verifyPassword(currentPassword, user.passwordHash))) {
+    throw new ValidationError("Senha atual incorreta");
+  }
+  const problem = newPasswordProblem(currentPassword, newPassword);
+  if (problem) throw new ValidationError(problem);
+
+  const { tokenVersion } = await changePassword(userId, newPassword);
+  return issueTokens({ ...user, tokenVersion });
 }
 
 async function issueTokens(user: {
