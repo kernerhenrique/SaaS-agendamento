@@ -102,6 +102,20 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
 - **`PaymentIndicator`**: ícone discreto nos concluídos da agenda (grade e lista) — check = pago, cifrão = falta receber —, com `aria-label`.
 - **Acessibilidade na grade**: só blocos arrastáveis recebem os atributos do dnd-kit. Nos demais, ele marcava `aria-disabled="true"` num botão que continua clicável.
 
+## Financeiro (Fase 4C)
+
+- **`/admin/financeiro`**:
+  - período (Hoje · Últimos 7 dias · Este mês · Mês passado · Personalizado) guardado na URL (`?periodo=&inicio=&fim=&aba=`); regra pura em `financeiro/period.ts`;
+  - tudo **pela data de recebimento**.
+- **KPIs** (`KpiCard`): Recebido no período, A receber (total atual, com contagem), Ticket médio e Descontos.
+- **Barras "Por forma de pagamento"**: largura proporcional ao maior valor (`style` só para o dado dinâmico). No celular a contagem sai para a barra caber.
+- **Abas:**
+  - **Recebimentos**: filtro por forma e profissional; tabela no desktop, cartões no celular.
+  - **A receber**: concluídos com saldo, com botão "Receber".
+  - **Comissões**: só com `features.commissions`; % atual, recebido e comissão, com total.
+- Clicar num recebimento ou em "Receber" abre o **mesmo drawer do agendamento**. A lista de profissionais vem de `agenda/professional-options.ts`, compartilhado com a Agenda.
+- **Comissão no cadastro do profissional**: campo "%" (0–100) na aba Dados, só com o flag. O texto explica que mudar vale só para os próximos pagamentos.
+
 ## Quando usar drawer vs. modal vs. página
 
 - **Drawer** (`Sheet` + `DetailDrawerContent`, `src/components/detail-drawer.tsx`): detalhe de um registro existente (agendamento, cliente, profissional) — mantém a lista de fundo visível/no contexto.

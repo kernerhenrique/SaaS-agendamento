@@ -247,6 +247,8 @@ Todas de 2 a 6 são aditivas com `nullable`/`default`, sem backfill. `prisma/see
 
 **4B: implementado** (2026-09-27): seção Pagamento no drawer, "Concluir e receber" com "Só concluir", registro e remoção de recebimentos, indicador pago/pendente na agenda, `MoneyInput`. E2E `tests/e2e/admin-pagamento.spec.ts`.
 
+**4C: implementado** (2026-09-27): tela Financeiro (período na URL, KPIs, barras por forma, abas Recebimentos, A receber e Comissões, drawer compartilhado) e % de comissão no cadastro. E2E `tests/e2e/financeiro.spec.ts`.
+
 **Decisões do usuário (2026-09-27):**
 - comissão congelada em cada pagamento;
 - valor do atendimento ajustável ao receber;
