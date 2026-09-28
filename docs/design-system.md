@@ -86,6 +86,22 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
   - "Na página" (`visibleOnline`) esconde o serviço da página pública e bloqueia a reserva pública pela API. O serviço oculto continua disponível para encaixe no painel.
   - Ações da linha no menu "…"; remover pede confirmação.
 
+## Pagamentos (Fase 4B)
+
+- **Seção Pagamento no drawer do agendamento** (`agenda/appointment-payments.tsx`):
+  - badge pendente/parcial/pago (tokens `--payment-*`, mapa em `src/lib/payment-status.ts`);
+  - três quadrinhos Valor · Recebido · Falta;
+  - lista de recebimentos. Um registro só de desconto aparece como "Desconto de R$ X", sem forma de pagamento.
+  - Remover recebimento pede confirmação (modal).
+- **`PaymentForm`** (`src/components/admin/payment-form.tsx`), reusado no Financeiro:
+  - campos: valor do atendimento (ajustável), recebido (padrão = saldo), desconto, data (máximo hoje), forma em chips (`role="radio"`) e observação;
+  - prévia ao vivo de quanto ainda falta;
+  - uma coluna no celular, duas a partir de `sm`.
+- **"Concluir" abre "Concluir e receber"** (uma transação no servidor), com "Só concluir" para receber depois.
+- **`MoneyInput`** (`src/components/money-input.tsx`): valor em R$ guardado em centavos inteiros; os dígitos entram pela direita, como em maquininha.
+- **`PaymentIndicator`**: ícone discreto nos concluídos da agenda (grade e lista) — check = pago, cifrão = falta receber —, com `aria-label`.
+- **Acessibilidade na grade**: só blocos arrastáveis recebem os atributos do dnd-kit. Nos demais, ele marcava `aria-disabled="true"` num botão que continua clicável.
+
 ## Quando usar drawer vs. modal vs. página
 
 - **Drawer** (`Sheet` + `DetailDrawerContent`, `src/components/detail-drawer.tsx`): detalhe de um registro existente (agendamento, cliente, profissional) — mantém a lista de fundo visível/no contexto.
