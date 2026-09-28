@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CircleCheck, HandCoins, Receipt, RotateCcw, TicketPercent, Wallet } from "lucide-react";
 
+import { MethodBreakdown } from "@/components/admin/method-breakdown";
+import { PeriodPicker } from "@/components/admin/period-picker";
 import { EmptyState } from "@/components/empty-state";
 import { KpiCard } from "@/components/kpi-card";
 import { TableRowsSkeleton } from "@/components/skeletons";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -28,43 +28,12 @@ import type {
 
 import { AppointmentDrawer } from "../agenda/appointment-drawer";
 import type { ProfessionalOption } from "../agenda/types";
-import { PERIOD_LABELS, PERIOD_PRESETS, resolvePeriod, type PeriodPreset } from "@/lib/period";
+import { resolvePeriod, type PeriodPreset } from "@/lib/period";
+import { useFetchJson } from "@/lib/use-fetch-json";
 
 export type FinanceTab = "recebimentos" | "a-receber" | "comissoes";
 
 const ALL = "all";
-
-/**
- * Busca JSON e guarda de qual URL veio o dado: enquanto a URL atual não
- * chegou, `loading` é true (skeleton); um `reloadKey` novo atualiza no lugar.
- */
-function useFetchJson<T>(url: string | null, reloadKey: number) {
-  const [state, setState] = useState<{ url: string | null; data: T | null; error: boolean }>({
-    url: null,
-    data: null,
-    error: false,
-  });
-  useEffect(() => {
-    if (!url) return;
-    let cancelled = false;
-    fetch(url)
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
-      .then((data: T) => {
-        if (!cancelled) setState({ url, data, error: false });
-      })
-      .catch(() => {
-        if (!cancelled) setState({ url, data: null, error: true });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [url, reloadKey]);
-  return {
-    data: state.url === url ? state.data : null,
-    loading: state.url !== url,
-    error: state.url === url && state.error,
-  };
-}
 
 export function FinanceView({
   timezone,
@@ -130,50 +99,13 @@ export function FinanceView({
             {range.startDate !== range.endDate ? ` – ${formatIsoDate(range.endDate)}` : ""} · pela data de recebimento
           </p>
         </div>
-        <div className="flex flex-wrap items-end gap-2">
-          <Select value={preset} onValueChange={(value) => setPreset((value as PeriodPreset) ?? "mes")}>
-            <SelectTrigger aria-label="Período" className="w-44">
-              <SelectValue>{(value: PeriodPreset) => PERIOD_LABELS[value]}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {PERIOD_PRESETS.map((key) => (
-                <SelectItem key={key} value={key}>
-                  {PERIOD_LABELS[key]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {preset === "personalizado" ? (
-            <>
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="fin-start" className="text-caption">
-                  De
-                </Label>
-                <Input
-                  id="fin-start"
-                  type="date"
-                  className="w-40"
-                  value={custom.startDate}
-                  max={custom.endDate}
-                  onChange={(event) => event.target.value && setCustom((c) => ({ ...c, startDate: event.target.value }))}
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="fin-end" className="text-caption">
-                  Até
-                </Label>
-                <Input
-                  id="fin-end"
-                  type="date"
-                  className="w-40"
-                  value={custom.endDate}
-                  min={custom.startDate}
-                  onChange={(event) => event.target.value && setCustom((c) => ({ ...c, endDate: event.target.value }))}
-                />
-              </div>
-            </>
-          ) : null}
-        </div>
+        <PeriodPicker
+          idPrefix="fin"
+          preset={preset}
+          onPresetChange={setPreset}
+          custom={custom}
+          onCustomChange={setCustom}
+        />
       </div>
 
       {summary.error ? (
@@ -204,7 +136,7 @@ export function FinanceView({
             />
             <KpiCard icon={TicketPercent} label="Descontos" value={formatPriceFromCents(summary.data.summary.discountCents)} />
           </div>
-          <MethodBreakdown summary={summary.data.summary} />
+          <MethodBreakdown byMethod={summary.data.summary.byMethod} />
         </>
       )}
 
@@ -460,37 +392,6 @@ export function FinanceView({
         onChanged={reloadAll}
       />
     </main>
-  );
-}
-
-/** Barras por forma de pagamento (proporção do recebido no período). */
-function MethodBreakdown({ summary }: { summary: FinanceSummary }) {
-  if (summary.byMethod.length === 0) return null;
-  const max = Math.max(...summary.byMethod.map((m) => m.amountCents));
-  return (
-    <section className="rounded-lg border bg-card p-4" aria-labelledby="by-method-title">
-      <h2 id="by-method-title" className="mb-3 text-sm font-semibold">
-        Por forma de pagamento
-      </h2>
-      <ul className="flex flex-col gap-2">
-        {summary.byMethod.map((row) => (
-          <li key={row.method} className="grid grid-cols-[5.5rem_1fr_auto] items-center gap-3 text-sm sm:grid-cols-[6.5rem_1fr_auto]">
-            <span>{PAYMENT_METHOD_LABELS[row.method]}</span>
-            <span className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
-              {/* Largura proporcional ao maior valor: dado dinâmico, por isso style. */}
-              <span className="block h-full rounded-full bg-primary" style={{ width: `${(row.amountCents / max) * 100}%` }} />
-            </span>
-            <span className="text-right tabular-nums">
-              {formatPriceFromCents(row.amountCents)}{" "}
-              {/* No celular a contagem sai para a barra ter espaço. */}
-              <span className="hidden text-caption text-muted-foreground sm:inline">
-                ({row.count} {row.count === 1 ? "recebimento" : "recebimentos"})
-              </span>
-            </span>
-          </li>
-        ))}
-      </ul>
-    </section>
   );
 }
 

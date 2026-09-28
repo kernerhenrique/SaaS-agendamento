@@ -291,12 +291,25 @@ export default function DesignSystemPage() {
             </div>
           </Section>
 
-          <Section title="Card de KPI">
+          <Section
+            title="Card de KPI"
+            description="Com `delta`: comparação com o período anterior. Taxas em que subir é ruim invertem as cores (higherIsBetter=false)."
+          >
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <KpiCard icon={CalendarClock} label="Agendamentos" value="128" />
-              <KpiCard icon={XCircle} label="Taxa de cancelamento" value="4,2%" />
-              <KpiCard icon={UserX} label="Taxa de no-show" value="1,8%" />
-              <KpiCard icon={Trophy} label="Mais requisitado" value="João Barbeiro (52)" />
+              <KpiCard icon={CalendarClock} label="Agendamentos" value="128" delta={{ value: 0.12 }} />
+              <KpiCard
+                icon={XCircle}
+                label="Taxa de cancelamento"
+                value="4,2%"
+                delta={{ value: -0.013, kind: "points", higherIsBetter: false }}
+              />
+              <KpiCard
+                icon={UserX}
+                label="Taxa de faltas"
+                value="1,8%"
+                delta={{ value: 0.004, kind: "points", higherIsBetter: false }}
+              />
+              <KpiCard icon={Trophy} label="Mais requisitado" value="João Barbeiro (52)" delta={{ value: null }} />
             </div>
           </Section>
 

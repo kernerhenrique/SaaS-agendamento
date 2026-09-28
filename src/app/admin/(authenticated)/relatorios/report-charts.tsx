@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "cn";
 
-const NICE_STEPS = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000];
+// Até 100 mil: cobre contagens e valores em reais de um negócio pequeno/médio.
+const NICE_STEPS = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 2500, 5000, 10000, 20000, 25000, 50000, 100000];
 const MAX_TICKS = 4;
 
 /** Topo do eixo e intervalo entre linhas de grade, em números "redondos". */
@@ -69,7 +70,15 @@ export function ChartCard({
   );
 }
 
-export function DataTable({ columns, rows }: { columns: [string, string]; rows: [ReactNode, number][] }) {
+export function DataTable({
+  columns,
+  rows,
+  formatValue = String,
+}: {
+  columns: [string, string];
+  rows: [ReactNode, number][];
+  formatValue?: (value: number) => string;
+}) {
   return (
     <div className="max-h-72 overflow-auto">
       <table className="w-full text-sm">
@@ -83,7 +92,7 @@ export function DataTable({ columns, rows }: { columns: [string, string]; rows: 
           {rows.map(([label, value], index) => (
             <tr key={index} className="border-t">
               <td className="py-1.5">{label}</td>
-              <td className="py-1.5 text-right tabular-nums">{value}</td>
+              <td className="py-1.5 text-right tabular-nums">{formatValue(value)}</td>
             </tr>
           ))}
         </tbody>
@@ -92,11 +101,25 @@ export function DataTable({ columns, rows }: { columns: [string, string]; rows: 
   );
 }
 
+const describeCount = (count: number) => pluralize(count, "agendamento", "agendamentos");
+
 /**
  * Colunas por dia. Só a maior coluna recebe rótulo fixo; o valor de cada dia
- * aparece no tooltip ao passar o mouse ou focar via teclado.
+ * aparece no tooltip ao passar o mouse ou focar via teclado. `describe`
+ * formata o valor (padrão: "N agendamentos"; no faturamento, R$) e
+ * `formatTick` o eixo Y (`axisWidthClass` alarga o eixo para valores longos).
  */
-export function DailyColumnChart({ data }: { data: { date: string; count: number }[] }) {
+export function DailyColumnChart({
+  data,
+  describe = describeCount,
+  formatTick = String,
+  axisWidthClass = "w-6",
+}: {
+  data: { date: string; count: number }[];
+  describe?: (value: number) => string;
+  formatTick?: (value: number) => string;
+  axisWidthClass?: string;
+}) {
   const maxValue = Math.max(0, ...data.map((d) => d.count));
   const { top, step } = niceScale(maxValue);
   const ticks = Array.from({ length: top / step + 1 }, (_, i) => i * step);
@@ -109,14 +132,14 @@ export function DailyColumnChart({ data }: { data: { date: string; count: number
     <div className="flex flex-col gap-1">
       <div className="flex gap-2 pt-5">
         {/* Eixo Y */}
-        <div className="relative h-48 w-6 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
+        <div className={cn("relative h-48 shrink-0 text-right text-xs text-muted-foreground tabular-nums", axisWidthClass)}>
           {ticks.map((tick) => (
             <span
               key={tick}
-              className="absolute right-0 translate-y-1/2"
+              className="absolute right-0 translate-y-1/2 whitespace-nowrap"
               style={{ bottom: `${(tick / top) * 100}%` }}
             >
-              {tick}
+              {formatTick(tick)}
             </span>
           ))}
         </div>
@@ -140,7 +163,7 @@ export function DailyColumnChart({ data }: { data: { date: string; count: number
                 <button
                   key={day.date}
                   type="button"
-                  aria-label={`${longDateFormat.format(parseIsoDate(day.date))}: ${pluralize(day.count, "agendamento", "agendamentos")}`}
+                  aria-label={`${longDateFormat.format(parseIsoDate(day.date))}: ${describe(day.count)}`}
                   className="group relative flex h-full flex-1 items-end justify-center rounded-sm outline-none hover:bg-muted/60 focus-visible:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <span
@@ -148,8 +171,8 @@ export function DailyColumnChart({ data }: { data: { date: string; count: number
                     style={{ height: day.count > 0 ? `max(${heightPercent}%, 2px)` : 0 }}
                   >
                     {index === maxIndex && (
-                      <span className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 text-xs font-medium text-foreground tabular-nums group-hover:invisible group-focus-visible:invisible">
-                        {day.count}
+                      <span className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap text-xs font-medium text-foreground tabular-nums group-hover:invisible group-focus-visible:invisible">
+                        {formatTick(day.count)}
                       </span>
                     )}
                   </span>
@@ -164,7 +187,7 @@ export function DailyColumnChart({ data }: { data: { date: string; count: number
                     style={{ bottom: `calc(${heightPercent}% + 4px)` }}
                   >
                     <strong className="text-sm font-semibold text-popover-foreground tabular-nums">
-                      {pluralize(day.count, "agendamento", "agendamentos")}
+                      {describe(day.count)}
                     </strong>
                     <span className="text-xs text-muted-foreground">
                       {longDateFormat.format(parseIsoDate(day.date))}
@@ -177,17 +200,20 @@ export function DailyColumnChart({ data }: { data: { date: string; count: number
         </div>
       </div>
 
-      {/* Eixo X */}
-      <div className={cn("ml-8 flex text-xs text-muted-foreground", gapClass)}>
-        {data.map((day, index) => (
-          <span key={day.date} className="relative flex-1">
-            {index % labelEvery === 0 && (
-              <span className="absolute left-0 whitespace-nowrap">
-                {shortDateFormat.format(parseIsoDate(day.date))}
-              </span>
-            )}
-          </span>
-        ))}
+      {/* Eixo X (o recuo acompanha a largura do eixo Y) */}
+      <div className="flex gap-2">
+        <span aria-hidden className={cn("shrink-0", axisWidthClass)} />
+        <div className={cn("flex flex-1 text-xs text-muted-foreground", gapClass)}>
+          {data.map((day, index) => (
+            <span key={day.date} className="relative flex-1">
+              {index % labelEvery === 0 && (
+                <span className="absolute left-0 whitespace-nowrap">
+                  {shortDateFormat.format(parseIsoDate(day.date))}
+                </span>
+              )}
+            </span>
+          ))}
+        </div>
       </div>
       <div className="h-4" aria-hidden />
     </div>
@@ -197,8 +223,10 @@ export function DailyColumnChart({ data }: { data: { date: string; count: number
 /** Barras horizontais com o valor escrito na ponta de cada barra. */
 export function HorizontalBarChart({
   rows,
+  formatValue = String,
 }: {
   rows: { key: string; label: ReactNode; value: number }[];
+  formatValue?: (value: number) => string;
 }) {
   const maxValue = Math.max(1, ...rows.map((r) => r.value));
 
@@ -215,7 +243,7 @@ export function HorizontalBarChart({
               className="h-5 rounded-r-[4px] bg-viz-series-1"
               style={{ width: row.value > 0 ? `max(${(row.value / maxValue) * 85}%, 2px)` : 0 }}
             />
-            <span className="text-sm font-medium tabular-nums">{row.value}</span>
+            <span className="whitespace-nowrap text-sm font-medium tabular-nums">{formatValue(row.value)}</span>
           </div>
         </li>
       ))}
