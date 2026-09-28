@@ -125,6 +125,25 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
 - **Perfil do profissional › Desempenho:** "Recebido no mês" e "Comissão do mês" (só com `features.commissions`), pela data de recebimento e com a % congelada de cada pagamento.
 - A regra de "a receber" é uma só (`listReceivables` em `payment.service.ts`), usada pelo Início e pelo Financeiro.
 
+## Relatórios (Fase 5)
+
+- **`/admin/relatorios`**:
+  - o mesmo `PeriodPicker` do Financeiro (`src/components/admin/period-picker.tsx`; regra em `src/lib/period.ts`);
+  - estado na URL (`?periodo&inicio&fim&aba`);
+  - dados via `useFetchJson` (`src/lib/use-fetch-json.ts`, compartilhado com o Financeiro).
+- **Cinco abas:**
+  - Atendimentos;
+  - Faturamento: recebido por dia em R$ e barras por forma (`MethodBreakdown`, compartilhado);
+  - Profissionais: tabela comparativa, cartões no celular;
+  - Serviços: receita ou quantidade;
+  - Clientes: novos × que voltaram e quem mais gastou. Quem pagou por um atendimento de outra data aparece como "pagamento antecipado".
+- **`KpiCard` com `delta`**: "▲ 12% vs. período anterior" (período imediatamente anterior, de mesmo tamanho).
+  - Verde quando é bom, vermelho quando é ruim; `higherIsBetter: false` inverte (faltas, cancelamento, descontos).
+  - Taxas comparam em **pontos percentuais** (`kind: "points"`).
+  - Sem base (anterior = 0): "Sem base no período anterior".
+- **Gráficos** (`relatorios/report-charts.tsx`) aceitam formatadores (`describe`, `formatTick`, `formatValue`) para valores em R$. A alternância gráfico/tabela continua em todos.
+- **"Exportar CSV"**: recebimentos do período e fechamento de comissões, no formato do Excel pt-BR (BOM, `;`, vírgula decimal). Download por link com `download`.
+
 ## Quando usar drawer vs. modal vs. página
 
 - **Drawer** (`Sheet` + `DetailDrawerContent`, `src/components/detail-drawer.tsx`): detalhe de um registro existente (agendamento, cliente, profissional) — mantém a lista de fundo visível/no contexto.

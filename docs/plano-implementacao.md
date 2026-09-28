@@ -261,7 +261,18 @@ Todas de 2 a 6 são aditivas com `nullable`/`default`, sem backfill. `prisma/see
 
 ## 6. Fase 5 — Relatórios
 
-- Estender `getReportSummary` com financeiro/comissão. Cobrir com teste isolado a lacuna já identificada no diagnóstico (`getReportSummary` como um todo, e `getAvailableSlots` de orquestração).
+**Implementada (2026-09-28).** Decisões do usuário: relatórios de Faturamento, Profissionais, Serviços e Clientes; comparação com o período anterior; exportar CSV de recebimentos e comissões.
+
+- **5A:**
+  - regras puras testadas em `src/server/modules/report/report-rules.ts`, que fecham a lacuna de teste do `getReportSummary`;
+  - `getReport` por seção, com o período anterior;
+  - exportação CSV;
+  - período em `src/lib/period.ts`;
+  - Financeiro e Relatórios usam a mesma regra de ticket médio.
+- **5B:** tela com cinco abas, KPIs com comparação, gráficos em R$ e menu de exportação.
+- E2E: `relatorios-api.spec.ts` (coerência com o Financeiro e o CSV) e `relatorios.spec.ts` (tela e download).
+- Continua pendente: teste de orquestração do `getAvailableSlots` com banco. A revalidação da reserva pública (E2E) já exercita esse caminho.
+- Efeito colateral conhecido: o E2E de sessão faz logout, o que derruba também a sessão aberta no navegador do dono (por desenho, logout revoga todas as sessões).
 
 ## 7. Fase 6 — Mensagens e Configurações
 
