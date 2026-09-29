@@ -144,6 +144,21 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
 - **Gráficos** (`relatorios/report-charts.tsx`) aceitam formatadores (`describe`, `formatTick`, `formatValue`) para valores em R$. A alternância gráfico/tabela continua em todos.
 - **"Exportar CSV"**: recebimentos do período e fechamento de comissões, no formato do Excel pt-BR (BOM, `;`, vírgula decimal). Download por link com `download`.
 
+## Configurações (Fase 6B)
+
+- **`/admin/configuracoes`**: formulário longo, então é página. Cinco cartões (`SettingsCard`), cada um com o próprio "Salvar":
+  - Negócio · Identidade · Horário · Reservas · Conta;
+  - índice lateral fixo no desktop; no celular, faixa de atalhos rolável (links `#secao`).
+- **`useSaveSettings`**: toast em sucesso, erro de validação inline ao lado do botão, e `router.refresh()` para o shell (nome, logo, cor, termos do nicho) mudar na hora.
+- **Identidade**:
+  - logo e capa por link `https://`, com prévia e aviso se a imagem não abrir;
+  - cor com seletor + hex e prévia (botão e link) usando `getAccentCssVars` num contêiner — nunca muda o `:root` antes de salvar;
+  - contraste mostrado com `accentContrast` (`src/lib/accent-color.ts`): texto do botão e cor como texto sobre fundo branco.
+- **Reservas**: opções prontas em `Select` (sem número solto), exemplo concreto da antecedência e prévia "O cliente vê assim".
+- **Página pública**: capa acima do cabeçalho (só no passo 1) e `BusinessDetails` (`<details>` nativo, fechado por padrão): "Aberto hoje · 09:00 às 19:00", semana agrupada ("Seg a Sex") e políticas em frases (`src/lib/business-info.ts`).
+- **Link de gerenciar**: dentro do prazo de cancelamento, alerta `warning` com "Falar no WhatsApp" (mensagem pronta) no lugar de Cancelar/Reagendar.
+- `WorkingHoursEditor` aceita `allowBreak={false}` (horário do negócio não tem almoço) e dá nome acessível aos campos de hora.
+
 ## Quando usar drawer vs. modal vs. página
 
 - **Drawer** (`Sheet` + `DetailDrawerContent`, `src/components/detail-drawer.tsx`): detalhe de um registro existente (agendamento, cliente, profissional) — mantém a lista de fundo visível/no contexto.
@@ -174,9 +189,9 @@ Toda tela busca de dados precisa dos três estados:
 ## Como trocar a identidade para um novo cliente
 
 Hoje (antes da Fase 7 formalizar o processo completo em `docs/como-clonar.md`):
-1. `Business.name`, `Business.accentColor`, `Business.logoUrl` — únicos campos de identidade que já existem no banco. Ainda sem tela de Configurações; editar via seed ou Prisma Studio.
-2. Contraste do texto sobre a cor de marca é calculado automaticamente (`getAccentForeground`, `src/lib/accent-color.ts`) — não precisa ajustar manualmente.
-3. Terminologia e recursos do nicho: `Business.businessType` escolhe o preset em `src/config/vertical.ts` (barbershop, beauty_clinic, tattoo_studio, generic). Troca "Profissional/Serviço/Cliente" em todas as telas, no e-mail e no menu, e liga/desliga portfólio, preço "a partir de" e categorias.
+1. Nome, logo, capa, cor de marca, contato, horário e regras de reserva: tudo pela tela **Configurações** do painel (Fase 6B). Slug e fuso ficam de fora de propósito (ver CLAUDE.md).
+2. Contraste do texto sobre a cor de marca é calculado automaticamente (`getAccentForeground`, `src/lib/accent-color.ts`, sempre o texto de maior contraste); a tela avisa quando a cor é clara demais para texto sobre fundo branco.
+3. Terminologia e recursos do nicho: `Business.businessType` (campo "Tipo de negócio" em Configurações) escolhe o preset em `src/config/vertical.ts` (barbershop, beauty_clinic, tattoo_studio, generic). Troca "Profissional/Serviço/Cliente" em todas as telas, no e-mail e no menu, e liga/desliga portfólio, preço "a partir de" e categorias.
 
 ## Marca do produto (a plataforma) vs. marca do cliente
 

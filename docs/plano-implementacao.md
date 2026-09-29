@@ -276,8 +276,25 @@ Todas de 2 a 6 são aditivas com `nullable`/`default`, sem backfill. `prisma/see
 
 ## 7. Fase 6 — Mensagens e Configurações
 
-- `src/server/modules/notification/whatsapp/` (isolado, como o CLAUDE.md já prevê, para plugar API oficial depois sem mexer nas telas).
-- Preset de vertical em `src/config/vertical.ts` (terminologia + feature flags), consumido pela tela de Configurações.
+Decisões do usuário (2026-09-28):
+- políticas de reserva: antecedência mínima, janela máxima (padrão 60 dias) e prazo para cancelar/remarcar pelo link. Valem para a página pública e o link; o painel continua livre;
+- mensagens: modelos editáveis + botão WhatsApp com texto pronto + lista de lembretes de amanhã;
+- logo e capa por link (sem upload);
+- extras: trocar senha e horário de funcionamento informativo na página pública.
+
+- **6A (implementado):**
+  - migration aditiva (políticas e capa no `Business`, `BusinessWorkingHours`, `MessageTemplate`, `MessageLog`);
+  - `booking-policy.ts` (`bookingWindow`, `canClientChange`, testados) aplicado em `getAvailableSlots` e no link de gerenciar;
+  - API de Configurações por seção com validação pura (`business-rules.ts`);
+  - troca de senha (`POST /api/admin/auth/password`).
+  - Os E2E passaram a buscar horário livre dentro da janela de reserva.
+- **6B (implementado):**
+  - `/admin/configuracoes` em cinco seções (Negócio, Identidade, Horário, Reservas, Conta), cada uma salvando sozinha;
+  - página pública com capa e "Horários e políticas" (frases de `src/lib/business-info.ts`, testadas);
+  - faixa de datas e "próximo horário" limitados à janela;
+  - link de gerenciar: dentro do prazo, aviso + WhatsApp no lugar de Cancelar/Reagendar.
+  - Correção: `getAccentForeground` escolhia texto branco em cores médias (laranja, verde) com contraste ~2:1; agora usa o texto de maior contraste.
+- **6C (pendente):** `src/server/modules/notification/whatsapp/` (isolado para plugar API oficial depois), tela Mensagens e WhatsApp no drawer.
 
 ## 8. Fase 7 — Base clonável
 
