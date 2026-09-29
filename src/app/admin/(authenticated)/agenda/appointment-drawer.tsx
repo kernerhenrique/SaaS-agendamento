@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { CalendarClock, MessageCircle, RotateCcw } from "lucide-react";
+import { CalendarClock, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 import { DetailDrawerContent } from "@/components/detail-drawer";
 import { StatusBadge } from "@/components/status-badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -26,8 +26,8 @@ import { NEXT_STATUS_ACTIONS, STATUS_LABELS, STATUS_TONE } from "@/lib/appointme
 import { localMinutesToUtc, utcToLocalDate, utcToLocalMinutes } from "@/lib/date";
 import { formatPhoneBR } from "@/lib/phone";
 import { minutesToTimeInput, timeInputToMinutes } from "@/lib/weekday";
-import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { BookingTimeNotice, useNow } from "@/components/admin/booking-time-notice";
+import { WhatsAppMessageMenu } from "@/components/admin/whatsapp-message-menu";
 import { evaluateLocalSlot } from "@/server/modules/appointment/admin-booking-rules";
 import { RESCHEDULABLE_STATUSES } from "@/server/modules/appointment/reschedule-rules";
 
@@ -248,15 +248,9 @@ function DrawerBody({
             {clientStats.completed} {clientStats.completed === 1 ? "atendimento concluído" : "atendimentos concluídos"} ·{" "}
             {clientStats.noShows} {clientStats.noShows === 1 ? "falta" : "faltas"}
           </p>
-          <a
-            href={buildWhatsAppUrl(appointment.client.phone)}
-            target="_blank"
-            rel="noreferrer"
-            className={buttonVariants({ variant: "outline", size: "sm", className: "mt-1 w-fit" })}
-          >
-            <MessageCircle />
-            WhatsApp
-          </a>
+          <div className="mt-1">
+            <WhatsAppMessageMenu appointmentId={appointment.id} phone={appointment.client.phone} timezone={timezone} />
+          </div>
         </section>
 
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">

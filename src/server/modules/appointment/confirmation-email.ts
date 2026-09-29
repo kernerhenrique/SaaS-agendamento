@@ -1,4 +1,5 @@
 import { getVertical } from "@/config/vertical";
+import { buildManageUrl } from "@/server/app-url";
 import { sendEmail } from "@/server/modules/notification/email";
 
 export interface AppointmentConfirmationEmailData {
@@ -11,10 +12,6 @@ export interface AppointmentConfirmationEmailData {
   startAt: Date;
   timezone: string;
   manageToken: string;
-}
-
-function getAppBaseUrl(): string {
-  return process.env.APP_BASE_URL ?? "http://localhost:3000";
 }
 
 /** Nome do cliente vem do formulário público: nunca interpolar cru no HTML. */
@@ -37,7 +34,7 @@ export async function sendAppointmentConfirmationEmail(
     timeStyle: "short",
   }).format(data.startAt);
 
-  const manageUrl = `${getAppBaseUrl()}/agendamento/${data.manageToken}/gerenciar`;
+  const manageUrl = buildManageUrl(data.manageToken);
 
   const text = [
     `Olá ${data.clientName},`,

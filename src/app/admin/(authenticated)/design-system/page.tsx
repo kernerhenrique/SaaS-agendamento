@@ -49,6 +49,11 @@ import { Stepper } from "@/components/stepper";
 import { TableToolbar } from "@/components/table-toolbar";
 import { TimeSlotGrid } from "@/components/time-slot-grid";
 import { STATUS_BLOCK_CLASSES, STATUS_LABELS } from "@/lib/appointment-status";
+import type { QueueItem } from "@/server/modules/notification/whatsapp/message.service";
+import { DEFAULT_TEMPLATES, buildTemplateValues, renderTemplate } from "@/server/modules/notification/whatsapp/templates";
+
+import { MessageQueueRow } from "../mensagens/message-queue";
+import { TemplateEditor } from "../mensagens/template-editor";
 
 const APPOINTMENT_TONES: { tone: StatusTone; label: string }[] = [
   { tone: "scheduled", label: "Agendado" },
@@ -427,9 +432,69 @@ export default function DesignSystemPage() {
               </DropdownMenu>
             </div>
           </Section>
+
+          <MessagesSection />
         </TabsContent>
       </Tabs>
     </main>
+  );
+}
+
+const DEMO_MESSAGE_VALUES = buildTemplateValues({
+  clientName: "Maria Silva",
+  serviceName: "Corte de cabelo",
+  professionalName: "João",
+  businessName: "Negócio de exemplo",
+  businessAddress: "Rua Exemplo, 100",
+  startAt: new Date("2026-09-30T17:30:00Z"),
+  timeZone: "America/Sao_Paulo",
+  manageUrl: "https://exemplo.com/agendamento/exemplo/gerenciar",
+});
+
+function demoQueueItem(appointmentId: string, clientName: string, startAt: string): QueueItem {
+  const text = renderTemplate(DEFAULT_TEMPLATES.REMINDER, { ...DEMO_MESSAGE_VALUES, primeiro_nome: clientName.split(" ")[0] });
+  return {
+    appointmentId,
+    startAt,
+    clientName,
+    clientPhone: "11999990000",
+    serviceName: "Corte de cabelo",
+    professionalName: "João",
+    message: { kind: "REMINDER", text, url: "#", sentAt: null },
+  };
+}
+
+function MessagesSection() {
+  const [sentAt, setSentAt] = useState<string | null>("2026-09-29T17:05:00Z");
+  return (
+    <Section
+      title="Mensagens (WhatsApp)"
+      description="Item da fila de envio (enviar abre o wa.me e marca; desmarcar desfaz) e editor de modelo com variáveis e prévia. Aqui nada é salvo nem enviado."
+    >
+      <ul className="flex flex-col gap-2">
+        <MessageQueueRow
+          item={demoQueueItem("demo-1", "Maria Silva", "2026-09-30T12:00:00Z")}
+          sentAt={null}
+          timezone="America/Sao_Paulo"
+          sendLabel="Enviar lembrete"
+          onSend={() => toast.info("Demonstração: abriria o WhatsApp.")}
+          onUnmark={() => undefined}
+        />
+        <MessageQueueRow
+          item={demoQueueItem("demo-2", "Pedro Alves", "2026-09-30T13:30:00Z")}
+          sentAt={sentAt}
+          timezone="America/Sao_Paulo"
+          sendLabel="Enviar lembrete"
+          onSend={() => setSentAt(new Date().toISOString())}
+          onUnmark={() => setSentAt(null)}
+        />
+      </ul>
+      <TemplateEditor
+        demo
+        template={{ kind: "REMINDER", body: DEFAULT_TEMPLATES.REMINDER, isCustom: false }}
+        sample={DEMO_MESSAGE_VALUES}
+      />
+    </Section>
   );
 }
 

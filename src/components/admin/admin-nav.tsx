@@ -53,7 +53,7 @@ export function useAdminNav(): AdminNavItem[] {
     { href: "/admin/servicos", label: terms.service.plural, icon: SERVICE_ICONS[serviceIcon], group: "cadastros" },
     { href: "/admin/financeiro", label: "Financeiro", icon: Wallet, group: "gestao" },
     { href: "/admin/relatorios", label: "Relatórios", icon: BarChart3, group: "gestao" },
-    { href: "/admin/mensagens", label: "Mensagens", icon: MessageCircle, group: "gestao", soon: true },
+    { href: "/admin/mensagens", label: "Mensagens", icon: MessageCircle, group: "gestao" },
     { href: "/admin/configuracoes", label: "Configurações", icon: Settings, group: "rodape" },
   ];
 }
