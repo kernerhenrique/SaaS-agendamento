@@ -10,7 +10,7 @@ import {
 } from "@/server/modules/business/business-rules";
 
 describe("parseBusinessProfile", () => {
-  const base = { name: " Barbearia X ", businessType: "barbershop", whatsapp: "(11) 98888-0000" };
+  const base = { name: " Barbearia X ", whatsapp: "(11) 98888-0000" };
 
   it("normaliza nome, WhatsApp (só dígitos) e campos vazios", () => {
     expect(parseBusinessProfile({ ...base, address: "  " })).toEqual({
@@ -18,17 +18,19 @@ describe("parseBusinessProfile", () => {
       address: null,
       whatsapp: "11988880000",
       instagramUrl: null,
-      businessType: "barbershop",
     });
+  });
+
+  it("ignora tipo de negócio: o nicho é definido na criação do cliente, não pela tela", () => {
+    expect(parseBusinessProfile({ ...base, businessType: "tattoo_studio" })).not.toHaveProperty("businessType");
   });
 
   it("aceita WhatsApp com +55", () => {
     expect(parseBusinessProfile({ ...base, whatsapp: "+55 11 98888-0000" }).whatsapp).toBe("11988880000");
   });
 
-  it("recusa nome vazio, nicho fora dos presets e WhatsApp sem DDD", () => {
+  it("recusa nome vazio e WhatsApp sem DDD", () => {
     expect(() => parseBusinessProfile({ ...base, name: "" })).toThrow("nome");
-    expect(() => parseBusinessProfile({ ...base, businessType: "padaria" })).toThrow("Tipo de negócio");
     expect(() => parseBusinessProfile({ ...base, whatsapp: "98888-0000" })).toThrow("DDD");
   });
 });

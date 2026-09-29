@@ -1,5 +1,4 @@
 import { Weekday } from "@/generated/prisma/enums";
-import { isVerticalKey } from "@/config/vertical";
 import { normalizePhoneBR } from "@/lib/phone";
 import { ValidationError } from "@/server/errors";
 
@@ -79,22 +78,21 @@ export interface BusinessProfileInput {
   address: string | null;
   whatsapp: string | null;
   instagramUrl: string | null;
-  businessType: string;
 }
 
+/**
+ * Dados do negócio editáveis pelo dono. O tipo de negócio (preset de nicho)
+ * NÃO entra: é definido na criação do cliente (seed / script de clonagem) e
+ * só muda pelo suporte — um campo `businessType` no corpo é ignorado.
+ */
 export function parseBusinessProfile(body: Body): BusinessProfileInput {
   const name = optionalText(body.name, "Nome", TEXT_LIMITS.name);
   if (!name) throw new ValidationError("Informe o nome do negócio");
-  const businessType = body.businessType;
-  if (typeof businessType !== "string" || !isVerticalKey(businessType)) {
-    throw new ValidationError("Tipo de negócio inválido");
-  }
   return {
     name,
     address: optionalText(body.address, "Endereço", TEXT_LIMITS.address),
     whatsapp: parseBusinessWhatsapp(body.whatsapp),
     instagramUrl: parseInstagram(body.instagramUrl),
-    businessType,
   };
 }
 

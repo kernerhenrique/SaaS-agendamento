@@ -17,10 +17,12 @@ test("configurações validam e salvam por seção, e o horário de funcionament
     });
     expect(badColor.status()).toBe(400);
     expect((await badColor.json()).error).toContain("#RRGGBB");
-    const badType = await api.patch("/api/admin/business", {
-      data: { secao: "negocio", name: original.name, businessType: "padaria" },
+    // O nicho é definido na criação do cliente: a tela não troca (campo ignorado).
+    const typeAttempt = await api.patch("/api/admin/business", {
+      data: { secao: "negocio", name: original.name, address: original.address, whatsapp: original.whatsapp, instagramUrl: original.instagramUrl, businessType: "tattoo_studio" },
     });
-    expect(badType.status()).toBe(400);
+    expect(typeAttempt.status()).toBe(200);
+    expect((await typeAttempt.json()).business.businessType).toBe(original.businessType);
 
     // Negócio: Instagram por @ vira link; WhatsApp vira só dígitos.
     const saved = await api.patch("/api/admin/business", {
@@ -28,7 +30,6 @@ test("configurações validam e salvam por seção, e o horário de funcionament
         secao: "negocio",
         name: original.name,
         address: original.address,
-        businessType: original.businessType,
         whatsapp: "(11) 97777-0000",
         instagramUrl: "@navalha.teste",
       },
@@ -50,7 +51,6 @@ test("configurações validam e salvam por seção, e o horário de funcionament
         secao: "negocio",
         name: original.name,
         address: original.address,
-        businessType: original.businessType,
         whatsapp: original.whatsapp,
         instagramUrl: original.instagramUrl,
       },

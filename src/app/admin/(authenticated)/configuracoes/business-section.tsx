@@ -7,8 +7,7 @@ import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { VERTICAL_PRESETS, getVertical, type VerticalKey } from "@/config/vertical";
+import { getVertical } from "@/config/vertical";
 import { formatPhoneBR } from "@/lib/phone";
 
 import type { BusinessSettings } from "@/server/modules/business/business.service";
@@ -27,13 +26,11 @@ export function BusinessSection({ business }: { business: BusinessSettings }) {
   const [address, setAddress] = useState(business.address ?? "");
   const [whatsapp, setWhatsapp] = useState(business.whatsapp ? formatPhoneBR(business.whatsapp) : "");
   const [instagram, setInstagram] = useState(business.instagramUrl ?? "");
-  const [businessType, setBusinessType] = useState(business.businessType);
   const [copied, setCopied] = useState(false);
   const { save, isSaving, error } = useSaveSettings((saved) => setInstagram(saved.instagramUrl ?? ""));
   const origin = useOrigin();
   const publicPath = `/${business.slug}`;
-  const typeChanged = businessType !== business.businessType;
-  const nextTerms = getVertical(businessType).terms;
+  const vertical = getVertical(business.businessType);
 
   async function copyLink() {
     try {
@@ -49,7 +46,7 @@ export function BusinessSection({ business }: { business: BusinessSettings }) {
     <SettingsCard
       id="negocio"
       title="Negócio"
-      description="Nome, contato e tipo de negócio. Aparecem na página pública e nas mensagens."
+      description="Nome e contato. Aparecem na página pública e nas mensagens."
       isSaving={isSaving}
       error={error}
       onSubmit={() =>
@@ -59,7 +56,6 @@ export function BusinessSection({ business }: { business: BusinessSettings }) {
           address,
           whatsapp,
           instagramUrl: instagram,
-          businessType,
         })
       }
     >
@@ -105,22 +101,10 @@ export function BusinessSection({ business }: { business: BusinessSettings }) {
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="business-type">Tipo de negócio</Label>
-        <Select value={businessType} onValueChange={(value) => value && setBusinessType(value)}>
-          <SelectTrigger id="business-type" className="w-full sm:w-72">
-            <SelectValue>{(value: string) => getVertical(value).label}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {(Object.keys(VERTICAL_PRESETS) as VerticalKey[]).map((key) => (
-              <SelectItem key={key} value={key}>
-                {VERTICAL_PRESETS[key].label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <p className="text-caption text-muted-foreground" aria-live="polite">
-          {typeChanged
-            ? `Ao salvar, o painel e a página pública passam a dizer "${nextTerms.professional.plural}", "${nextTerms.service.plural}" e "${nextTerms.client.plural}".`
-            : "Define os nomes usados no painel e na página pública (ex.: Barbeiro, Procedimento)."}
+        <Input id="business-type" readOnly value={vertical.label} className="text-muted-foreground sm:w-72" aria-describedby="business-type-help" />
+        <p id="business-type-help" className="text-caption text-muted-foreground">
+          Definido na contratação: é o que faz o sistema falar &quot;{vertical.terms.professional.plural}&quot; e &quot;
+          {vertical.terms.service.plural}&quot;. Para mudar, fale com o suporte.
         </p>
       </div>
 
