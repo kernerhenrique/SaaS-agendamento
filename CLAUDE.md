@@ -56,7 +56,7 @@ src/
 │   │   ├── service/
 │   │   ├── payment/         # registro de pagamentos externos: regras puras (payment-rules.ts) + financeiro/comissões
 │   │   ├── report/
-│   │   └── notification/    # e-mail; whatsapp/ isolado para trocar provedor
+│   │   └── notification/    # e-mail; whatsapp/ isolado: templates.ts (puro), sender.ts (wa.me hoje), message.service.ts (modelos, filas, "enviado")
 │   └── db/prisma.ts         # singleton do PrismaClient
 ├── config/
 │   ├── vertical.ts          # preset do nicho: terminologia + feature flags (ativo = Business.businessType)
@@ -163,6 +163,7 @@ Pré-requisitos: Node ≥20.19, Docker.
 - Reserva pública e reagendamento pelo link revalidam no servidor com `assertSlotAvailable` (`availability.ts`): só aceitam um horário que a própria disponibilidade ofereceria. O encaixe pelo painel segue outra regra (`admin-booking-rules.ts`: pode encaixar fora do expediente com confirmação).
 - Políticas de reserva (`Business.minBookingNoticeMinutes`, `maxBookingWindowDays` padrão 60, `cancellationDeadlineHours`) valem só para quem agenda sem login: entram em `getAvailableSlots` (antecedência vira o "agora", datas além da janela não têm horário) e o prazo de cancelamento é checado no link de gerenciar (`booking-policy.ts`). O painel não passa por elas. Os E2E buscam horário livre dentro da janela (`findFreeSlot`).
 - Slug e fuso do negócio não são editáveis em Configurações: trocar o slug quebra links já compartilhados; trocar o fuso deslocaria a agenda gravada. `BusinessWorkingHours` é só informativo (página pública); a disponibilidade vem do expediente de cada profissional.
+- WhatsApp sem API: o dono envia pelo próprio WhatsApp via link `wa.me` com o texto pronto; "enviado" (`MessageLog`) é marcado quando ele abre o link, e pode ser desmarcado. Os links são montados antes do clique (abrir depois de um fetch seria bloqueado como pop-up). Para plugar a API oficial, trocar a implementação de `WhatsAppSender` (`notification/whatsapp/sender.ts`). Links para o cliente usam `APP_BASE_URL` (`src/server/app-url.ts`).
 - Troca de senha exige a senha atual, derruba as outras sessões (`tokenVersion`) e reemite os cookies da sessão atual.
 - Rate limit em memória via `globalThis`: funciona só em instância única. Limitação conhecida; Redis/Upstash só quando pedido.
 

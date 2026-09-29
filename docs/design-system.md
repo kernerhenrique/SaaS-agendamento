@@ -159,6 +159,16 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
 - **Link de gerenciar**: dentro do prazo de cancelamento, alerta `warning` com "Falar no WhatsApp" (mensagem pronta) no lugar de Cancelar/Reagendar.
 - `WorkingHoursEditor` aceita `allowBreak={false}` (horário do negócio não tem almoço) e dá nome acessível aos campos de hora.
 
+## Mensagens (Fase 6C)
+
+- **`WhatsAppMessageMenu`** (`src/components/admin/whatsapp-message-menu.tsx`), no drawer do agendamento: "WhatsApp ▾" com os três textos prontos, cada um com check e hora quando já enviado, e "Conversa sem mensagem pronta". Se os textos não carregarem, vira o botão simples de antes.
+- Cada opção é um **link wa.me de verdade** (`DropdownMenuItem render={<a>}`): abrir o WhatsApp depois de um `fetch` seria bloqueado como pop-up. O clique só marca como enviado.
+- **`/admin/mensagens`** (aba na URL, `?aba=`):
+  - **Lembretes de amanhã** e **Pós-atendimento** (`MessageQueueList` + `MessageQueueRow`): contador "3 de 8 enviados" com barra `success`, "Ver mensagem" (`<details>`), enviar / reenviar / desmarcar;
+  - **Modelos** (`TemplateEditor`): chips que inserem a variável no cursor, aviso para `{variável}` inexistente, prévia com dados do próprio negócio e "Restaurar padrão" com confirmação (modal).
+- Estados: skeleton, vazio com explicação de quando a lista enche, erro com "Tentar de novo".
+- No style guide, o editor roda em modo `demo` (não grava).
+
 ## Quando usar drawer vs. modal vs. página
 
 - **Drawer** (`Sheet` + `DetailDrawerContent`, `src/components/detail-drawer.tsx`): detalhe de um registro existente (agendamento, cliente, profissional) — mantém a lista de fundo visível/no contexto.

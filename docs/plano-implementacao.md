@@ -294,7 +294,12 @@ Decisões do usuário (2026-09-28):
   - faixa de datas e "próximo horário" limitados à janela;
   - link de gerenciar: dentro do prazo, aviso + WhatsApp no lugar de Cancelar/Reagendar.
   - Correção: `getAccentForeground` escolhia texto branco em cores médias (laranja, verde) com contraste ~2:1; agora usa o texto de maior contraste.
-- **6C (pendente):** `src/server/modules/notification/whatsapp/` (isolado para plugar API oficial depois), tela Mensagens e WhatsApp no drawer.
+- **6C (implementado):**
+  - `src/server/modules/notification/whatsapp/`: `templates.ts` (modelos padrão, variáveis, `renderTemplate` testado; linha com variável vazia some), `sender.ts` (interface `WhatsAppSender`, hoje link wa.me) e `message.service.ts` (modelos do negócio, textos prontos por agendamento, marcar/desmarcar enviado, filas);
+  - drawer do agendamento: "WhatsApp ▾" com Confirmação, Lembrete e Pós-atendimento, mostrando o que já foi enviado;
+  - `/admin/mensagens`: Lembretes de amanhã e Pós-atendimento (enviar um a um, contador, desmarcar) e Modelos (variáveis clicáveis, prévia com dados do negócio, restaurar padrão).
+  - Nenhuma tela "em breve" restante no menu.
+- Fora do escopo desta fase: envio automático (API oficial/provedor), upload de imagem, trocar slug/fuso pela tela, e-mail de lembrete.
 
 ## 8. Fase 7 — Base clonável
 
