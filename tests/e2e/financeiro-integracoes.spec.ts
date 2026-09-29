@@ -46,7 +46,7 @@ test("início, ficha do cliente e perfil do profissional mostram o financeiro", 
   await page.goto("/admin");
   await expect(page.getByText("Recebido no mês")).toBeVisible();
   await expect(page.getByText(/A receber \(\d+\)/)).toBeVisible();
-  const alert = page.getByRole("link", { name: /sem pagamento registrado/ });
+  const alert = page.getByRole("link", { name: /sem nenhum pagamento/ });
   await expect(alert).toBeVisible();
   await alert.click();
   await expect(page).toHaveURL(/\/admin\/financeiro\?.*aba=a-receber/);

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, CalendarCheck, CalendarDays, Gauge, HandCoins, UserPlus, UserX, Wallet } from "lucide-react";
+import { AlertTriangle, CalendarCheck, CircleAlert, CalendarDays, Gauge, HandCoins, UserPlus, UserX, Wallet } from "lucide-react";
 
 import { NewAppointmentButton } from "@/components/admin/new-appointment-button";
 import { EmptyState } from "@/components/empty-state";
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getVertical, lowerTerm } from "@/config/vertical";
 import { STATUS_LABELS, STATUS_TONE } from "@/lib/appointment-status";
 import { formatPriceFromCents } from "@/lib/currency";
+import { cn } from "cn";
 import { formatDateLabel } from "@/lib/date";
 import { prisma } from "@/server/db/prisma";
 import { requireAdminSession } from "@/server/modules/auth/session";
@@ -36,7 +37,8 @@ export default async function InicioPage() {
   const hasAlerts =
     data.alerts.professionalsWithoutHours.length > 0 ||
     data.alerts.inactiveClients > 0 ||
-    data.alerts.completedWithoutPayment > 0;
+    data.alerts.completedWithoutPayment.count > 0 ||
+    data.alerts.completedPartialPayment.count > 0;
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
@@ -116,12 +118,22 @@ export default async function InicioPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             {!hasAlerts ? <p className="text-sm text-muted-foreground">Tudo certo por aqui.</p> : null}
-            {data.alerts.completedWithoutPayment > 0 ? (
+            {data.alerts.completedWithoutPayment.count > 0 ? (
+              <Alert href="/admin/financeiro?aba=a-receber" tone="destructive">
+                <strong>{data.alerts.completedWithoutPayment.count}</strong>{" "}
+                {data.alerts.completedWithoutPayment.count === 1
+                  ? "atendimento concluído está sem nenhum pagamento"
+                  : "atendimentos concluídos estão sem nenhum pagamento"}{" "}
+                ({formatPriceFromCents(data.alerts.completedWithoutPayment.cents)}).
+              </Alert>
+            ) : null}
+            {data.alerts.completedPartialPayment.count > 0 ? (
               <Alert href="/admin/financeiro?aba=a-receber">
-                <strong>{data.alerts.completedWithoutPayment}</strong>{" "}
-                {data.alerts.completedWithoutPayment === 1
-                  ? "atendimento concluído está sem pagamento registrado."
-                  : "atendimentos concluídos estão sem pagamento registrado."}
+                <strong>{data.alerts.completedPartialPayment.count}</strong>{" "}
+                {data.alerts.completedPartialPayment.count === 1
+                  ? "atendimento concluído com pagamento parcial"
+                  : "atendimentos concluídos com pagamento parcial"}{" "}
+                (faltam {formatPriceFromCents(data.alerts.completedPartialPayment.cents)}).
               </Alert>
             ) : null}
             {data.alerts.professionalsWithoutHours.map((professional) => (
@@ -157,13 +169,28 @@ function KpiLink({ href, children }: { href: string; children: React.ReactNode }
   );
 }
 
-function Alert({ href, children }: { href: string; children: React.ReactNode }) {
+const ALERT_TONES = {
+  warning: { box: "border-warning/30 bg-warning/10 hover:bg-warning/15", icon: "text-warning", Icon: AlertTriangle },
+  destructive: { box: "border-destructive/30 bg-destructive/10 hover:bg-destructive/15", icon: "text-destructive", Icon: CircleAlert },
+} as const;
+
+/** Alerta clicável do quadro "Atenção": amarelo (atenção) ou vermelho (dinheiro sem nenhum registro). */
+function Alert({
+  href,
+  tone = "warning",
+  children,
+}: {
+  href: string;
+  tone?: keyof typeof ALERT_TONES;
+  children: React.ReactNode;
+}) {
+  const { box, icon, Icon } = ALERT_TONES[tone];
   return (
     <Link
       href={href}
-      className="flex gap-3 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm transition-colors hover:bg-warning/15 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+      className={cn("flex gap-3 rounded-lg border p-3 text-sm transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none", box)}
     >
-      <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
+      <Icon className={cn("mt-0.5 size-4 shrink-0", icon)} />
       <span>{children}</span>
     </Link>
   );

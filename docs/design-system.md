@@ -120,7 +120,7 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
 
 - **Início:**
   - KPIs "Recebido no mês" e "A receber (N)" são clicáveis e levam ao Financeiro;
-  - alerta "N atendimentos concluídos sem pagamento registrado" (só os sem nenhum recebimento; parcial não conta) leva a Financeiro › A receber.
+  - no quadro "Atenção", dois alertas levam a Financeiro › A receber: **vermelho** (`destructive`) para concluídos sem nenhum pagamento, com o valor; **amarelo** (`warning`) para pagamento parcial, com quanto falta. O `Alert` do Início aceita `tone`.
 - **Ficha do cliente:** "Total gasto" (soma do que foi recebido) em grade 2×2 com Atendimentos, Faltas e Última visita.
 - **Perfil do profissional › Desempenho:** "Recebido no mês" e "Comissão do mês" (só com `features.commissions`), pela data de recebimento e com a % congelada de cada pagamento.
 - A regra de "a receber" é uma só (`listReceivables` em `payment.service.ts`), usada pelo Início e pelo Financeiro.
@@ -201,7 +201,7 @@ Toda tela busca de dados precisa dos três estados:
 Hoje (antes da Fase 7 formalizar o processo completo em `docs/como-clonar.md`):
 1. Nome, logo, capa, cor de marca, contato, horário e regras de reserva: tudo pela tela **Configurações** do painel (Fase 6B). Slug e fuso ficam de fora de propósito (ver CLAUDE.md).
 2. Contraste do texto sobre a cor de marca é calculado automaticamente (`getAccentForeground`, `src/lib/accent-color.ts`, sempre o texto de maior contraste); a tela avisa quando a cor é clara demais para texto sobre fundo branco.
-3. Terminologia e recursos do nicho: `Business.businessType` (campo "Tipo de negócio" em Configurações) escolhe o preset em `src/config/vertical.ts` (barbershop, beauty_clinic, tattoo_studio, generic). Troca "Profissional/Serviço/Cliente" em todas as telas, no e-mail e no menu, e liga/desliga portfólio, preço "a partir de" e categorias.
+3. Terminologia e recursos do nicho: `Business.businessType` (definido na criação do cliente; em Configurações aparece só para leitura) escolhe o preset em `src/config/vertical.ts` (barbershop, beauty_clinic, tattoo_studio, generic). Troca "Profissional/Serviço/Cliente" em todas as telas, no e-mail e no menu, e liga/desliga portfólio, preço "a partir de" e categorias.
 
 ## Marca do produto (a plataforma) vs. marca do cliente
 

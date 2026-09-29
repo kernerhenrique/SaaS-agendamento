@@ -43,10 +43,17 @@ export interface DashboardData {
   alerts: {
     professionalsWithoutHours: { id: string; name: string }[];
     inactiveClients: number;
-    /** Concluídos sem NENHUM recebimento registrado (provável esquecimento). */
-    completedWithoutPayment: number;
+    /** Concluídos sem NENHUM recebimento registrado (provável esquecimento) — alerta vermelho. */
+    completedWithoutPayment: { count: number; cents: number };
+    /** Concluídos com pagamento parcial (ex.: só o sinal) — alerta amarelo; `cents` = quanto falta. */
+    completedPartialPayment: { count: number; cents: number };
   };
 }
+
+const totalReceivable = (rows: { summary: { balanceCents: number } }[]) => ({
+  count: rows.length,
+  cents: rows.reduce((sum, row) => sum + row.summary.balanceCents, 0),
+});
 
 export async function getDashboard(businessId: string, timeZone: string, now = new Date()): Promise<DashboardData> {
   const today = todayInTimeZone(timeZone);
@@ -138,16 +145,14 @@ export async function getDashboard(businessId: string, timeZone: string, now = n
         .length,
       receivedCents: received._sum.amountCents ?? 0,
     },
-    receivable: {
-      cents: receivables.reduce((sum, r) => sum + r.summary.balanceCents, 0),
-      count: receivables.length,
-    },
+    receivable: totalReceivable(receivables),
     alerts: {
       professionalsWithoutHours: professionals
         .filter((p) => p.workingHours.length === 0)
         .map((p) => ({ id: p.id, name: p.name })),
       inactiveClients,
-      completedWithoutPayment: receivables.filter((r) => r.summary.status === "PENDING").length,
+      completedWithoutPayment: totalReceivable(receivables.filter((r) => r.summary.status === "PENDING")),
+      completedPartialPayment: totalReceivable(receivables.filter((r) => r.summary.status === "PARTIAL")),
     },
   };
 }
