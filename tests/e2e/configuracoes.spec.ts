@@ -20,12 +20,16 @@ test("configurações salvam capa, horário e janela e aparecem na página públ
     await identidade.getByRole("button", { name: "Salvar" }).click();
     await expect(page.getByText("Alterações salvas").first()).toBeVisible();
 
-    // Horário: seg a sex 09–18 e sábado.
+    // Horário: seg a sáb 09–18 (preenche cada dia, sem depender do que já estava salvo).
     const horario = page.locator("#horario");
     for (const day of ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]) {
       const checkbox = horario.getByRole("checkbox", { name: day });
       if (!(await checkbox.isChecked())) await checkbox.click();
+      await horario.getByLabel(`${day}: início`).fill("09:00");
+      await horario.getByLabel(`${day}: fim`).fill("18:00");
     }
+    const sunday = horario.getByRole("checkbox", { name: "Domingo" });
+    if (await sunday.isChecked()) await sunday.click();
     await expect(horario.getByText("Seg a Sáb")).toBeVisible();
     await horario.getByRole("button", { name: "Salvar" }).click();
     await expect(page.getByText("Alterações salvas").first()).toBeVisible();
