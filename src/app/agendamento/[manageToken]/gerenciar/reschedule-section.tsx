@@ -17,6 +17,7 @@ export function RescheduleSection({
   serviceId,
   professionalId,
   timezone,
+  maxWindowDays,
   onRescheduled,
 }: {
   token: string;
@@ -24,9 +25,13 @@ export function RescheduleSection({
   serviceId: string;
   professionalId: string;
   timezone: string;
+  /** Janela de reserva do negócio (hoje + N dias): além dela não há horário. */
+  maxWindowDays: number;
   onRescheduled: (newStartAt: string, newEndAt: string) => void;
 }) {
-  const [date, setDate] = useState(() => todayInTimeZone(timezone));
+  const [today] = useState(() => todayInTimeZone(timezone));
+  const lastDate = addDaysToIsoDate(today, maxWindowDays);
+  const [date, setDate] = useState(today);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,13 +80,25 @@ export function RescheduleSection({
   return (
     <div className="flex flex-col gap-2 rounded-lg border p-4">
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" onClick={() => setDate((d) => addDaysToIsoDate(d, -1))}>
+        <Button
+          variant="outline"
+          size="sm"
+          aria-label="Dia anterior"
+          disabled={date <= today}
+          onClick={() => setDate((d) => addDaysToIsoDate(d, -1))}
+        >
           ←
         </Button>
         <p className="min-w-40 text-center text-sm font-medium first-letter:uppercase">
           {formatDateLabel(date, timezone)}
         </p>
-        <Button variant="outline" size="sm" onClick={() => setDate((d) => addDaysToIsoDate(d, 1))}>
+        <Button
+          variant="outline"
+          size="sm"
+          aria-label="Próximo dia"
+          disabled={date >= lastDate}
+          onClick={() => setDate((d) => addDaysToIsoDate(d, 1))}
+        >
           →
         </Button>
       </div>

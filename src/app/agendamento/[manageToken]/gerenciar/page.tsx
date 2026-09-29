@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { VerticalProvider } from "@/config/vertical-context";
 import { checkRateLimit, getClientIp, MANAGE_TOKEN_RATE_LIMIT } from "@/lib/rate-limit";
 import { NotFoundError } from "@/server/errors";
-import { getAppointmentForManagement } from "@/server/modules/appointment/manage.service";
+import { clientCanChange, getAppointmentForManagement } from "@/server/modules/appointment/manage.service";
 
 import { ManageView } from "./manage-view";
 
@@ -42,6 +42,7 @@ export default async function ManageAppointmentPage({
     <ManageView
       token={manageToken}
       initialIsFuture={initialIsFuture}
+      initialCanChange={clientCanChange(appointment)}
       appointment={{
         status: appointment.status,
         startAt: appointment.startAt.toISOString(),
@@ -51,6 +52,9 @@ export default async function ManageAppointmentPage({
           name: appointment.business.name,
           timezone: appointment.business.timezone,
           address: appointment.business.address,
+          whatsapp: appointment.business.whatsapp,
+          maxBookingWindowDays: appointment.business.maxBookingWindowDays,
+          cancellationDeadlineHours: appointment.business.cancellationDeadlineHours,
         },
         professional: { id: appointment.professional.id, name: appointment.professional.name },
         service: {

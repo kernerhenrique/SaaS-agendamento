@@ -16,6 +16,7 @@ import { getInitials } from "@/lib/text";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { cn } from "cn";
 
+import { BusinessDetails } from "./business-details";
 import { ConfirmationStep, type ConfirmedAppointmentInfo } from "./confirmation-step";
 import { ContactStep, type ContactInfo } from "./contact-step";
 import { DatetimeStep } from "./datetime-step";
@@ -123,6 +124,10 @@ export function BookingFlow({
     <VerticalProvider verticalKey={business.businessType}>
     <AccentColorScope accentColor={business.accentColor} className="flex flex-1 flex-col">
       <main className="flex flex-1 flex-col">
+        {business.coverUrl && step === 1 ? (
+          // eslint-disable-next-line @next/next/no-img-element -- capa vem de URL externa arbitrária, sem domínio fixo para configurar no next/image
+          <img src={business.coverUrl} alt="" className="h-32 w-full object-cover sm:h-52" />
+        ) : null}
         <header className="border-b bg-card p-4 shadow-sm sm:p-6">
           <div className={CONTENT_WIDTH_CLASS}>
             <div className="flex items-start justify-between gap-4">
@@ -165,6 +170,7 @@ export function BookingFlow({
                 <ThemeToggle />
               </div>
             </div>
+            {step === 1 ? <BusinessDetails business={business} /> : null}
             {step <= 4 ? (
               <div className="mt-4">
                 <Stepper
@@ -195,6 +201,7 @@ export function BookingFlow({
                   serviceId={selection.service.id}
                   professionalId={selection.professionalId}
                   timezone={business.timezone}
+                  maxWindowDays={business.maxBookingWindowDays}
                   onSelect={handleSelectSlot}
                 />
               ) : null}

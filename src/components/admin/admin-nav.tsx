@@ -54,7 +54,7 @@ export function useAdminNav(): AdminNavItem[] {
     { href: "/admin/financeiro", label: "Financeiro", icon: Wallet, group: "gestao" },
     { href: "/admin/relatorios", label: "Relatórios", icon: BarChart3, group: "gestao" },
     { href: "/admin/mensagens", label: "Mensagens", icon: MessageCircle, group: "gestao", soon: true },
-    { href: "/admin/configuracoes", label: "Configurações", icon: Settings, group: "rodape", soon: true },
+    { href: "/admin/configuracoes", label: "Configurações", icon: Settings, group: "rodape" },
   ];
 }
 

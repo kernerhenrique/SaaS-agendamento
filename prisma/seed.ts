@@ -29,6 +29,18 @@ async function main() {
       whatsapp: "11988880000",
       instagramUrl: "https://instagram.com/navalhadeouro",
       policyText: "Cancelamentos com menos de 2 horas de antecedência podem ser cobrados. Chegue com 10 minutos de antecedência.",
+      cancellationDeadlineHours: 2,
+      // Informativo (página pública); a disponibilidade vem do expediente de cada barbeiro.
+      workingHours: {
+        create: [
+          ...[Weekday.MONDAY, Weekday.TUESDAY, Weekday.WEDNESDAY, Weekday.THURSDAY, Weekday.FRIDAY].map((weekday) => ({
+            weekday,
+            startMinute: 9 * 60,
+            endMinute: 19 * 60,
+          })),
+          { weekday: Weekday.SATURDAY, startMinute: 9 * 60, endMinute: 17 * 60 },
+        ],
+      },
       users: {
         create: {
           email: "dono@navalhadeouro.com",

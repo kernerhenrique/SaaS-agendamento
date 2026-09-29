@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { MessageCircle } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useVertical } from "@/config/vertical-context";
 import { AppointmentStatus } from "@/generated/prisma/enums";
 import { STATUS_LABELS } from "@/lib/appointment-status";
+import { formatMinutesDuration } from "@/lib/business-info";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 import { RescheduleSection } from "./reschedule-section";
 import { ReviewForm } from "./review-form";
@@ -25,6 +28,7 @@ export function ManageView({
   token,
   appointment: initial,
   initialIsFuture,
+  initialCanChange,
 }: {
   token: string;
   appointment: ManagedAppointment;
@@ -37,6 +41,8 @@ export function ManageView({
    * reavaliar isso depois da carga inicial.
    */
   initialIsFuture: boolean;
+  /** Fora do prazo de cancelamento do negócio? Calculado no servidor, pelo mesmo motivo acima. */
+  initialCanChange: boolean;
 }) {
   const { terms } = useVertical();
   const [appointment, setAppointment] = useState(initial);
@@ -44,7 +50,9 @@ export function ManageView({
   const [error, setError] = useState<string | null>(null);
   const [isRescheduling, setIsRescheduling] = useState(false);
 
-  const canManage = CANCELLABLE_STATUSES.includes(appointment.status) && initialIsFuture;
+  const isOpen = CANCELLABLE_STATUSES.includes(appointment.status) && initialIsFuture;
+  const canManage = isOpen && initialCanChange;
+  const deadlineHours = appointment.business.cancellationDeadlineHours;
 
   async function handleCancel() {
     if (!window.confirm("Tem certeza que deseja cancelar este agendamento?")) return;
@@ -111,11 +119,35 @@ export function ManageView({
               serviceId={appointment.service.id}
               professionalId={appointment.professional.id}
               timezone={appointment.business.timezone}
+              maxWindowDays={appointment.business.maxBookingWindowDays}
               onRescheduled={(newStartAt, newEndAt) => {
                 setAppointment((prev) => ({ ...prev, startAt: newStartAt, endAt: newEndAt }));
                 setIsRescheduling(false);
               }}
             />
+          ) : null}
+        </div>
+      ) : null}
+
+      {isOpen && !canManage ? (
+        <div role="status" className="flex flex-col gap-3 rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm">
+          <p>
+            Alterações pelo link só até {formatMinutesDuration(deadlineHours * 60)} antes do horário. Para cancelar ou
+            trocar, fale com {appointment.business.name}.
+          </p>
+          {appointment.business.whatsapp ? (
+            <a
+              href={buildWhatsAppUrl(
+                appointment.business.whatsapp,
+                `Olá! Preciso alterar meu agendamento de ${formatFullDateTime(appointment.startAt, appointment.business.timezone)}.`,
+              )}
+              target="_blank"
+              rel="noreferrer"
+              className={buttonVariants({ variant: "outline", size: "sm", className: "w-fit bg-background" })}
+            >
+              <MessageCircle />
+              Falar no WhatsApp
+            </a>
           ) : null}
         </div>
       ) : null}

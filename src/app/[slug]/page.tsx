@@ -44,6 +44,7 @@ export default async function PublicBookingPage({
 
   const business = await prisma.business.findFirst({
     where: { slug, deletedAt: null },
+    include: { workingHours: { select: { weekday: true, startMinute: true, endMinute: true } } },
   });
   if (!business) {
     notFound();
@@ -79,6 +80,11 @@ export default async function PublicBookingPage({
         instagramUrl: business.instagramUrl,
         policyText: business.policyText,
         businessType: business.businessType,
+        coverUrl: business.coverUrl,
+        workingHours: business.workingHours,
+        minBookingNoticeMinutes: business.minBookingNoticeMinutes,
+        maxBookingWindowDays: business.maxBookingWindowDays,
+        cancellationDeadlineHours: business.cancellationDeadlineHours,
       }}
       services={services.map((service) => ({
         id: service.id,

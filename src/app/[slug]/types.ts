@@ -1,3 +1,5 @@
+import type { BusinessHoursEntry } from "@/lib/business-info";
+
 export interface BusinessInfo {
   id: string;
   name: string;
@@ -10,6 +12,11 @@ export interface BusinessInfo {
   instagramUrl: string | null;
   policyText: string | null;
   businessType: string;
+  coverUrl: string | null;
+  workingHours: BusinessHoursEntry[];
+  minBookingNoticeMinutes: number;
+  maxBookingWindowDays: number;
+  cancellationDeadlineHours: number;
 }
 
 export interface ServiceOption {

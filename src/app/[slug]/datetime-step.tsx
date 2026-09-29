@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { DateStrip } from "@/components/date-strip";
 import { SlotGridSkeleton } from "@/components/slot-grid-skeleton";
 import { TimeSlotGrid, type TimeSlot } from "@/components/time-slot-grid";
-import { formatDateLabel, todayInTimeZone, utcToLocalMinutes } from "@/lib/date";
+import { addDaysToIsoDate, formatDateLabel, todayInTimeZone, utcToLocalMinutes } from "@/lib/date";
 
 import { NO_PREFERENCE, type AvailableSlot } from "./types";
 
@@ -43,15 +43,19 @@ export function DatetimeStep({
   serviceId,
   professionalId,
   timezone,
+  maxWindowDays,
   onSelect,
 }: {
   businessId: string;
   serviceId: string;
   professionalId: string | typeof NO_PREFERENCE;
   timezone: string;
+  /** Janela de reserva do negócio: hoje + N dias, inclusive (mesma regra do servidor). */
+  maxWindowDays: number;
   onSelect: (slot: AvailableSlot) => void;
 }) {
   const [today] = useState(() => todayInTimeZone(timezone));
+  const lastDate = addDaysToIsoDate(today, maxWindowDays);
   const [date, setDate] = useState(today);
   const [slots, setSlots] = useState<AvailableSlot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -99,9 +103,8 @@ export function DatetimeStep({
     setSearchNextError(null);
     try {
       for (let offset = 1; offset <= MAX_DAYS_TO_PROBE; offset++) {
-        const candidateDate = new Date(date);
-        candidateDate.setDate(candidateDate.getDate() + offset);
-        const candidateISO = candidateDate.toISOString().slice(0, 10);
+        const candidateISO = addDaysToIsoDate(date, offset);
+        if (candidateISO > lastDate) break;
 
         const candidateSlots = await fetchSlotsForDate({
           businessId,
@@ -114,7 +117,11 @@ export function DatetimeStep({
           return;
         }
       }
-      setSearchNextError(`Nenhum horário livre nos próximos ${MAX_DAYS_TO_PROBE} dias.`);
+      setSearchNextError(
+        addDaysToIsoDate(date, MAX_DAYS_TO_PROBE) >= lastDate
+          ? "Nenhum horário livre até o fim da agenda aberta."
+          : `Nenhum horário livre nos próximos ${MAX_DAYS_TO_PROBE} dias.`,
+      );
     } finally {
       setIsSearchingNext(false);
     }
@@ -124,7 +131,7 @@ export function DatetimeStep({
     <div className="flex flex-col gap-4">
       <h2 className="text-lg font-semibold">Escolha data e horário</h2>
 
-      <DateStrip minDate={today} selectedDate={date} timezone={timezone} onSelect={setDate} />
+      <DateStrip minDate={today} days={maxWindowDays + 1} selectedDate={date} timezone={timezone} onSelect={setDate} />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-medium first-letter:uppercase">{formatDateLabel(date, timezone)}</p>

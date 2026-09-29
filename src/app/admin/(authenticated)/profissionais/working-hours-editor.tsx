@@ -67,9 +67,12 @@ export function workingHoursFormEntriesToInput(entries: WorkingHoursFormEntry[])
 export function WorkingHoursEditor({
   value,
   onChange,
+  allowBreak = true,
 }: {
   value: WorkingHoursFormEntry[];
   onChange: (next: WorkingHoursFormEntry[]) => void;
+  /** Horário de funcionamento do negócio não tem intervalo de almoço. */
+  allowBreak?: boolean;
 }) {
   function updateEntry(index: number, patch: Partial<WorkingHoursFormEntry>) {
     onChange(value.map((entry, i) => (i === index ? { ...entry, ...patch } : entry)));
@@ -97,6 +100,7 @@ export function WorkingHoursEditor({
               <Input
                 type="time"
                 className="w-28"
+                aria-label={`${WEEKDAY_LABELS[entry.weekday]}: início`}
                 value={entry.startTime}
                 onChange={(event) => updateEntry(index, { startTime: event.target.value })}
               />
@@ -104,17 +108,20 @@ export function WorkingHoursEditor({
               <Input
                 type="time"
                 className="w-28"
+                aria-label={`${WEEKDAY_LABELS[entry.weekday]}: fim`}
                 value={entry.endTime}
                 onChange={(event) => updateEntry(index, { endTime: event.target.value })}
               />
-              <Label className="flex items-center gap-1 font-normal">
-                <Checkbox
-                  checked={entry.hasBreak}
-                  onCheckedChange={(checked) => updateEntry(index, { hasBreak: checked === true })}
-                />
-                Almoço
-              </Label>
-              {entry.hasBreak ? (
+              {allowBreak ? (
+                <Label className="flex items-center gap-1 font-normal">
+                  <Checkbox
+                    checked={entry.hasBreak}
+                    onCheckedChange={(checked) => updateEntry(index, { hasBreak: checked === true })}
+                  />
+                  Almoço
+                </Label>
+              ) : null}
+              {allowBreak && entry.hasBreak ? (
                 <>
                   <Input
                     type="time"

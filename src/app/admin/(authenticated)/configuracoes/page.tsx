@@ -1,15 +1,17 @@
-import { Settings } from "lucide-react";
+import { prisma } from "@/server/db/prisma";
+import { requireAdminSession } from "@/server/modules/auth/session";
+import { getBusinessSettings } from "@/server/modules/business/business.service";
 
-import { ComingSoon } from "@/components/admin/coming-soon";
+import { SettingsView } from "./settings-view";
 
 export const metadata = { title: "Configurações" };
 
-export default function ConfiguracoesPage() {
-  return (
-    <ComingSoon
-      title="Configurações"
-      icon={Settings}
-      description="Identidade do negócio (logo, cor, capa), contato, horário de funcionamento, regras de reserva e senha."
-    />
-  );
+export default async function ConfiguracoesPage() {
+  const session = await requireAdminSession();
+  const [business, user] = await Promise.all([
+    getBusinessSettings(session.businessId),
+    prisma.user.findUniqueOrThrow({ where: { id: session.userId }, select: { email: true } }),
+  ]);
+
+  return <SettingsView business={business} email={user.email} />;
 }
