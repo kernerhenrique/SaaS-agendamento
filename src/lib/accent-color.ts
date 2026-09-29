@@ -35,11 +35,45 @@ export function resolveAccentColor(accentColor: string | null | undefined): stri
   return normalizeHex(accentColor) ?? DEFAULT_ACCENT_COLOR;
 }
 
-/** Cor de texto (quase-branco ou quase-preto, alinhada aos tokens --primary-foreground existentes) com contraste adequado contra o hex informado. */
+// Luminância aproximada dos dois textos possíveis (oklch 0.985 e 0.145: Y ≈ L³).
+const LIGHT_TEXT_LUMINANCE = 0.955;
+const DARK_TEXT_LUMINANCE = 0.003;
+
+function contrastRatio(a: number, b: number): number {
+  const [light, dark] = a > b ? [a, b] : [b, a];
+  return (light + 0.05) / (dark + 0.05);
+}
+
+/** O texto escuro contrasta mais que o claro sobre essa luminância? */
+function prefersDarkText(luminance: number): boolean {
+  return contrastRatio(luminance, DARK_TEXT_LUMINANCE) > contrastRatio(luminance, LIGHT_TEXT_LUMINANCE);
+}
+
+/**
+ * Cor de texto (quase-branco ou quase-preto, alinhada aos tokens
+ * --primary-foreground) com o MAIOR contraste possível contra o hex. Cores
+ * médias (laranja, verde claro) ficam com texto escuro.
+ */
 export function getAccentForeground(hex: string): string {
   const normalized = normalizeHex(hex) ?? DEFAULT_ACCENT_COLOR;
-  const luminance = relativeLuminance(normalized);
-  return luminance > 0.45 ? "oklch(0.145 0 0)" : "oklch(0.985 0 0)";
+  return prefersDarkText(relativeLuminance(normalized)) ? "oklch(0.145 0 0)" : "oklch(0.985 0 0)";
+}
+
+/** Contraste AA mínimo para texto normal (WCAG 2.x). */
+export const AA_CONTRAST = 4.5;
+
+/**
+ * Contraste da cor de marca nos dois usos do design system: texto do botão
+ * sobre a cor (`onButton`, com o texto claro/escuro que `getAccentForeground`
+ * escolheria) e a cor como texto/link sobre o fundo claro (`onLightBackground`).
+ */
+export function accentContrast(hex: string): { onButton: number; onLightBackground: number } {
+  const luminance = relativeLuminance(normalizeHex(hex) ?? DEFAULT_ACCENT_COLOR);
+  const text = prefersDarkText(luminance) ? DARK_TEXT_LUMINANCE : LIGHT_TEXT_LUMINANCE;
+  return {
+    onButton: contrastRatio(luminance, text),
+    onLightBackground: contrastRatio(luminance, 1),
+  };
 }
 
 /**

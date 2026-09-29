@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  AA_CONTRAST,
+  accentContrast,
   DEFAULT_ACCENT_COLOR,
   getAccentCssVars,
   getAccentForeground,
@@ -38,6 +40,24 @@ describe("getAccentForeground", () => {
   it("usa texto claro sobre cores escuras", () => {
     expect(getAccentForeground("#000000")).toBe("oklch(0.985 0 0)");
     expect(getAccentForeground(DEFAULT_ACCENT_COLOR)).toBe("oklch(0.985 0 0)"); // indigo
+  });
+
+  it("cores médias ficam com o texto de maior contraste (escuro), não branco", () => {
+    expect(getAccentForeground("#f59e0b")).toBe("oklch(0.145 0 0)"); // laranja/âmbar
+    expect(getAccentForeground("#22c55e")).toBe("oklch(0.145 0 0)"); // verde
+  });
+});
+
+describe("accentContrast", () => {
+  it("o texto do botão sempre fica com o melhor contraste disponível (≥ 4,5 nas cores comuns)", () => {
+    for (const color of [DEFAULT_ACCENT_COLOR, "#f59e0b", "#22c55e", "#0ea5e9", "#dc2626", "#111827"]) {
+      expect(accentContrast(color).onButton, color).toBeGreaterThanOrEqual(AA_CONTRAST);
+    }
+  });
+
+  it("cor clara como texto sobre fundo branco fica abaixo de AA", () => {
+    expect(accentContrast("#fde047").onLightBackground).toBeLessThan(AA_CONTRAST);
+    expect(accentContrast(DEFAULT_ACCENT_COLOR).onLightBackground).toBeGreaterThanOrEqual(AA_CONTRAST);
   });
 });
 
