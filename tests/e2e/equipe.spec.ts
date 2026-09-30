@@ -43,6 +43,12 @@ test("convite pela tela, painel reduzido do profissional e revogar", async ({ pa
     await expect(menu.getByRole("link", { name: "Barbeiros" })).toHaveCount(0);
     await expect(pro.getByText("Minha comissão no mês")).toBeVisible();
 
+    // Menu da conta (canto superior direito) abre com nome e papel — já quebrou por faltar o grupo do título.
+    await pro.getByRole("button", { name: /^Conta:/ }).click();
+    await expect(pro.getByRole("menu").getByText("Barbeiro", { exact: true })).toBeVisible();
+    await expect(pro.getByRole("menuitem", { name: "Sair" })).toBeVisible();
+    await pro.keyboard.press("Escape");
+
     // Telas do dono voltam ao Início; Configurações só com a Conta; Mensagens sem Modelos.
     await pro.goto("/admin/financeiro");
     await expect(pro).toHaveURL(/\/admin$/);

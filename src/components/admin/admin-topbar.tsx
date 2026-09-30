@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -69,10 +70,13 @@ export function AdminTopbar({
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-48">
-          <DropdownMenuLabel className="flex flex-col">
-            <span className="truncate">{userName}</span>
-            <span className="text-caption font-normal text-muted-foreground">{roleLabel}</span>
-          </DropdownMenuLabel>
+          {/* Base UI: o título do menu precisa estar dentro de um grupo. */}
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="flex flex-col">
+              <span className="truncate">{userName}</span>
+              <span className="text-caption font-normal text-muted-foreground">{roleLabel}</span>
+            </DropdownMenuLabel>
+          </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={logout} disabled={isLoggingOut}>
             <LogOut />
