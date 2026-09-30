@@ -16,6 +16,14 @@ export class ValidationError extends Error {
   }
 }
 
+/** Logado, mas sem permissão para esta ação (ex.: profissional no Financeiro). */
+export class ForbiddenError extends Error {
+  constructor(message = "Você não tem permissão para esta ação") {
+    super(message);
+    this.name = "ForbiddenError";
+  }
+}
+
 export class UnauthorizedError extends Error {
   constructor(message = "Não autenticado") {
     super(message);

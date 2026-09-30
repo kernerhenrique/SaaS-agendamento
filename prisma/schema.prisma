@@ -10,6 +10,9 @@ datasource db {
 
 enum UserRole {
   OWNER
+  // Funcionário ligado a um Professional: só a própria agenda e os próprios clientes
+  // (matriz em src/server/modules/auth/permissions.ts).
+  PROFESSIONAL
 }
 
 enum Weekday {
@@ -81,6 +84,7 @@ model Business {
   workingHours      BusinessWorkingHours[]
   messageTemplates  MessageTemplate[]
   messageLogs       MessageLog[]
+  staffInvites      StaffInvite[]
 
   @@index([deletedAt])
 }
@@ -145,10 +149,32 @@ model User {
   // Incrementado em logout/troca de senha para invalidar de uma vez todos os
   // refresh tokens já emitidos, sem precisar de uma tabela de sessões.
   tokenVersion Int      @default(0)
+  // Cadastro da agenda deste usuário (obrigatório para PROFESSIONAL).
+  professionalId String?       @unique
+  professional   Professional? @relation(fields: [professionalId], references: [id], onDelete: SetNull)
+  // Acesso revogado pelo dono: não entra nem renova a sessão.
+  disabledAt     DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@index([businessId])
+}
+
+// Convite de acesso ao painel para um profissional (link enviado pelo dono).
+// Só o hash do token é gravado; o link em si aparece uma vez para o dono.
+model StaffInvite {
+  id              String       @id @default(cuid())
+  businessId      String
+  business        Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  professionalId  String
+  professional    Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  tokenHash       String       @unique
+  expiresAt       DateTime     @db.Timestamptz(6)
+  usedAt          DateTime?    @db.Timestamptz(6)
+  createdByUserId String?
+  createdAt       DateTime     @default(now())
+
+  @@index([professionalId])
 }
 
 model Professional {
@@ -173,6 +199,8 @@ model Professional {
   professionalServices ProfessionalService[]
   appointments         Appointment[]
   photos               ProfessionalPhoto[]
+  user                 User?
+  staffInvites         StaffInvite[]
 
   @@index([businessId])
 }
@@ -278,6 +306,9 @@ model Client {
   email         String?
   internalNotes String?
   tags          String[] @default([])
+  // Notas e tags são compartilhadas entre quem atende: quem editou por último.
+  notesUpdatedByUserId String?
+  notesUpdatedAt       DateTime? @db.Timestamptz(6)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -307,6 +338,9 @@ model Appointment {
   // (editar o serviço depois não reescreve o passado) e pode ser ajustado ao
   // receber (ex.: serviço "a partir de").
   priceCents           Int
+  // Quem fez (null = cliente pela página pública / link de gerenciar).
+  createdByUserId      String?
+  cancelledByUserId    String?
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
 
@@ -335,6 +369,8 @@ model Payment {
   note              String?
   // % de comissão do profissional congelada no momento do registro.
   commissionPercent Int?
+  // Quem registrou (dono ou o próprio profissional).
+  createdByUserId   String?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   deletedAt         DateTime?

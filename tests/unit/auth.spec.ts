@@ -28,6 +28,7 @@ describe("tokens", () => {
       userId: "user_1",
       businessId: "biz_1",
       role: UserRole.OWNER,
+      professionalId: null,
     });
 
     const payload = await verifyAccessToken(token);
@@ -35,6 +36,18 @@ describe("tokens", () => {
     expect(payload.businessId).toBe("biz_1");
     expect(payload.role).toBe(UserRole.OWNER);
     expect(payload.type).toBe("access");
+  });
+
+  it("o access token do profissional carrega o cadastro dele na agenda", async () => {
+    const token = await signAccessToken({
+      userId: "user_2",
+      businessId: "biz_1",
+      role: UserRole.PROFESSIONAL,
+      professionalId: "pro_1",
+    });
+    const payload = await verifyAccessToken(token);
+    expect(payload.role).toBe(UserRole.PROFESSIONAL);
+    expect(payload.professionalId).toBe("pro_1");
   });
 
   it("assina e verifica um refresh token, preservando o tokenVersion", async () => {

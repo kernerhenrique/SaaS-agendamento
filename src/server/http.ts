@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { NotFoundError, UnauthorizedError, ValidationError } from "@/server/errors";
+import { ForbiddenError, NotFoundError, UnauthorizedError, ValidationError } from "@/server/errors";
 
 export function rateLimitedResponse(retryAfterSeconds: number): NextResponse {
   return NextResponse.json(
@@ -12,6 +12,9 @@ export function rateLimitedResponse(retryAfterSeconds: number): NextResponse {
 export function handleApiError(error: unknown): NextResponse {
   if (error instanceof UnauthorizedError) {
     return NextResponse.json({ error: error.message }, { status: 401 });
+  }
+  if (error instanceof ForbiddenError) {
+    return NextResponse.json({ error: error.message }, { status: 403 });
   }
   if (error instanceof NotFoundError) {
     return NextResponse.json({ error: error.message }, { status: 404 });

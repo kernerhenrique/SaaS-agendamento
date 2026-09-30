@@ -17,6 +17,8 @@ export interface AccessTokenPayload extends JWTPayload {
   sub: string;
   businessId: string;
   role: UserRole;
+  /** Cadastro da agenda do usuário (profissional); ausente/null para o dono. */
+  professionalId?: string | null;
   type: "access";
 }
 
@@ -31,8 +33,14 @@ export function signAccessToken(payload: {
   userId: string;
   businessId: string;
   role: UserRole;
+  professionalId: string | null;
 }): Promise<string> {
-  return new SignJWT({ businessId: payload.businessId, role: payload.role, type: "access" })
+  return new SignJWT({
+    businessId: payload.businessId,
+    role: payload.role,
+    professionalId: payload.professionalId,
+    type: "access",
+  })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(payload.userId)
     .setIssuedAt()

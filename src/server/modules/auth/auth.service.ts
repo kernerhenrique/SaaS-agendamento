@@ -26,12 +26,33 @@ export interface AuthTokens {
  */
 const INVALID_CREDENTIALS_MESSAGE = "E-mail ou senha inválidos";
 
+const USER_ACCESS_INCLUDE = { professional: { select: { deletedAt: true } } } as const;
+
+/**
+ * Acesso bloqueado: revogado pelo dono, ou profissional cujo cadastro da
+ * agenda foi removido. Vale para o login e para cada renovação da sessão.
+ */
+export function isAccessBlocked(user: {
+  role: UserRole;
+  disabledAt: Date | null;
+  professionalId: string | null;
+  professional: { deletedAt: Date | null } | null;
+}): boolean {
+  if (user.disabledAt) return true;
+  if (user.role === "PROFESSIONAL") {
+    return !user.professionalId || !user.professional || user.professional.deletedAt != null;
+  }
+  return false;
+}
+
 export async function login(
   email: string,
   password: string,
 ): Promise<{ user: AuthenticatedUser; tokens: AuthTokens }> {
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
+  // E-mail sem diferença de maiúsculas/espaços (o convite grava em minúsculas).
+  const user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() }, include: USER_ACCESS_INCLUDE });
+  // Mesma mensagem genérica para acesso revogado: não revela que a conta existe.
+  if (!user || isAccessBlocked(user)) {
     throw new ValidationError(INVALID_CREDENTIALS_MESSAGE);
   }
 
@@ -66,8 +87,8 @@ export async function refreshTokens(refreshToken: string): Promise<AuthTokens> {
     throw new ValidationError("Refresh token inválido ou expirado");
   }
 
-  const user = await prisma.user.findUnique({ where: { id: payload.sub } });
-  if (!user || user.tokenVersion !== payload.tokenVersion) {
+  const user = await prisma.user.findUnique({ where: { id: payload.sub }, include: USER_ACCESS_INCLUDE });
+  if (!user || user.tokenVersion !== payload.tokenVersion || isAccessBlocked(user)) {
     throw new ValidationError("Refresh token inválido ou expirado");
   }
 
@@ -92,7 +113,7 @@ export async function changePassword(userId: string, newPassword: string): Promi
 }
 
 /**
- * Troca de senha pelo próprio dono (Configurações → Conta). Exige a senha
+ * Troca de senha pelo próprio usuário, dono ou profissional (Configurações → Conta). Exige a senha
  * atual. `changePassword` incrementa o `tokenVersion`, o que derruba as
  * outras sessões; esta recebe tokens novos e continua logada.
  */
@@ -112,10 +133,11 @@ export async function changeOwnPassword(
   return issueTokens({ ...user, tokenVersion });
 }
 
-async function issueTokens(user: {
+export async function issueTokens(user: {
   id: string;
   businessId: string;
   role: UserRole;
+  professionalId: string | null;
   tokenVersion: number;
 }): Promise<AuthTokens> {
   const [accessToken, refreshToken] = await Promise.all([
@@ -123,6 +145,7 @@ async function issueTokens(user: {
       userId: user.id,
       businessId: user.businessId,
       role: user.role,
+      professionalId: user.professionalId,
     }),
     signRefreshToken({
       userId: user.id,
