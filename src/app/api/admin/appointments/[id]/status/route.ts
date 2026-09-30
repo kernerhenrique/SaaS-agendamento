@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { AppointmentStatus } from "@/generated/prisma/enums";
 import { ValidationError } from "@/server/errors";
 import { handleApiError } from "@/server/http";
+import { requireAppointmentAccess } from "@/server/modules/auth/appointment-access";
 import { requireAdminSession } from "@/server/modules/auth/session";
 import { updateAppointmentStatus } from "@/server/modules/appointment/appointment.service";
 
@@ -16,6 +17,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAdminSession();
     const { id } = await params;
+    await requireAppointmentAccess(session, id);
     const body = await request.json().catch(() => null);
     const status = (body as Record<string, unknown> | null)?.status;
 
@@ -27,6 +29,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       session.businessId,
       id,
       status as AppointmentStatus,
+      session.userId,
     );
     return NextResponse.json({ appointment });
   } catch (error) {

@@ -1,4 +1,4 @@
-import { expect, type APIRequestContext, type Page } from "@playwright/test";
+import { expect, type APIRequestContext, type Browser, type BrowserContext, type Page } from "@playwright/test";
 
 /** Entra no painel com o dono do seed (prisma/seed.ts). */
 export async function loginAsOwner(page: Page) {
@@ -43,4 +43,53 @@ export async function findFreeSlot(
     }
   }
   throw new Error("Nenhum horário livre na janela de reserva; rode npx prisma migrate reset para limpar o banco local");
+}
+
+/**
+ * Dá acesso ao painel a um profissional pelo fluxo real de convite (o dono
+ * gera o link, o profissional aceita) e devolve o contexto já logado como ele.
+ * Reaproveita o mesmo usuário entre execuções (o aceite reativa o acesso).
+ */
+export async function loginAsProfessional(
+  browser: Browser,
+  owner: APIRequestContext,
+  professionalId: string,
+  account: { name: string; email: string; password: string },
+): Promise<BrowserContext> {
+  await owner.delete(`/api/admin/staff/${professionalId}`);
+  const created = await owner.post(`/api/admin/staff/${professionalId}/invite`);
+  expect(created.status()).toBe(201);
+  const token = ((await created.json()).invite.url as string).split("/admin/convite/")[1];
+  const context = await browser.newContext();
+  const accepted = await context.request.post(`/api/public/staff-invite/${token}`, { data: account });
+  expect(accepted.status(), await accepted.text()).toBe(201);
+  return context;
+}
+
+/** Hoje + N dias (YYYY-MM-DD) no fuso do negócio do seed. */
+export function localDateInDays(days: number): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date(Date.now() + days * 86_400_000));
+}
+
+/**
+ * Encaixe à noite (fora do expediente, com confirmação) num minuto livre:
+ * tenta horários de 15 em 15 min a partir das 20:00 até achar um vago.
+ */
+export async function createEveningAppointment(
+  api: APIRequestContext,
+  params: { professionalId: string; serviceId: string; date: string; client: { name: string; phone: string } },
+): Promise<{ id: string; hhmm: string }> {
+  const first = Math.floor(Math.random() * 14);
+  let lastError = "";
+  for (let attempt = 0; attempt < 14; attempt++) {
+    const minute = 20 * 60 + 15 * ((first + attempt) % 14);
+    const hhmm = `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+    const response = await api.post("/api/admin/appointments", {
+      data: { ...params, startAt: `${params.date}T${hhmm}:00-03:00`, allowOutsideHours: true },
+    });
+    if (response.status() === 201) return { id: (await response.json()).appointment.id as string, hhmm };
+    lastError = await response.text();
+    if (response.status() !== 400) throw new Error(`Encaixe falhou: ${response.status()} ${lastError}`);
+  }
+  throw new Error(`Nenhum horário livre à noite para o teste (último erro: ${lastError})`);
 }

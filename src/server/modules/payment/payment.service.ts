@@ -68,6 +68,7 @@ async function insertPayment(
   appointment: { id: string; professional: { commissionPercent: number | null } },
   input: RegisterPaymentInput,
   timeZone: string,
+  createdByUserId: string | null,
 ) {
   const endOfToday = localDayRangeUtc(todayInTimeZone(timeZone), timeZone).end;
   const problem = validatePaymentInput(input, endOfToday);
@@ -87,6 +88,7 @@ async function insertPayment(
       receivedAt: input.receivedAt,
       note: input.note?.trim() || null,
       commissionPercent: appointment.professional.commissionPercent,
+      createdByUserId,
     },
   });
 }
@@ -95,18 +97,28 @@ async function insertPayment(
  * Registra um recebimento em qualquer status: sinal antes do atendimento,
  * taxa de falta, sinal retido num cancelado. "A receber" só olha concluídos.
  */
-export async function registerPayment(businessId: string, appointmentId: string, input: RegisterPaymentInput) {
+export async function registerPayment(
+  businessId: string,
+  appointmentId: string,
+  input: RegisterPaymentInput,
+  createdByUserId: string | null = null,
+) {
   const appointment = await prisma.appointment.findFirst({
     where: { id: appointmentId, businessId },
     select: { id: true, professional: { select: { commissionPercent: true } } },
   });
   if (!appointment) throw new NotFoundError("Agendamento não encontrado");
   const timeZone = await businessTimezone(businessId);
-  return prisma.$transaction((tx) => insertPayment(tx, businessId, appointment, input, timeZone));
+  return prisma.$transaction((tx) => insertPayment(tx, businessId, appointment, input, timeZone, createdByUserId));
 }
 
 /** "Concluir e receber": conclui e, se vier pagamento, registra na MESMA transação. */
-export async function completeAppointment(businessId: string, appointmentId: string, payment?: RegisterPaymentInput) {
+export async function completeAppointment(
+  businessId: string,
+  appointmentId: string,
+  payment?: RegisterPaymentInput,
+  createdByUserId: string | null = null,
+) {
   const appointment = await prisma.appointment.findFirst({
     where: { id: appointmentId, businessId },
     select: { id: true, status: true, professional: { select: { commissionPercent: true } } },
@@ -118,7 +130,7 @@ export async function completeAppointment(businessId: string, appointmentId: str
   const timeZone = await businessTimezone(businessId);
   return prisma.$transaction(async (tx) => {
     await tx.appointment.update({ where: { id: appointment.id }, data: { status: AppointmentStatus.COMPLETED } });
-    if (payment) await insertPayment(tx, businessId, appointment, payment, timeZone);
+    if (payment) await insertPayment(tx, businessId, appointment, payment, timeZone, createdByUserId);
     return { id: appointment.id, status: AppointmentStatus.COMPLETED };
   });
 }
@@ -196,9 +208,12 @@ export interface ReceivableRow {
 }
 
 /** Concluídos com saldo em aberto (independe do período: é o que falta receber hoje). */
-export async function listReceivables(businessId: string): Promise<ReceivableRow[]> {
+export async function listReceivables(
+  businessId: string,
+  scope: { professionalId?: string } = {},
+): Promise<ReceivableRow[]> {
   const appointments = await prisma.appointment.findMany({
-    where: { businessId, status: AppointmentStatus.COMPLETED },
+    where: { businessId, status: AppointmentStatus.COMPLETED, ...scope },
     select: {
       id: true,
       startAt: true,

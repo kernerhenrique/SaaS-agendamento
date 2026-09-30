@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { ValidationError } from "@/server/errors";
 import { handleApiError } from "@/server/http";
-import { requireAdminSession } from "@/server/modules/auth/session";
+import { requirePermission } from "@/server/modules/auth/session";
 import { PAYMENT_METHOD_LABELS } from "@/server/modules/payment/payment-rules";
 import { getCommissions, listPayments } from "@/server/modules/payment/payment.service";
 import { centsToCsv, toCsv } from "@/server/modules/report/report-rules";
@@ -20,7 +20,7 @@ type ExportType = (typeof EXPORTS)[number];
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await requireAdminSession();
+    const session = await requirePermission("reports.view");
     const params = request.nextUrl.searchParams;
     const type = params.get("tipo") as ExportType | null;
     if (!type || !EXPORTS.includes(type)) throw new ValidationError('tipo deve ser "recebimentos" ou "comissoes"');

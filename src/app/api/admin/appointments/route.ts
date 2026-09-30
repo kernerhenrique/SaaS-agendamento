@@ -4,6 +4,8 @@ import { localDayRangeUtc } from "@/lib/date";
 import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
 import { handleApiError } from "@/server/http";
+import { assertOwnProfessional } from "@/server/modules/auth/appointment-access";
+import { can, professionalScope } from "@/server/modules/auth/permissions";
 import { requireAdminSession } from "@/server/modules/auth/session";
 import { summarizePayments } from "@/server/modules/payment/payment-rules";
 import {
@@ -20,7 +22,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate") ?? startDate;
-    const professionalId = searchParams.get("professionalId") ?? undefined;
+    // Profissional: sempre a própria agenda, qualquer que seja o filtro pedido.
+    const professionalId = professionalScope(session).professionalId ?? searchParams.get("professionalId") ?? undefined;
 
     if (!startDate || !DATE_PATTERN.test(startDate) || !endDate || !DATE_PATTERN.test(endDate)) {
       throw new ValidationError("Parâmetros startDate/endDate são obrigatórios (YYYY-MM-DD)");
@@ -84,9 +87,12 @@ export async function POST(request: NextRequest) {
       throw new ValidationError("client.name e client.phone são obrigatórios");
     }
 
+    assertOwnProfessional(session, professionalId);
     const appointment = await createManualAppointment({
       businessId: session.businessId,
       professionalId,
+      createdByUserId: session.userId,
+      keepExistingClientName: !can(session.role, "appointment.manageAny"),
       serviceId,
       startAt,
       client: {

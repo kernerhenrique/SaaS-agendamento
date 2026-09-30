@@ -13,7 +13,13 @@ export interface SearchResults {
  * Busca global do painel (command palette). Sempre restrita ao negócio da
  * sessão. Casa nome por trecho (sem diferenciar maiúsculas) e telefone por dígitos.
  */
-export async function searchAdmin(businessId: string, query: string, timeZone: string): Promise<SearchResults> {
+export async function searchAdmin(
+  businessId: string,
+  query: string,
+  timeZone: string,
+  /** Profissional: só os próprios clientes e agendamentos. */
+  scope: { professionalId?: string } = {},
+): Promise<SearchResults> {
   const term = query.trim();
   if (term.length < 2) return { clients: [], appointments: [] };
 
@@ -27,7 +33,11 @@ export async function searchAdmin(businessId: string, query: string, timeZone: s
 
   const [clients, appointments] = await Promise.all([
     prisma.client.findMany({
-      where: { businessId, ...clientMatch },
+      where: {
+        businessId,
+        ...clientMatch,
+        ...(scope.professionalId ? { appointments: { some: { professionalId: scope.professionalId } } } : {}),
+      },
       select: { id: true, name: true, phone: true },
       orderBy: { name: "asc" },
       take: LIMIT,
@@ -35,6 +45,7 @@ export async function searchAdmin(businessId: string, query: string, timeZone: s
     prisma.appointment.findMany({
       where: {
         businessId,
+        ...scope,
         status: { in: ["PENDING", "CONFIRMED"] },
         startAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
         client: clientMatch,

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { ValidationError } from "@/server/errors";
 import { handleApiError } from "@/server/http";
-import { requireAdminSession } from "@/server/modules/auth/session";
+import { requirePermission } from "@/server/modules/auth/session";
 import { parseBookingPolicies, parseBranding, parseBusinessProfile } from "@/server/modules/business/business-rules";
 import {
   getBusinessSettings,
@@ -13,7 +13,7 @@ import {
 
 export async function GET() {
   try {
-    const session = await requireAdminSession();
+    const session = await requirePermission("settings.manage");
     return NextResponse.json({ business: await getBusinessSettings(session.businessId) });
   } catch (error) {
     return handleApiError(error);
@@ -23,7 +23,7 @@ export async function GET() {
 /** Salva uma seção por vez: `{ secao: "negocio" | "identidade" | "reservas", ...campos }`. */
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await requireAdminSession();
+    const session = await requirePermission("settings.manage");
     const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
     if (!body) throw new ValidationError("Corpo da requisição inválido");
 

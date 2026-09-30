@@ -155,7 +155,12 @@ export interface QueueItem {
  * Pós-atendimento: concluídos de ontem e hoje. Mostra também os já enviados,
  * marcados, para o dono ver o progresso ("3 de 8 enviados").
  */
-export async function getMessageQueue(businessId: string, queue: MessageQueue): Promise<{ date: string; items: QueueItem[] }> {
+export async function getMessageQueue(
+  businessId: string,
+  queue: MessageQueue,
+  /** Profissional: só os atendimentos dele. */
+  scope: { professionalId?: string } = {},
+): Promise<{ date: string; items: QueueItem[] }> {
   const business = await prisma.business.findFirst({ where: { id: businessId, deletedAt: null }, select: { timezone: true } });
   if (!business) throw new NotFoundError("Negócio não encontrado");
   const today = todayInTimeZone(business.timezone);
@@ -170,6 +175,7 @@ export async function getMessageQueue(businessId: string, queue: MessageQueue): 
     prisma.appointment.findMany({
       where: {
         businessId,
+        ...scope,
         startAt: { gte: start, lt: end },
         status: isReminder ? { in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED] } : AppointmentStatus.COMPLETED,
       },

@@ -1,6 +1,7 @@
 import type { AppointmentStatus } from "@/generated/prisma/enums";
 import { localDayRangeUtc, todayInTimeZone } from "@/lib/date";
 import { prisma } from "@/server/db/prisma";
+import { commissionFor } from "@/server/modules/payment/payment-rules";
 import { listReceivables } from "@/server/modules/payment/payment.service";
 
 import {
@@ -37,6 +38,8 @@ export interface DashboardData {
     newClients: number;
     /** Recebido no mês (data de recebimento). */
     receivedCents: number;
+    /** Comissão do mês (só na versão do profissional; null para o dono). */
+    myCommissionCents: number | null;
   };
   /** Concluídos com saldo em aberto, de qualquer data (mesma regra do Financeiro). */
   receivable: { cents: number; count: number };
@@ -55,7 +58,16 @@ const totalReceivable = (rows: { summary: { balanceCents: number } }[]) => ({
   cents: rows.reduce((sum, row) => sum + row.summary.balanceCents, 0),
 });
 
-export async function getDashboard(businessId: string, timeZone: string, now = new Date()): Promise<DashboardData> {
+/**
+ * Números do Início. `scope` (profissional): tudo só dos atendimentos dele,
+ * mais a comissão dele no mês; o dono vê o negócio inteiro.
+ */
+export async function getDashboard(
+  businessId: string,
+  timeZone: string,
+  now = new Date(),
+  scope: { professionalId?: string } = {},
+): Promise<DashboardData> {
   const today = todayInTimeZone(timeZone);
   const todayRange = localDayRangeUtc(today, timeZone);
   const { startDate, endDate } = monthRange(today);
@@ -66,27 +78,27 @@ export async function getDashboard(businessId: string, timeZone: string, now = n
   const [todayAppointments, monthAppointments, professionals, blocks, firstVisits, inactiveClients, received, receivables] =
     await Promise.all([
       prisma.appointment.findMany({
-        where: { businessId, status: { not: "CANCELLED" }, startAt: { gte: todayRange.start, lt: todayRange.end } },
+        where: { businessId, ...scope, status: { not: "CANCELLED" }, startAt: { gte: todayRange.start, lt: todayRange.end } },
         include: { client: true, service: true, professional: true },
         orderBy: { startAt: "asc" },
       }),
       prisma.appointment.findMany({
-        where: { businessId, startAt: { gte: monthStart, lt: monthEnd } },
+        where: { businessId, ...scope, startAt: { gte: monthStart, lt: monthEnd } },
         select: { status: true, startAt: true, endAt: true },
       }),
       prisma.professional.findMany({
-        where: { businessId, active: true, deletedAt: null },
+        where: { businessId, active: true, deletedAt: null, ...(scope.professionalId ? { id: scope.professionalId } : {}) },
         select: { id: true, name: true, workingHours: true },
         orderBy: { name: "asc" },
       }),
       prisma.timeBlock.findMany({
-        where: { professional: { businessId, active: true, deletedAt: null }, startAt: { lt: monthEnd }, endAt: { gt: monthStart } },
+        where: { professional: { businessId, active: true, deletedAt: null, ...(scope.professionalId ? { id: scope.professionalId } : {}) }, startAt: { lt: monthEnd }, endAt: { gt: monthStart } },
         select: { professionalId: true, startAt: true, endAt: true },
       }),
       // Primeira visita de cada cliente: é "novo" no mês se ela cai no mês.
       prisma.appointment.groupBy({
         by: ["clientId"],
-        where: { businessId, status: { not: "CANCELLED" } },
+        where: { businessId, ...scope, status: { not: "CANCELLED" } },
         _min: { startAt: true },
       }),
       // Sem atendimento concluído nos últimos N dias e sem nada marcado para frente.
@@ -94,21 +106,26 @@ export async function getDashboard(businessId: string, timeZone: string, now = n
         where: {
           businessId,
           appointments: {
-            some: { status: "COMPLETED" },
+            some: { status: "COMPLETED", ...scope },
             none: {
               OR: [
-                { status: "COMPLETED", startAt: { gte: inactiveSince } },
-                { status: { in: ["PENDING", "CONFIRMED"] }, startAt: { gte: now } },
+                { status: "COMPLETED", ...scope, startAt: { gte: inactiveSince } },
+                { status: { in: ["PENDING", "CONFIRMED"] }, ...scope, startAt: { gte: now } },
               ],
             },
           },
         },
       }),
-      prisma.payment.aggregate({
-        where: { businessId, deletedAt: null, receivedAt: { gte: monthStart, lt: monthEnd } },
-        _sum: { amountCents: true },
+      prisma.payment.findMany({
+        where: {
+          businessId,
+          deletedAt: null,
+          receivedAt: { gte: monthStart, lt: monthEnd },
+          ...(scope.professionalId ? { appointment: { professionalId: scope.professionalId } } : {}),
+        },
+        select: { amountCents: true, commissionPercent: true },
       }),
-      listReceivables(businessId),
+      listReceivables(businessId, scope),
     ]);
 
   const dates = datesInRange(startDate, endDate);
@@ -143,7 +160,8 @@ export async function getDashboard(businessId: string, timeZone: string, now = n
       occupancyRate: computeOccupancyRate(bookedMinutes, available),
       newClients: firstVisits.filter((v) => v._min.startAt && v._min.startAt >= monthStart && v._min.startAt < monthEnd)
         .length,
-      receivedCents: received._sum.amountCents ?? 0,
+      receivedCents: received.reduce((sum, payment) => sum + payment.amountCents, 0),
+      myCommissionCents: scope.professionalId ? received.reduce((sum, payment) => sum + commissionFor(payment), 0) : null,
     },
     receivable: totalReceivable(receivables),
     alerts: {

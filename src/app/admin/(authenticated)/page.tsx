@@ -13,6 +13,7 @@ import { formatPriceFromCents } from "@/lib/currency";
 import { cn } from "cn";
 import { formatDateLabel } from "@/lib/date";
 import { prisma } from "@/server/db/prisma";
+import { professionalScope } from "@/server/modules/auth/permissions";
 import { requireAdminSession } from "@/server/modules/auth/session";
 import { INACTIVE_CLIENT_DAYS, getDashboard } from "@/server/modules/dashboard/dashboard.service";
 
@@ -28,7 +29,8 @@ export default async function InicioPage() {
     select: { timezone: true, businessType: true },
   });
   const { terms } = getVertical(business.businessType);
-  const data = await getDashboard(session.businessId, business.timezone);
+  // Profissional: o Início mostra só os números dele.
+  const data = await getDashboard(session.businessId, business.timezone, undefined, professionalScope(session));
 
   const formatTime = (iso: string) =>
     new Intl.DateTimeFormat("pt-BR", { timeZone: business.timezone, hour: "2-digit", minute: "2-digit" }).format(

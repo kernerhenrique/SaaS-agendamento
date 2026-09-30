@@ -6,13 +6,15 @@ import {
   getAppointmentDetail,
   rescheduleAppointmentAsAdmin,
 } from "@/server/modules/appointment/appointment.service";
+import { assertOwnProfessional, requireAppointmentAccess } from "@/server/modules/auth/appointment-access";
+import { professionalScope } from "@/server/modules/auth/permissions";
 import { requireAdminSession } from "@/server/modules/auth/session";
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await requireAdminSession();
     const { id } = await params;
-    const detail = await getAppointmentDetail(session.businessId, id);
+    const detail = await getAppointmentDetail(session.businessId, id, professionalScope(session));
     return NextResponse.json(detail);
   } catch (error) {
     return handleApiError(error);
@@ -24,6 +26,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const session = await requireAdminSession();
     const { id } = await params;
+    await requireAppointmentAccess(session, id);
     const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
 
     const startAtRaw = body?.startAt;
@@ -33,6 +36,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
     const startAt = new Date(startAtRaw);
     if (Number.isNaN(startAt.getTime())) throw new ValidationError("startAt inválido");
+    // Profissional remarca, mas não passa o atendimento para um colega.
+    assertOwnProfessional(session, professionalId);
 
     const appointment = await rescheduleAppointmentAsAdmin(session.businessId, id, {
       startAt,

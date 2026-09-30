@@ -29,19 +29,29 @@ export interface ClientListRow {
  * milhares de clientes: carrega status e datas dos agendamentos e resume em
  * memória com as regras puras (mais simples e testável que SQL agregado).
  */
+/**
+ * Escopo do profissional: só clientes com pelo menos um agendamento com ele
+ * (qualquer status), e só os agendamentos com ele contam nos números.
+ */
+export type ClientScope = { professionalId?: string };
+
+const scopedClientWhere = (scope: ClientScope) =>
+  scope.professionalId ? { appointments: { some: { professionalId: scope.professionalId } } } : {};
+
 export async function listClients(
   businessId: string,
   options: { query?: string; filter: ClientFilter },
   now = new Date(),
+  scope: ClientScope = {},
 ): Promise<ClientListRow[]> {
   const clients = await prisma.client.findMany({
-    where: { businessId },
+    where: { businessId, ...scopedClientWhere(scope) },
     select: {
       id: true,
       name: true,
       phone: true,
       tags: true,
-      appointments: { select: { status: true, startAt: true } },
+      appointments: { where: scope, select: { status: true, startAt: true } },
     },
     orderBy: { name: "asc" },
   });
@@ -62,12 +72,17 @@ export async function listClients(
   }));
 }
 
-/** Ficha do cliente: dados, notas/tags e histórico (mais recentes primeiro). */
-export async function getClientDetail(businessId: string, clientId: string, now = new Date()) {
+/**
+ * Ficha do cliente: dados, notas/tags e histórico (mais recentes primeiro).
+ * Profissional (`scope`): só o histórico com ele e sem o total gasto; as notas
+ * e tags são compartilhadas entre quem atende, com "editado por".
+ */
+export async function getClientDetail(businessId: string, clientId: string, now = new Date(), scope: ClientScope = {}) {
   const client = await prisma.client.findFirst({
-    where: { id: clientId, businessId },
+    where: { id: clientId, businessId, ...scopedClientWhere(scope) },
     include: {
       appointments: {
+        where: scope,
         select: {
           id: true,
           status: true,
@@ -81,17 +96,24 @@ export async function getClientDetail(businessId: string, clientId: string, now 
   });
   if (!client) throw new NotFoundError("Cadastro não encontrado");
 
-  // Total gasto = tudo que foi efetivamente recebido nos atendimentos dele.
-  const spent = await prisma.payment.aggregate({
-    where: { businessId, deletedAt: null, appointment: { clientId } },
-    _sum: { amountCents: true },
-  });
+  // Total gasto = tudo que foi efetivamente recebido nos atendimentos dele (só o dono vê).
+  const [spent, notesEditor] = await Promise.all([
+    scope.professionalId
+      ? null
+      : prisma.payment.aggregate({
+          where: { businessId, deletedAt: null, appointment: { clientId } },
+          _sum: { amountCents: true },
+        }),
+    client.notesUpdatedByUserId
+      ? prisma.user.findUnique({ where: { id: client.notesUpdatedByUserId }, select: { name: true } })
+      : null,
+  ]);
 
   const { appointments, ...data } = client;
   return {
-    client: data,
+    client: { ...data, notesUpdatedBy: notesEditor?.name ?? null },
     summary: summarizeClient(appointments, now),
-    totalSpentCents: spent._sum.amountCents ?? 0,
+    totalSpentCents: spent ? (spent._sum.amountCents ?? 0) : null,
     history: appointments.slice(0, CLIENT_HISTORY_LIMIT),
   };
 }
@@ -100,18 +122,27 @@ export async function updateClientNotes(
   businessId: string,
   clientId: string,
   input: { internalNotes: string | null; tags: string[] },
+  actor: { userId: string; scope?: ClientScope } = { userId: "" },
 ) {
   const notes = input.internalNotes?.trim() || null;
   if (notes && notes.length > MAX_NOTES_LENGTH) {
     throw new ValidationError(`As notas podem ter no máximo ${MAX_NOTES_LENGTH} caracteres`);
   }
-  const existing = await prisma.client.findFirst({ where: { id: clientId, businessId }, select: { id: true } });
+  const existing = await prisma.client.findFirst({
+    where: { id: clientId, businessId, ...scopedClientWhere(actor.scope ?? {}) },
+    select: { id: true },
+  });
   if (!existing) throw new NotFoundError("Cadastro não encontrado");
 
   return prisma.client.update({
     where: { id: clientId },
-    data: { internalNotes: notes, tags: normalizeTags(input.tags) },
-    select: { id: true, internalNotes: true, tags: true },
+    data: {
+      internalNotes: notes,
+      tags: normalizeTags(input.tags),
+      notesUpdatedByUserId: actor.userId || null,
+      notesUpdatedAt: new Date(),
+    },
+    select: { id: true, internalNotes: true, tags: true, notesUpdatedAt: true },
   });
 }
 
@@ -120,11 +151,13 @@ export async function updateClientNotes(
  * mostra "cliente encontrado" em vez de renomear sem avisar). null se o número
  * ainda está incompleto ou não existe.
  */
-export async function findClientByPhone(businessId: string, rawPhone: string) {
+export async function findClientByPhone(businessId: string, rawPhone: string, scope: ClientScope = {}) {
   const phone = normalizePhoneBR(rawPhone);
   if (phone.length < 10) return null;
-  return prisma.client.findUnique({
-    where: { businessId_phone: { businessId, phone } },
+  // Profissional: cliente de colega não aparece (não revela a base do colega);
+  // ao salvar, o agendamento se liga ao mesmo cadastro, sem duplicar.
+  return prisma.client.findFirst({
+    where: { businessId, phone, ...scopedClientWhere(scope) },
     select: { id: true, name: true, phone: true, email: true },
   });
 }

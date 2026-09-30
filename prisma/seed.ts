@@ -4,6 +4,8 @@ import { PrismaClient, Weekday, AppointmentStatus, PaymentMethod } from "../src/
 const prisma = new PrismaClient();
 
 async function main() {
+  await prisma.staffInvite.deleteMany();
+  await prisma.messageLog.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.review.deleteMany();
   await prisma.appointment.deleteMany();
@@ -138,6 +140,18 @@ async function main() {
           { url: "https://picsum.photos/seed/joao-corte-2/400/400", position: 1 },
         ],
       },
+    },
+  });
+
+  // Acesso do João ao painel como profissional (só a agenda e os clientes dele).
+  await prisma.user.create({
+    data: {
+      businessId: business.id,
+      email: "joao@navalhadeouro.com",
+      name: "João Barbeiro",
+      passwordHash: await bcrypt.hash("senha123", 10),
+      role: "PROFESSIONAL",
+      professionalId: joao.id,
     },
   });
 

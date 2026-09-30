@@ -81,6 +81,14 @@ export interface InsertAppointmentParams {
   startAt: Date;
   client: { name: string; phone: string; email?: string };
   notes?: string;
+  /** Quem marcou pelo painel (null/ausente = cliente pela página pública). */
+  createdByUserId?: string | null;
+  /**
+   * Telefone já cadastrado mantém o nome do cadastro (encaixe feito por um
+   * profissional: um erro de digitação dele não renomeia o cliente para o
+   * colega e para o dono).
+   */
+  keepExistingClientName?: boolean;
 }
 
 export const MANAGE_TOKEN_TTL_DAYS_AFTER_APPOINTMENT = 30;
@@ -92,7 +100,7 @@ export const MANAGE_TOKEN_TTL_DAYS_AFTER_APPOINTMENT = 30;
  * exclusion constraint do Postgres rejeita a segunda gravação.
  */
 async function insertAppointment(params: InsertAppointmentParams) {
-  const { businessId, professionalId, serviceId, startAt, client, notes } = params;
+  const { businessId, professionalId, serviceId, startAt, client, notes, createdByUserId, keepExistingClientName } = params;
 
   const [professional, service] = await Promise.all([
     prisma.professional.findFirst({
@@ -115,7 +123,7 @@ async function insertAppointment(params: InsertAppointmentParams) {
 
   const clientRecord = await prisma.client.upsert({
     where: { businessId_phone: { businessId, phone } },
-    update: { name: client.name, email: client.email },
+    update: keepExistingClientName ? {} : { name: client.name, email: client.email },
     create: { businessId, name: client.name, phone, email: client.email },
   });
 
@@ -133,6 +141,7 @@ async function insertAppointment(params: InsertAppointmentParams) {
         manageTokenExpiresAt,
         // Valor do atendimento congelado na marcação (ajustável ao receber).
         priceCents: service.priceCents,
+        createdByUserId: createdByUserId ?? null,
       },
       include: { professional: true, service: true, client: true, business: true },
     });
@@ -227,6 +236,7 @@ export async function updateAppointmentStatus(
   businessId: string,
   appointmentId: string,
   nextStatus: AppointmentStatus,
+  actorUserId?: string,
 ) {
   const appointment = await prisma.appointment.findFirst({
     where: { id: appointmentId, businessId },
@@ -244,7 +254,11 @@ export async function updateAppointmentStatus(
 
   return prisma.appointment.update({
     where: { id: appointmentId },
-    data: { status: nextStatus },
+    data: {
+      status: nextStatus,
+      // Quem cancelou pelo painel (o cancelamento pelo link do cliente fica sem usuário).
+      ...(nextStatus === AppointmentStatus.CANCELLED ? { cancelledByUserId: actorUserId ?? null } : {}),
+    },
   });
 }
 
@@ -329,10 +343,26 @@ export async function rescheduleAppointmentAsAdmin(
 
 const CLIENT_HISTORY_LIMIT = 5;
 
-/** Detalhe para o drawer da agenda, com o histórico recente do cliente. */
-export async function getAppointmentDetail(businessId: string, appointmentId: string) {
+/** Nome e papel de quem fez algo no painel ("quem fez"), ou null (página pública / link). */
+async function actorsById(userIds: (string | null)[]) {
+  const ids = [...new Set(userIds.filter((id): id is string => id != null))];
+  if (ids.length === 0) return new Map<string, { name: string; role: "OWNER" | "PROFESSIONAL" }>();
+  const users = await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, role: true } });
+  return new Map(users.map((user) => [user.id, { name: user.name, role: user.role }]));
+}
+
+/**
+ * Detalhe para o drawer da agenda, com o histórico recente do cliente.
+ * `scope` (profissional): histórico e contagens só dos atendimentos com ele —
+ * ele não fica sabendo que o cliente também é atendido por um colega.
+ */
+export async function getAppointmentDetail(
+  businessId: string,
+  appointmentId: string,
+  scope: { professionalId?: string } = {},
+) {
   const appointment = await prisma.appointment.findFirst({
-    where: { id: appointmentId, businessId },
+    where: { id: appointmentId, businessId, ...scope },
     include: {
       professional: { select: { id: true, name: true } },
       service: { select: { id: true, name: true, durationMin: true, priceCents: true } },
@@ -341,16 +371,26 @@ export async function getAppointmentDetail(businessId: string, appointmentId: st
   });
   if (!appointment) throw new NotFoundError("Agendamento não encontrado");
 
-  const [history, completedCount, noShowCount] = await Promise.all([
+  const clientWhere = { businessId, clientId: appointment.clientId, ...scope };
+  const [history, completedCount, noShowCount, actors] = await Promise.all([
     prisma.appointment.findMany({
-      where: { businessId, clientId: appointment.clientId, id: { not: appointment.id } },
+      where: { ...clientWhere, id: { not: appointment.id } },
       select: { id: true, startAt: true, status: true, service: { select: { name: true } } },
       orderBy: { startAt: "desc" },
       take: CLIENT_HISTORY_LIMIT,
     }),
-    prisma.appointment.count({ where: { businessId, clientId: appointment.clientId, status: "COMPLETED" } }),
-    prisma.appointment.count({ where: { businessId, clientId: appointment.clientId, status: "NO_SHOW" } }),
+    prisma.appointment.count({ where: { ...clientWhere, status: "COMPLETED" } }),
+    prisma.appointment.count({ where: { ...clientWhere, status: "NO_SHOW" } }),
+    actorsById([appointment.createdByUserId, appointment.cancelledByUserId]),
   ]);
 
-  return { appointment, history, clientStats: { completed: completedCount, noShows: noShowCount } };
+  return {
+    appointment,
+    history,
+    clientStats: { completed: completedCount, noShows: noShowCount },
+    audit: {
+      createdBy: appointment.createdByUserId ? (actors.get(appointment.createdByUserId) ?? null) : null,
+      cancelledBy: appointment.cancelledByUserId ? (actors.get(appointment.cancelledByUserId) ?? null) : null,
+    },
+  };
 }

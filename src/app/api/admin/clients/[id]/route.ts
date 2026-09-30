@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { ValidationError } from "@/server/errors";
 import { handleApiError } from "@/server/http";
+import { professionalScope } from "@/server/modules/auth/permissions";
 import { requireAdminSession } from "@/server/modules/auth/session";
 import { getClientDetail, updateClientNotes } from "@/server/modules/client/client.service";
 
@@ -9,7 +10,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   try {
     const session = await requireAdminSession();
     const { id } = await params;
-    return NextResponse.json(await getClientDetail(session.businessId, id));
+    return NextResponse.json(await getClientDetail(session.businessId, id, new Date(), professionalScope(session)));
   } catch (error) {
     return handleApiError(error);
   }
@@ -29,7 +30,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (!Array.isArray(tags) || !tags.every((tag) => typeof tag === "string")) {
       throw new ValidationError("tags deve ser uma lista de textos");
     }
-    const client = await updateClientNotes(session.businessId, id, { internalNotes, tags });
+    const client = await updateClientNotes(session.businessId, id, { internalNotes, tags }, { userId: session.userId, scope: professionalScope(session) });
     return NextResponse.json({ client });
   } catch (error) {
     return handleApiError(error);

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { ValidationError } from "@/server/errors";
 import { handleApiError } from "@/server/http";
+import { requireProfessionalAccess } from "@/server/modules/auth/appointment-access";
 import { requireAdminSession } from "@/server/modules/auth/session";
 import { createTimeBlock } from "@/server/modules/professional/professional.service";
 
@@ -13,6 +14,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAdminSession();
     const { id } = await params;
+    // Bloqueios (folga, almoço): o profissional gerencia os da própria agenda.
+    requireProfessionalAccess(session, id);
     const body = await request.json().catch(() => null);
 
     const startAtRaw = (body as Record<string, unknown> | null)?.startAt;

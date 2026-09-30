@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { handleApiError } from "@/server/http";
-import { requireAdminSession } from "@/server/modules/auth/session";
+import { requireAdminSession, requirePermission } from "@/server/modules/auth/session";
 import { createService, listServices } from "@/server/modules/service/service.service";
 import { parseServiceInput } from "./parse";
 
@@ -17,7 +17,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await requireAdminSession();
+    const session = await requirePermission("catalog.manage");
     const body = await request.json().catch(() => null);
     const input = parseServiceInput(body);
     const service = await createService(session.businessId, input);

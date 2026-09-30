@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { handleApiError } from "@/server/http";
+import { requireAppointmentAccess } from "@/server/modules/auth/appointment-access";
 import { requireAdminSession } from "@/server/modules/auth/session";
 import {
   getAppointmentMessages,
@@ -18,6 +19,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAdminSession();
     const { id } = await params;
+    await requireAppointmentAccess(session, id);
     return NextResponse.json({ messages: await getAppointmentMessages(session.businessId, id) });
   } catch (error) {
     return handleApiError(error);
@@ -29,6 +31,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAdminSession();
     const { id } = await params;
+    await requireAppointmentAccess(session, id);
     const body = (await request.json().catch(() => null)) as { kind?: unknown } | null;
     return NextResponse.json(await markMessageSent(session.businessId, id, parseMessageKind(body?.kind)));
   } catch (error) {
@@ -41,6 +44,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAdminSession();
     const { id } = await params;
+    await requireAppointmentAccess(session, id);
     await unmarkMessageSent(session.businessId, id, parseMessageKind(request.nextUrl.searchParams.get("kind")));
     return NextResponse.json({ ok: true });
   } catch (error) {
