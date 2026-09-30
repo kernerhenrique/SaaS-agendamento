@@ -301,6 +301,32 @@ Decisões do usuário (2026-09-28):
   - Nenhuma tela "em breve" restante no menu.
 - Fora do escopo desta fase: envio automático (API oficial/provedor), upload de imagem, trocar slug/fuso pela tela, e-mail de lembrete.
 
+## 7.1 Equipe: vários usuários (antes da Fase 7)
+
+**Implementada (2026-09-30).** Decisões do usuário:
+- o profissional vê só a própria agenda;
+- ficha e telefone só dos clientes dele; notas e tags compartilhadas entre quem atende;
+- pode cancelar, remarcar e registrar pagamento, sem desconto nem mudar o valor;
+- acesso por link de convite enviado pelo dono.
+
+- **A (servidor):**
+  - migration aditiva: `UserRole.PROFESSIONAL`, `User.professionalId` e `disabledAt`, `StaffInvite`, campos de "quem fez";
+  - `permissions.ts` (puro, testado); token com `professionalId`;
+  - login e renovação recusam acesso revogado;
+  - convite com hash, 7 dias e uso único.
+- **B (escopo nas rotas):**
+  - `requirePermission` nas áreas do dono;
+  - `professionalScope` em agenda, clientes, busca, fila de mensagens e Início;
+  - `requireAppointmentAccess` nos agendamentos (colega = 404);
+  - pagamento do profissional sem desconto nem troca de valor;
+  - cliente compartilhada sem renomear e sem revelar cliente de colega.
+- **C (telas):**
+  - menu e páginas por papel; Configurações só com Conta; Mensagens sem Modelos;
+  - agenda de uma coluna; Início com a comissão dele;
+  - cartão "Acesso ao painel"; página do convite; "quem fez" no drawer.
+- **E2E:** `equipe-convite-api.spec.ts`, `equipe-permissoes-api.spec.ts` (inclui a cliente compartilhada) e `equipe.spec.ts` (telas).
+- **Observado:** numa das execuções completas, `admin-agenda.spec.ts` falhou uma vez e passou em seguida (sozinho e na suíte inteira), com a memória do computador apertada. Fica o registro caso volte a acontecer.
+
 ## 8. Fase 7 — Base clonável
 
 - Presets de vertical completos + seeds por vertical + script `npm run novo-cliente` + `docs/como-clonar.md`.

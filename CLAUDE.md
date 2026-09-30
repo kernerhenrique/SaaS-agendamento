@@ -27,7 +27,7 @@ Se algum desses arquivos ainda não existir, crie-o quando a tarefa tocar no ass
 - Next.js 16 (App Router) + TypeScript estrito + Tailwind CSS v4 + shadcn/ui (Base UI), Lucide, Motion, Sonner
 - Backend: Route Handlers do próprio Next.js (sem servidor separado)
 - PostgreSQL + Prisma
-- Auth: JWT (access 15min + refresh 7 dias) com bcrypt, em cookies `httpOnly`; só para usuários do negócio
+- Auth: JWT (access 15min + refresh 7 dias) com bcrypt, em cookies `httpOnly`; só para usuários do negócio. Papéis: **dono** (`OWNER`) e **profissional** (`PROFESSIONAL`, ligado a um `Professional`); matriz em `src/server/modules/auth/permissions.ts`
 - E-mail: Nodemailer (Gmail SMTP); sem credenciais, o e-mail é apenas logado no console. A confirmação da reserva é enviada com `after()` (depois da resposta): o cliente não espera o SMTP.
 - Testes: Vitest (unitário) + Playwright (E2E)
 - Deploy: Vercel + Postgres gerenciado (Supabase, Neon, Railway)
@@ -49,6 +49,7 @@ src/
 │   │   ├── appointment/     # disponibilidade, criação, status, cancelamento, regras de horário do painel, políticas de reserva (booking-policy.ts)
 │   │   ├── auth/            # login, sessão, troca de senha (password-rules.ts)
 │   │   ├── business/        # Configurações do negócio: validação pura (business-rules.ts) + leitura/gravação por seção
+│   │   ├── staff/           # convite de acesso da equipe (token, aceite, revogar)
 │   │   ├── client/          # mini-CRM: lista/filtros, ficha, notas e tags, busca por telefone
 │   │   ├── dashboard/       # métricas do Início (reusadas no perfil do profissional)
 │   │   ├── professional/
@@ -137,7 +138,7 @@ npm run test:e2e            # Playwright
 ```
 Pré-requisitos: Node ≥20.19, Docker.
 
-**Dados de teste (só banco local):** admin `dono@navalhadeouro.com` / `senha123`; página pública `/navalha-de-ouro`. Use-os para testar fluxos e tirar screenshots sozinho.
+**Dados de teste (só banco local):** admin `dono@navalhadeouro.com` / `senha123`; profissional `joao@navalhadeouro.com` / `senha123` (criado pelo seed; num banco antigo, convide pelo cadastro do João); página pública `/navalha-de-ouro`. Use-os para testar fluxos e tirar screenshots sozinho.
 
 ## Standard Workflow
 1. Pergunta sobre o código ou mudança? Se for pergunta, investigue antes de propor código.
@@ -166,6 +167,15 @@ Pré-requisitos: Node ≥20.19, Docker.
 - Slug e fuso do negócio não são editáveis em Configurações: trocar o slug quebra links já compartilhados; trocar o fuso deslocaria a agenda gravada. `BusinessWorkingHours` é só informativo (página pública); a disponibilidade vem do expediente de cada profissional.
 - WhatsApp sem API: o dono envia pelo próprio WhatsApp via link `wa.me` com o texto pronto; "enviado" (`MessageLog`) é marcado quando ele abre o link, e pode ser desmarcado. Os links são montados antes do clique (abrir depois de um fetch seria bloqueado como pop-up). Para plugar a API oficial, trocar a implementação de `WhatsAppSender` (`notification/whatsapp/sender.ts`). Links para o cliente usam `APP_BASE_URL` (`src/server/app-url.ts`).
 - Troca de senha exige a senha atual, derruba as outras sessões (`tokenVersion`) e reemite os cookies da sessão atual.
+- **Equipe (dono + profissionais):**
+  - o profissional vê e mexe só na própria agenda e nos próprios clientes (clientes com algum agendamento com ele);
+  - pode confirmar, concluir, marcar falta, cancelar, remarcar e registrar pagamento, **sem** desconto nem mudar o valor;
+  - Financeiro, Relatórios, Configurações do negócio, cadastros, modelos de mensagem, remover pagamento e convites são só do dono.
+  - Rotas: `requirePermission(...)`, `professionalScope(access)` nas listas e `requireAppointmentAccess` nos agendamentos (`auth/appointment-access.ts`). Agendamento/cadastro de colega responde **404**, como se não existisse.
+  - Páginas de dono usam `requirePagePermission` (volta ao Início). O menu vem filtrado por `useAdminAccess()`.
+- **Cliente atendido por dois profissionais:** um cadastro só (telefone). Cada profissional vê só o próprio histórico, sem o total gasto. Notas e tags são compartilhadas, com "editado por". O profissional não renomeia cadastro existente, e a busca por telefone não revela cliente de colega.
+- **Convite da equipe:** link com token aleatório (no banco só o sha256), 7 dias, uso único (`StaffInvite`), enviado pelo dono (WhatsApp/copiar). Página `/admin/convite/[token]` fora do proxy de sessão. Revogar grava `User.disabledAt` + `tokenVersion`: o acesso cai em até 15 min (mesma janela do access token).
+- **"Quem fez":** `Appointment.createdByUserId`/`cancelledByUserId`, `Payment.createdByUserId`, `Client.notesUpdatedByUserId`. Registros antigos ficam sem autor e a tela não mostra a linha (não dá para distinguir "página pública" de "antes do controle").
 - Rate limit em memória via `globalThis`: funciona só em instância única. Limitação conhecida; Redis/Upstash só quando pedido.
 
 # This is NOT the Next.js you know

@@ -18,6 +18,12 @@ Depois de subir o clone e entrar no painel com o usuário do negócio, abrir **C
 
 Depois: cadastrar **Serviços** e **Profissionais** (expediente, serviços que realiza, comissão) e testar uma reserva pela página pública.
 
+**Equipe:** no cadastro de cada profissional › Dados › "Acesso ao painel", gerar o convite e mandar o link pelo WhatsApp.
+- O profissional cria o próprio e-mail e senha.
+- Ele passa a ver só a própria agenda e os próprios clientes.
+- Financeiro, relatórios e configurações continuam só com o dono.
+- O acesso pode ser revogado no mesmo cartão.
+
 ## O que ainda exige código ou banco (até a Fase 7)
 
 - Criar o negócio e o primeiro usuário: hoje só pelo seed (`prisma/seed.ts`) ou Prisma Studio.

@@ -169,6 +169,29 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
 - Estados: skeleton, vazio com explicação de quando a lista enche, erro com "Tentar de novo".
 - No style guide, o editor roda em modo `demo` (não grava).
 
+## Equipe: dono + profissionais
+
+- **`AdminAccessProvider` / `useAdminAccess()`** (`src/components/admin/admin-access-context.tsx`): papel e permissões de quem está logado, com a mesma matriz do servidor (`permissions.ts`). Serve só para esconder o que o papel não pode; quem garante é a API.
+- **Menu por papel** (`useAdminNav`): o profissional vê Início, Agenda, Clientes, Mensagens e Configurações; grupos vazios somem com o título.
+- **Telas de dono** (Financeiro, Relatórios, Profissionais, Serviços, style guide): `requirePagePermission` no servidor manda o profissional ao Início.
+- **Telas que o profissional abre, com conteúdo reduzido:**
+  - **Configurações:** só a seção Conta.
+  - **Mensagens:** só as listas, sem a aba Modelos.
+  - **Agenda:** só a coluna dele. Com uma agenda só, o seletor de equipe some, e o "Novo agendamento" já vem com o profissional escolhido.
+  - **Início:** os números dele e o cartão "Minha comissão no mês". Cartões e alertas que levariam ao Financeiro viram texto, sem link.
+  - **Pagamento:** o `PaymentForm` esconde "Valor do atendimento" e "Desconto", e a lista esconde "Remover recebimento".
+  - **Ficha do cliente:** sem "Total gasto"; histórico só com ele; "Notas e tags editadas por X em dd/mm/aaaa".
+- **`StaffAccessCard`** (`src/components/admin/staff-access-card.tsx`), no cadastro do profissional › Dados:
+  - estados: Sem acesso · Convite enviado · Acesso ativo · Acesso revogado (`StatusBadge`);
+  - ao gerar, o link aparece uma única vez, com "Copiar" e "Enviar pelo WhatsApp" (`buildWhatsAppShareUrl`, sem destinatário fixo);
+  - revogar e cancelar convite passam por modal de confirmação.
+- **Página do convite** `/admin/convite/[token]`: cartão no padrão do login (marca do produto), nome já preenchido e e-mail e senha escolhidos pelo profissional. Link inválido ou usado mostra mensagem genérica.
+- **"Quem fez":**
+  - linha em `text-caption` no drawer do agendamento ("Marcado por Carlos (dono) · Cancelado por João (barbeiro)");
+  - "Registrado por" em cada recebimento;
+  - sem autor registrado, a linha não aparece.
+- **Barra superior:** o menu da conta mostra nome e papel ("Dono" ou o termo do nicho).
+
 ## Quando usar drawer vs. modal vs. página
 
 - **Drawer** (`Sheet` + `DetailDrawerContent`, `src/components/detail-drawer.tsx`): detalhe de um registro existente (agendamento, cliente, profissional) — mantém a lista de fundo visível/no contexto.
