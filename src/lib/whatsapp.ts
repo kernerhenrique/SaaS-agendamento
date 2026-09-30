@@ -6,3 +6,8 @@ export function buildWhatsAppUrl(phone: string, message?: string): string {
   const url = `https://wa.me/${withCountryCode}`;
   return message ? `${url}?text=${encodeURIComponent(message)}` : url;
 }
+
+/** Compartilhar um texto pelo WhatsApp escolhendo o contato na hora (sem telefone definido). */
+export function buildWhatsAppShareUrl(message: string): string {
+  return `https://wa.me/?text=${encodeURIComponent(message)}`;
+}

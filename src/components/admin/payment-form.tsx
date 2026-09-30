@@ -13,6 +13,8 @@ import { localMinutesToUtc, todayInTimeZone } from "@/lib/date";
 import { PAYMENT_METHOD_LABELS, summarizePayments } from "@/server/modules/payment/payment-rules";
 import { cn } from "cn";
 
+import { useAdminAccess } from "./admin-access-context";
+
 export interface PaymentFormSummary {
   priceCents: number;
   paidCents: number;
@@ -44,6 +46,8 @@ export function PaymentForm({
   onCancel: () => void;
 }) {
   const today = todayInTimeZone(timezone);
+  // Desconto e valor do atendimento: só quem tem a permissão (o dono). O profissional registra o que entrou.
+  const canDiscount = useAdminAccess().can("payment.discount");
   const [priceCents, setPriceCents] = useState(summary.priceCents);
   const [amountCents, setAmountCents] = useState(summary.balanceCents);
   const [amountTouched, setAmountTouched] = useState(false);
@@ -125,10 +129,12 @@ export function PaymentForm({
 
       {/* Uma coluna no celular (o drawer tem ~290px); duas a partir de sm. */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="pf-price">Valor do atendimento</Label>
-          <MoneyInput id="pf-price" valueCents={priceCents} onValueChange={updatePrice} />
-        </div>
+        {canDiscount ? (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="pf-price">Valor do atendimento</Label>
+            <MoneyInput id="pf-price" valueCents={priceCents} onValueChange={updatePrice} />
+          </div>
+        ) : null}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="pf-amount">Valor recebido</Label>
           <MoneyInput
@@ -140,10 +146,12 @@ export function PaymentForm({
             }}
           />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="pf-discount">Desconto</Label>
-          <MoneyInput id="pf-discount" valueCents={discountCents} onValueChange={setDiscountCents} />
-        </div>
+        {canDiscount ? (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="pf-discount">Desconto</Label>
+            <MoneyInput id="pf-discount" valueCents={discountCents} onValueChange={setDiscountCents} />
+          </div>
+        ) : null}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="pf-date">Recebido em</Label>
           <Input id="pf-date" type="date" max={today} value={date} onChange={(event) => setDate(event.target.value)} />

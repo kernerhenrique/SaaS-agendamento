@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, CalendarCheck, CircleAlert, CalendarDays, Gauge, HandCoins, UserPlus, UserX, Wallet } from "lucide-react";
+import { AlertTriangle, CalendarCheck, CircleAlert, Percent, CalendarDays, Gauge, HandCoins, UserPlus, UserX, Wallet } from "lucide-react";
 
 import { NewAppointmentButton } from "@/components/admin/new-appointment-button";
 import { EmptyState } from "@/components/empty-state";
@@ -13,7 +13,7 @@ import { formatPriceFromCents } from "@/lib/currency";
 import { cn } from "cn";
 import { formatDateLabel } from "@/lib/date";
 import { prisma } from "@/server/db/prisma";
-import { professionalScope } from "@/server/modules/auth/permissions";
+import { can, professionalScope } from "@/server/modules/auth/permissions";
 import { requireAdminSession } from "@/server/modules/auth/session";
 import { INACTIVE_CLIENT_DAYS, getDashboard } from "@/server/modules/dashboard/dashboard.service";
 
@@ -29,7 +29,9 @@ export default async function InicioPage() {
     select: { timezone: true, businessType: true },
   });
   const { terms } = getVertical(business.businessType);
-  // Profissional: o Início mostra só os números dele.
+  // Profissional: o Início mostra só os números dele, sem links para as telas do dono.
+  const canFinance = can(session.role, "finance.view");
+  const canCatalog = can(session.role, "catalog.manage");
   const data = await getDashboard(session.businessId, business.timezone, undefined, professionalScope(session));
 
   const formatTime = (iso: string) =>
@@ -52,10 +54,10 @@ export default async function InicioPage() {
       </div>
 
       <section aria-label="Resumo do mês" className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <KpiLink href="/admin/financeiro?periodo=mes&aba=recebimentos">
+        <KpiLink href={canFinance ? "/admin/financeiro?periodo=mes&aba=recebimentos" : undefined}>
           <KpiCard icon={Wallet} label="Recebido no mês" value={formatPriceFromCents(data.month.receivedCents)} />
         </KpiLink>
-        <KpiLink href="/admin/financeiro?aba=a-receber">
+        <KpiLink href={canFinance ? "/admin/financeiro?aba=a-receber" : undefined}>
           <KpiCard
             icon={HandCoins}
             label={`A receber (${data.receivable.count})`}
@@ -65,11 +67,11 @@ export default async function InicioPage() {
         <KpiCard icon={CalendarCheck} label="Atendimentos no mês" value={String(data.month.appointments)} />
         <KpiCard icon={Gauge} label="Ocupação da agenda" value={formatRate(data.month.occupancyRate)} />
         <KpiCard icon={UserX} label="Taxa de faltas" value={formatRate(data.month.noShowRate)} />
-        <KpiCard
-          icon={UserPlus}
-          label={`${terms.client.plural} novos`}
-          value={String(data.month.newClients)}
-        />
+        {data.month.myCommissionCents !== null ? (
+          <KpiCard icon={Percent} label="Minha comissão no mês" value={formatPriceFromCents(data.month.myCommissionCents)} />
+        ) : (
+          <KpiCard icon={UserPlus} label={`${terms.client.plural} novos`} value={String(data.month.newClients)} />
+        )}
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
@@ -121,7 +123,7 @@ export default async function InicioPage() {
           <CardContent className="flex flex-col gap-3">
             {!hasAlerts ? <p className="text-sm text-muted-foreground">Tudo certo por aqui.</p> : null}
             {data.alerts.completedWithoutPayment.count > 0 ? (
-              <Alert href="/admin/financeiro?aba=a-receber" tone="destructive">
+              <Alert href={canFinance ? "/admin/financeiro?aba=a-receber" : undefined} tone="destructive">
                 <strong>{data.alerts.completedWithoutPayment.count}</strong>{" "}
                 {data.alerts.completedWithoutPayment.count === 1
                   ? "atendimento concluído está sem nenhum pagamento"
@@ -130,7 +132,7 @@ export default async function InicioPage() {
               </Alert>
             ) : null}
             {data.alerts.completedPartialPayment.count > 0 ? (
-              <Alert href="/admin/financeiro?aba=a-receber">
+              <Alert href={canFinance ? "/admin/financeiro?aba=a-receber" : undefined}>
                 <strong>{data.alerts.completedPartialPayment.count}</strong>{" "}
                 {data.alerts.completedPartialPayment.count === 1
                   ? "atendimento concluído com pagamento parcial"
@@ -139,7 +141,7 @@ export default async function InicioPage() {
               </Alert>
             ) : null}
             {data.alerts.professionalsWithoutHours.map((professional) => (
-              <Alert key={professional.id} href="/admin/profissionais">
+              <Alert key={professional.id} href={canCatalog ? "/admin/profissionais" : undefined}>
                 <strong>{professional.name}</strong> está sem expediente configurado e não recebe reservas.
               </Alert>
             ))}
@@ -159,8 +161,9 @@ export default async function InicioPage() {
   );
 }
 
-/** KPI clicável que leva ao Financeiro (mantém o visual do KpiCard). */
-function KpiLink({ href, children }: { href: string; children: React.ReactNode }) {
+/** KPI clicável que leva ao Financeiro (mantém o visual do KpiCard); sem `href`, só o cartão. */
+function KpiLink({ href, children }: { href?: string; children: React.ReactNode }) {
+  if (!href) return children;
   return (
     <Link
       href={href}
@@ -182,18 +185,23 @@ function Alert({
   tone = "warning",
   children,
 }: {
-  href: string;
+  /** Sem link quando a tela de destino é do dono (profissional). */
+  href?: string;
   tone?: keyof typeof ALERT_TONES;
   children: React.ReactNode;
 }) {
   const { box, icon, Icon } = ALERT_TONES[tone];
-  return (
-    <Link
-      href={href}
-      className={cn("flex gap-3 rounded-lg border p-3 text-sm transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none", box)}
-    >
+  const className = cn("flex gap-3 rounded-lg border p-3 text-sm transition-colors", box);
+  const content = (
+    <>
       <Icon className={cn("mt-0.5 size-4 shrink-0", icon)} />
       <span>{children}</span>
+    </>
+  );
+  if (!href) return <div className={className}>{content}</div>;
+  return (
+    <Link href={href} className={cn(className, "focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none")}>
+      {content}
     </Link>
   );
 }

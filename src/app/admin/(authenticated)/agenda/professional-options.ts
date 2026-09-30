@@ -7,9 +7,13 @@ import type { ProfessionalOption } from "./types";
  * (serviços que realizam + expediente). Compartilhado com o Financeiro, que
  * abre o mesmo drawer.
  */
-export async function getProfessionalOptions(businessId: string): Promise<ProfessionalOption[]> {
+export async function getProfessionalOptions(
+  businessId: string,
+  /** Profissional logado: só o próprio cadastro (a agenda dele). */
+  scope: { professionalId?: string } = {},
+): Promise<ProfessionalOption[]> {
   const professionals = await prisma.professional.findMany({
-    where: { businessId, active: true, deletedAt: null },
+    where: { businessId, active: true, deletedAt: null, ...(scope.professionalId ? { id: scope.professionalId } : {}) },
     orderBy: { name: "asc" },
     include: {
       professionalServices: { include: { service: true } },

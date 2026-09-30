@@ -2,13 +2,13 @@ import { notFound } from "next/navigation";
 
 import { NotFoundError } from "@/server/errors";
 import { prisma } from "@/server/db/prisma";
-import { requireAdminSession } from "@/server/modules/auth/session";
+import { requirePagePermission } from "@/server/modules/auth/page-access";
 import { getProfessionalProfile } from "@/server/modules/professional/professional-profile.service";
 
 import { ProfessionalProfile } from "./professional-profile";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  const session = await requireAdminSession();
+  const session = await requirePagePermission("catalog.manage");
   const { id } = await params;
   const professional = await prisma.professional.findFirst({
     where: { id, businessId: session.businessId, deletedAt: null },
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 export default async function ProfissionalPage({ params }: { params: Promise<{ id: string }> }) {
-  const session = await requireAdminSession();
+  const session = await requirePagePermission("catalog.manage");
   const { id } = await params;
   const business = await prisma.business.findUniqueOrThrow({
     where: { id: session.businessId },

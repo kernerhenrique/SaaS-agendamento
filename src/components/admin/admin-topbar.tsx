@@ -22,9 +22,12 @@ import { useLogout } from "./use-logout";
 export function AdminTopbar({
   business,
   userName,
+  roleLabel,
 }: {
   business: { name: string; logoUrl: string | null };
   userName: string;
+  /** "Dono" ou o termo do profissional ("Barbeiro"). */
+  roleLabel: string;
 }) {
   const { openNewAppointment, openSearch } = useAdminShell();
   const { logout, isLoggingOut } = useLogout();
@@ -59,14 +62,17 @@ export function AdminTopbar({
 
       <DropdownMenu>
         <DropdownMenuTrigger
-          render={<Button variant="ghost" size="icon" className="hidden rounded-full sm:inline-flex" aria-label="Conta" />}
+          render={<Button variant="ghost" size="icon" className="hidden rounded-full sm:inline-flex" aria-label={`Conta: ${userName}, ${roleLabel}`} />}
         >
           <Avatar size="sm">
             <AvatarFallback>{getInitials(userName)}</AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-48">
-          <DropdownMenuLabel className="truncate">{userName}</DropdownMenuLabel>
+          <DropdownMenuLabel className="flex flex-col">
+            <span className="truncate">{userName}</span>
+            <span className="text-caption font-normal text-muted-foreground">{roleLabel}</span>
+          </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={logout} disabled={isLoggingOut}>
             <LogOut />

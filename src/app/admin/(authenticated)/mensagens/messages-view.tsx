@@ -24,7 +24,8 @@ export function MessagesView({
   initialTab,
 }: {
   timezone: string;
-  templates: MessageTemplateDto[];
+  /** null = sem permissão para editar modelos (profissional): a aba some. */
+  templates: MessageTemplateDto[] | null;
   sample: TemplateValues;
   initialTab: MessagesTab;
 }) {
@@ -50,7 +51,7 @@ export function MessagesView({
         <TabsList>
           <TabsTrigger value="lembretes">Lembretes de amanhã</TabsTrigger>
           <TabsTrigger value="pos-atendimento">Pós-atendimento</TabsTrigger>
-          <TabsTrigger value="modelos">Modelos</TabsTrigger>
+          {templates ? <TabsTrigger value="modelos">Modelos</TabsTrigger> : null}
         </TabsList>
 
         <TabsContent value="lembretes" className="mt-4">
@@ -75,11 +76,13 @@ export function MessagesView({
           />
         </TabsContent>
 
-        <TabsContent value="modelos" className="mt-4 flex flex-col gap-5">
-          {templates.map((template) => (
-            <TemplateEditor key={template.kind} template={template} sample={sample} />
-          ))}
-        </TabsContent>
+        {templates ? (
+          <TabsContent value="modelos" className="mt-4 flex flex-col gap-5">
+            {templates.map((template) => (
+              <TemplateEditor key={template.kind} template={template} sample={sample} />
+            ))}
+          </TabsContent>
+        ) : null}
       </Tabs>
     </main>
   );

@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { lowerTerm } from "@/config/vertical";
 import { useVertical } from "@/config/vertical-context";
 import type { AppointmentStatus } from "@/generated/prisma/enums";
 import { NEXT_STATUS_ACTIONS, STATUS_LABELS, STATUS_TONE } from "@/lib/appointment-status";
@@ -48,6 +49,13 @@ interface AppointmentDetail {
   };
   history: { id: string; startAt: string; status: AppointmentStatus; service: { name: string } }[];
   clientStats: { completed: number; noShows: number };
+  /** Quem marcou / cancelou pelo painel (null quando não há registro). */
+  audit: { createdBy: Actor | null; cancelledBy: Actor | null };
+}
+
+interface Actor {
+  name: string;
+  role: "OWNER" | "PROFESSIONAL";
 }
 
 /**
@@ -166,7 +174,9 @@ function DrawerBody({
     );
   }
 
-  const { appointment, history, clientStats } = detail;
+  const { appointment, history, clientStats, audit } = detail;
+  const actorLabel = (actor: Actor) =>
+    `${actor.name} (${actor.role === "OWNER" ? "dono" : lowerTerm(terms.professional.singular)})`;
   const actions = NEXT_STATUS_ACTIONS[appointment.status];
   const canReschedule = RESCHEDULABLE_STATUSES.includes(appointment.status);
   const whenLabel = `${formatDateTime(appointment.startAt, { weekday: "long", day: "2-digit", month: "long" })}, ${formatDateTime(appointment.startAt, { hour: "2-digit", minute: "2-digit" })}–${formatDateTime(appointment.endAt, { hour: "2-digit", minute: "2-digit" })}`;
@@ -208,7 +218,16 @@ function DrawerBody({
       }
     >
       <div className="flex flex-col gap-5 py-2 text-sm">
-        <StatusBadge tone={STATUS_TONE[appointment.status]}>{STATUS_LABELS[appointment.status]}</StatusBadge>
+        <div className="flex flex-col items-start gap-1.5">
+          <StatusBadge tone={STATUS_TONE[appointment.status]}>{STATUS_LABELS[appointment.status]}</StatusBadge>
+          {audit.createdBy || audit.cancelledBy ? (
+            <p className="text-caption text-muted-foreground">
+              {audit.createdBy ? `Marcado por ${actorLabel(audit.createdBy)}` : null}
+              {audit.createdBy && audit.cancelledBy ? " · " : null}
+              {audit.cancelledBy ? `Cancelado por ${actorLabel(audit.cancelledBy)}` : null}
+            </p>
+          ) : null}
+        </div>
 
         {isRescheduling ? (
           <RescheduleForm

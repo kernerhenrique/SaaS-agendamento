@@ -1,4 +1,5 @@
 import { prisma } from "@/server/db/prisma";
+import { professionalScope } from "@/server/modules/auth/permissions";
 import { requireAdminSession } from "@/server/modules/auth/session";
 
 import { AgendaView } from "./agenda-view";
@@ -14,7 +15,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
 
   const [business, professionalOptions] = await Promise.all([
     prisma.business.findUniqueOrThrow({ where: { id: session.businessId } }),
-    getProfessionalOptions(session.businessId),
+    getProfessionalOptions(session.businessId, professionalScope(session)),
   ]);
 
   return (

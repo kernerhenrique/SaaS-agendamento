@@ -39,6 +39,8 @@ import { STATUS_LABELS, STATUS_TONE } from "@/lib/appointment-status";
 import { formatPriceFromCents } from "@/lib/currency";
 import { formatDateLabel } from "@/lib/date";
 
+import { StaffAccessCard } from "@/components/admin/staff-access-card";
+
 import { ProfessionalForm } from "../professional-form";
 import type { ProfessionalListItem, ServiceOption } from "../types";
 
@@ -240,6 +242,8 @@ export function ProfessionalProfile({
               router.refresh();
             }}
           />
+
+          <StaffAccessCard professionalId={professional.id} professionalName={professional.name} />
 
           <section className="flex max-w-2xl flex-col gap-2 rounded-lg border border-destructive/30 p-4">
             <h2 className="text-sm font-semibold">Remover cadastro</h2>

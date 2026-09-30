@@ -256,7 +256,8 @@ export function AgendaView({
           </TabsList>
         </Tabs>
 
-        <div className="hidden sm:block">
+        {/* Uma agenda só (profissional logado ou negócio de uma pessoa): sem seletor. */}
+        <div className={professionals.length > 1 ? "hidden sm:block" : "hidden"}>
           {view === "day" ? (
             <Select value={dayFilter} onValueChange={(value) => setDayFilter(value ?? ALL)}>
               <SelectTrigger aria-label={`Filtrar ${terms.professional.plural.toLowerCase()}`} className="min-w-44">

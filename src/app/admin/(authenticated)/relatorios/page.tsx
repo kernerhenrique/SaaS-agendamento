@@ -1,6 +1,6 @@
 import { parsePeriodPreset } from "@/lib/period";
 import { prisma } from "@/server/db/prisma";
-import { requireAdminSession } from "@/server/modules/auth/session";
+import { requirePagePermission } from "@/server/modules/auth/page-access";
 import { REPORT_SECTIONS, type ReportSection } from "@/server/modules/report/report.service";
 
 import { ReportsView } from "./reports-view";
@@ -12,7 +12,7 @@ export default async function RelatoriosPage({
 }: {
   searchParams: Promise<{ periodo?: string; inicio?: string; fim?: string; aba?: string }>;
 }) {
-  const session = await requireAdminSession();
+  const session = await requirePagePermission("reports.view");
   const params = await searchParams;
   const business = await prisma.business.findUniqueOrThrow({
     where: { id: session.businessId },

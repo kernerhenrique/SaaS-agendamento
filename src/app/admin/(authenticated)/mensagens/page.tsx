@@ -1,6 +1,7 @@
 import { addDaysToIsoDate, localMinutesToUtc, todayInTimeZone } from "@/lib/date";
 import { buildManageUrl } from "@/server/app-url";
 import { prisma } from "@/server/db/prisma";
+import { can } from "@/server/modules/auth/permissions";
 import { requireAdminSession } from "@/server/modules/auth/session";
 import { getMessageTemplates } from "@/server/modules/notification/whatsapp/message.service";
 import { buildTemplateValues } from "@/server/modules/notification/whatsapp/templates";
@@ -14,9 +15,11 @@ const TABS: MessagesTab[] = ["lembretes", "pos-atendimento", "modelos"];
 export default async function MensagensPage({ searchParams }: { searchParams: Promise<{ aba?: string }> }) {
   const session = await requireAdminSession();
   const { aba } = await searchParams;
+  // Profissional: só as listas de envio; os modelos ficam com o dono.
+  const canEditTemplates = can(session.role, "templates.manage");
   const [business, templates, service, professional] = await Promise.all([
     prisma.business.findUniqueOrThrow({ where: { id: session.businessId }, select: { name: true, address: true, timezone: true } }),
-    getMessageTemplates(session.businessId),
+    canEditTemplates ? getMessageTemplates(session.businessId) : null,
     prisma.service.findFirst({ where: { businessId: session.businessId, active: true, deletedAt: null }, orderBy: { position: "asc" } }),
     prisma.professional.findFirst({ where: { businessId: session.businessId, active: true, deletedAt: null }, orderBy: { name: "asc" } }),
   ]);
@@ -38,7 +41,7 @@ export default async function MensagensPage({ searchParams }: { searchParams: Pr
       timezone={business.timezone}
       templates={templates}
       sample={sample}
-      initialTab={TABS.includes(aba as MessagesTab) ? (aba as MessagesTab) : "lembretes"}
+      initialTab={TABS.includes(aba as MessagesTab) && (aba !== "modelos" || templates) ? (aba as MessagesTab) : "lembretes"}
     />
   );
 }

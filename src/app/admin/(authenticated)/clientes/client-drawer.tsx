@@ -19,6 +19,7 @@ import { formatPriceFromCents } from "@/lib/currency";
 import { formatPhoneBR } from "@/lib/phone";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { MAX_TAGS, normalizeTags } from "@/server/modules/client/client-rules";
+import { cn } from "cn";
 
 interface ClientDetail {
   client: {
@@ -29,9 +30,13 @@ interface ClientDetail {
     internalNotes: string | null;
     tags: string[];
     createdAt: string;
+    /** Notas e tags são compartilhadas entre quem atende: quem editou por último e quando. */
+    notesUpdatedBy: string | null;
+    notesUpdatedAt: string | null;
   };
   summary: { completed: number; noShows: number; lastVisitAt: string | null; nextAppointmentAt: string | null };
-  totalSpentCents: number;
+  /** null para o profissional (o financeiro do cliente fica com o dono). */
+  totalSpentCents: number | null;
   history: {
     id: string;
     status: AppointmentStatus;
@@ -174,7 +179,7 @@ function ClientDrawerBody({
         return;
       }
       setTagDraft("");
-      setDetail((prev) => (prev ? { ...prev, client: { ...prev.client, ...data.client } } : prev));
+      setDetail((prev) => (prev ? { ...prev, client: { ...prev.client, ...data.client, notesUpdatedBy: "você" } } : prev));
       setTags(data.client.tags);
       setNotes(data.client.internalNotes ?? "");
       toast.success("Ficha atualizada.");
@@ -219,8 +224,10 @@ function ClientDrawerBody({
           </a>
         </section>
 
-        <dl className="grid grid-cols-2 gap-2 text-center">
-          <Stat label="Total gasto" value={formatPriceFromCents(detail.totalSpentCents)} />
+        <dl className={cn("grid gap-2 text-center", detail.totalSpentCents !== null ? "grid-cols-2" : "grid-cols-3")}>
+          {detail.totalSpentCents !== null ? (
+            <Stat label="Total gasto" value={formatPriceFromCents(detail.totalSpentCents)} />
+          ) : null}
           <Stat label="Atendimentos" value={String(summary.completed)} />
           <Stat label="Faltas" value={String(summary.noShows)} tone={summary.noShows > 0 ? "danger" : undefined} />
           <Stat
@@ -238,6 +245,12 @@ function ClientDrawerBody({
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
           />
+          {client.notesUpdatedBy && client.notesUpdatedAt ? (
+            <p className="text-caption text-muted-foreground">
+              Notas e tags editadas por {client.notesUpdatedBy} em{" "}
+              {formatDate(client.notesUpdatedAt, { day: "2-digit", month: "2-digit", year: "numeric" })}
+            </p>
+          ) : null}
         </section>
 
         <section className="flex flex-col gap-2">

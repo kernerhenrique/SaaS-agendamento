@@ -1,5 +1,5 @@
 import { prisma } from "@/server/db/prisma";
-import { requireAdminSession } from "@/server/modules/auth/session";
+import { requirePagePermission } from "@/server/modules/auth/page-access";
 
 import { getProfessionalOptions } from "../agenda/professional-options";
 import { FinanceView, type FinanceTab } from "./finance-view";
@@ -14,7 +14,7 @@ export default async function FinanceiroPage({
 }: {
   searchParams: Promise<{ periodo?: string; inicio?: string; fim?: string; aba?: string }>;
 }) {
-  const session = await requireAdminSession();
+  const session = await requirePagePermission("finance.view");
   const params = await searchParams;
   const [business, professionals] = await Promise.all([
     prisma.business.findUniqueOrThrow({ where: { id: session.businessId }, select: { timezone: true } }),

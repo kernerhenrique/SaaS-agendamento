@@ -1,12 +1,12 @@
 import { prisma } from "@/server/db/prisma";
-import { requireAdminSession } from "@/server/modules/auth/session";
+import { requirePagePermission } from "@/server/modules/auth/page-access";
 
 import { ProfessionalsView } from "./professionals-view";
 
 export const metadata = { title: "Profissionais" };
 
 export default async function ProfissionaisPage() {
-  const session = await requireAdminSession();
+  const session = await requirePagePermission("catalog.manage");
 
   const professionals = await prisma.professional.findMany({
     where: { businessId: session.businessId, deletedAt: null },

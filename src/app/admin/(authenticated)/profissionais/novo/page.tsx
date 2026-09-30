@@ -1,12 +1,12 @@
 import { prisma } from "@/server/db/prisma";
-import { requireAdminSession } from "@/server/modules/auth/session";
+import { requirePagePermission } from "@/server/modules/auth/page-access";
 
 import { NewProfessionalView } from "./new-professional-view";
 
 export const metadata = { title: "Novo cadastro" };
 
 export default async function NovoProfissionalPage() {
-  const session = await requireAdminSession();
+  const session = await requirePagePermission("catalog.manage");
   const [business, services] = await Promise.all([
     prisma.business.findUniqueOrThrow({ where: { id: session.businessId }, select: { timezone: true } }),
     prisma.service.findMany({

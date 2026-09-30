@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useAdminAccess } from "@/components/admin/admin-access-context";
 import { PaymentForm } from "@/components/admin/payment-form";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,8 @@ interface PaymentItem {
   method: PaymentMethod;
   receivedAt: string;
   note: string | null;
+  /** Quem registrou (null = registro antigo, de antes do controle por usuário). */
+  createdByName: string | null;
 }
 
 /**
@@ -55,6 +58,7 @@ export function AppointmentPayments({
   onCompletingChange: (completing: boolean) => void;
   onChanged: () => void;
 }) {
+  const canDelete = useAdminAccess().can("payment.delete");
   const [data, setData] = useState<{ payments: PaymentItem[]; summary: PaymentSummary } | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [localReload, setLocalReload] = useState(0);
@@ -158,19 +162,24 @@ export function AppointmentPayments({
                   </>
                 )}
                 {payment.note ? <span className="block truncate text-caption text-muted-foreground">{payment.note}</span> : null}
+                {payment.createdByName ? (
+                  <span className="block truncate text-caption text-muted-foreground">Registrado por {payment.createdByName}</span>
+                ) : null}
               </span>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={
-                  payment.amountCents > 0
-                    ? `Remover recebimento de ${formatPriceFromCents(payment.amountCents)}`
-                    : `Remover desconto de ${formatPriceFromCents(payment.discountCents)}`
-                }
-                onClick={() => setRemoving(payment)}
-              >
-                <Trash2 />
-              </Button>
+              {canDelete ? (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={
+                    payment.amountCents > 0
+                      ? `Remover recebimento de ${formatPriceFromCents(payment.amountCents)}`
+                      : `Remover desconto de ${formatPriceFromCents(payment.discountCents)}`
+                  }
+                  onClick={() => setRemoving(payment)}
+                >
+                  <Trash2 />
+                </Button>
+              ) : null}
             </li>
           ))}
         </ul>

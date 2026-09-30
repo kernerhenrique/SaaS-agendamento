@@ -33,6 +33,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 import { BookingTimeNotice } from "@/components/admin/booking-time-notice";
 import { PaymentIndicator } from "@/components/admin/payment-indicator";
+import { StaffAccessCard } from "@/components/admin/staff-access-card";
 import { MoneyInput } from "@/components/money-input";
 import { ProfessionalAvatar } from "@/components/admin/professional-avatar";
 import { PROFESSIONAL_COLORS } from "@/lib/professional-colors";
@@ -434,6 +435,29 @@ export default function DesignSystemPage() {
           </Section>
 
           <MessagesSection />
+
+          <Section
+            title="Equipe (acesso ao painel)"
+            description="Cartão do cadastro do profissional: sem acesso → convite (link por WhatsApp) → ativo, com revogar. E a linha de 'quem fez' no drawer do agendamento. Aqui nada é salvo."
+          >
+            <div className="grid gap-4 lg:grid-cols-2">
+              <StaffAccessCard
+                professionalId="demo-1"
+                professionalName="João"
+                demo={{ status: "none", user: null, inviteExpiresAt: null }}
+              />
+              <StaffAccessCard
+                professionalId="demo-2"
+                professionalName="Marcos"
+                demo={{ status: "active", user: { name: "Marcos", email: "marcos@exemplo.com" }, inviteExpiresAt: null }}
+              />
+            </div>
+            <div className="flex flex-col items-start gap-1.5 rounded-lg border p-3">
+              <StatusBadge tone="cancelled">Cancelado</StatusBadge>
+              <p className="text-caption text-muted-foreground">Marcado por Carlos (dono) · Cancelado por João (barbeiro)</p>
+              <p className="text-caption text-muted-foreground">R$ 35,00 · PIX · Registrado por João</p>
+            </div>
+          </Section>
         </TabsContent>
       </Tabs>
     </main>

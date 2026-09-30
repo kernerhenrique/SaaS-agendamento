@@ -172,19 +172,20 @@ function NewAppointmentForm({
       .then((response) => (response.ok ? response.json() : Promise.reject()))
       .then((data: { professionals: ApiProfessional[] }) => {
         if (cancelled) return;
-        setProfessionals(
-          data.professionals
-            .filter((p) => p.active)
-            .map((p) => ({
-              id: p.id,
-              name: p.name,
-              services: p.professionalServices
-                .map((ps) => ps.service)
-                .filter((s) => s.active && !s.deletedAt)
-                .map((s) => ({ id: s.id, name: s.name, durationMin: s.durationMin })),
-              workingHours: p.workingHours,
-            })),
-        );
+        const options = data.professionals
+          .filter((p) => p.active)
+          .map((p) => ({
+            id: p.id,
+            name: p.name,
+            services: p.professionalServices
+              .map((ps) => ps.service)
+              .filter((s) => s.active && !s.deletedAt)
+              .map((s) => ({ id: s.id, name: s.name, durationMin: s.durationMin })),
+            workingHours: p.workingHours,
+          }));
+        setProfessionals(options);
+        // Uma agenda só (profissional logado ou negócio de uma pessoa): já vem escolhida.
+        if (options.length === 1) setProfessionalId((current) => current || options[0].id);
       })
       .catch(() => {
         if (!cancelled) setLoadError(true);

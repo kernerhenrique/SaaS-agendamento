@@ -34,10 +34,10 @@ export function AdminSidebar({
     document.cookie = `${SIDEBAR_COOKIE}=${next ? "collapsed" : "expanded"}; path=/admin; max-age=31536000; samesite=lax`;
   }
 
-  const groups = (Object.keys(NAV_GROUP_LABELS) as (keyof typeof NAV_GROUP_LABELS)[]).map((group) => ({
-    group,
-    items: items.filter((item) => item.group === group),
-  }));
+  const groups = (Object.keys(NAV_GROUP_LABELS) as (keyof typeof NAV_GROUP_LABELS)[])
+    .map((group) => ({ group, items: items.filter((item) => item.group === group) }))
+    // Profissional não tem "Cadastros": o grupo vazio some com o título.
+    .filter(({ items: groupItems }) => groupItems.length > 0);
   const footerItems = items.filter((item) => item.group === "rodape");
 
   return (

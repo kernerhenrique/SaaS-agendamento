@@ -18,6 +18,9 @@ import {
 
 import type { ServiceIconKey } from "@/config/vertical";
 import { useVertical } from "@/config/vertical-context";
+import type { Permission } from "@/server/modules/auth/permissions";
+
+import { useAdminAccess } from "./admin-access-context";
 
 export type AdminNavGroup = "operacao" | "cadastros" | "gestao" | "rodape";
 
@@ -43,19 +46,22 @@ const SERVICE_ICONS: Record<ServiceIconKey, LucideIcon> = {
   briefcase: Briefcase,
 };
 
+/** Menu do painel, só com o que o papel pode abrir (profissional: sem cadastros, Financeiro e Relatórios). */
 export function useAdminNav(): AdminNavItem[] {
   const { terms, serviceIcon } = useVertical();
-  return [
+  const access = useAdminAccess();
+  const items: (AdminNavItem & { permission?: Permission })[] = [
     { href: "/admin", label: "Início", icon: House, group: "operacao" },
     { href: "/admin/agenda", label: "Agenda", icon: CalendarDays, group: "operacao" },
     { href: "/admin/clientes", label: terms.client.plural, icon: Contact, group: "operacao" },
-    { href: "/admin/profissionais", label: terms.professional.plural, icon: Users, group: "cadastros" },
-    { href: "/admin/servicos", label: terms.service.plural, icon: SERVICE_ICONS[serviceIcon], group: "cadastros" },
-    { href: "/admin/financeiro", label: "Financeiro", icon: Wallet, group: "gestao" },
-    { href: "/admin/relatorios", label: "Relatórios", icon: BarChart3, group: "gestao" },
+    { href: "/admin/profissionais", label: terms.professional.plural, icon: Users, group: "cadastros", permission: "catalog.manage" },
+    { href: "/admin/servicos", label: terms.service.plural, icon: SERVICE_ICONS[serviceIcon], group: "cadastros", permission: "catalog.manage" },
+    { href: "/admin/financeiro", label: "Financeiro", icon: Wallet, group: "gestao", permission: "finance.view" },
+    { href: "/admin/relatorios", label: "Relatórios", icon: BarChart3, group: "gestao", permission: "reports.view" },
     { href: "/admin/mensagens", label: "Mensagens", icon: MessageCircle, group: "gestao" },
     { href: "/admin/configuracoes", label: "Configurações", icon: Settings, group: "rodape" },
   ];
+  return items.filter((item) => !item.permission || access.can(item.permission));
 }
 
 /** Início só fica ativo na raiz exata; os demais também nas sub-rotas (/admin/profissionais/[id]). */

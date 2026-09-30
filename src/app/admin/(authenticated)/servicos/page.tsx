@@ -1,5 +1,5 @@
 import { prisma } from "@/server/db/prisma";
-import { requireAdminSession } from "@/server/modules/auth/session";
+import { requirePagePermission } from "@/server/modules/auth/page-access";
 import { listServices } from "@/server/modules/service/service.service";
 
 import { ServicesView } from "./services-view";
@@ -7,7 +7,7 @@ import { ServicesView } from "./services-view";
 export const metadata = { title: "Serviços" };
 
 export default async function ServicosPage() {
-  const session = await requireAdminSession();
+  const session = await requirePagePermission("catalog.manage");
 
   const [services, professionals, categories] = await Promise.all([
     listServices(session.businessId),

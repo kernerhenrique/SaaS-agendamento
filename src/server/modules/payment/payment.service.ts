@@ -55,7 +55,20 @@ export async function getAppointmentPayments(businessId: string, appointmentId: 
     },
   });
   if (!appointment) throw new NotFoundError("Agendamento não encontrado");
-  return { payments: appointment.payments, summary: summarizePayments(appointment.priceCents, appointment.payments) };
+  // "Registrado por": nome de quem lançou (dono ou o próprio profissional).
+  const authorIds = [...new Set(appointment.payments.map((p) => p.createdByUserId).filter((id): id is string => id != null))];
+  const authors = authorIds.length
+    ? new Map(
+        (await prisma.user.findMany({ where: { id: { in: authorIds } }, select: { id: true, name: true } })).map((u) => [u.id, u.name]),
+      )
+    : new Map<string, string>();
+  return {
+    payments: appointment.payments.map((payment) => ({
+      ...payment,
+      createdByName: payment.createdByUserId ? (authors.get(payment.createdByUserId) ?? null) : null,
+    })),
+    summary: summarizePayments(appointment.priceCents, appointment.payments),
+  };
 }
 
 /**
