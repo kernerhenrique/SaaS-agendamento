@@ -1,0 +1,18 @@
+{
+  "nome": "Clínica Pele Leve",
+  "slug": "clinica-pele-leve",
+  "nicho": "beauty_clinic",
+  "endereco": "Av. Paulista, 1000 - São Paulo/SP",
+  "whatsapp": "11977776666",
+  "cor": "#7C3AED",
+  "horarioFuncionamento": [{ "dias": "seg-sex", "horario": "08:00-18:00" }],
+  "politicas": { "antecedenciaMinutos": 120, "cancelamentoHoras": 24 },
+  "profissionais": [
+    { "nome": "Dra. Ana", "especialidade": "Estética facial", "comissao": 40 },
+    {
+      "nome": "Bia",
+      "servicos": ["Drenagem linfática", "Massagem modeladora"],
+      "expediente": [{ "dias": "ter-sab", "horario": "10:00-19:00", "intervalo": "13:00-14:00" }]
+    }
+  ]
+}

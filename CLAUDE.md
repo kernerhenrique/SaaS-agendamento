@@ -13,7 +13,7 @@ Antes de qualquer mudança de schema, autenticação ou lógica de disponibilida
 ## Documentos de referência
 - Escopo e regras de negócio: @docs/escopo-sistema-agendamento.md
 - Design system (tokens, componentes, padrões de tela): @docs/design-system.md
-- Como criar um novo cliente a partir do base: @docs/como-clonar.md
+- Como entregar um cliente novo (`npm run novo-cliente`): @docs/como-clonar.md
 - Referências de mercado e padrões adotados: @docs/pesquisa-referencias.md
 - Publicação (Vercel + Neon + domínio): `docs/publicacao.md`. Venda e preços (negócio, não técnico): `docs/guia-de-vendas.md`
 
@@ -50,7 +50,8 @@ src/
 │   │   ├── appointment/     # disponibilidade, criação, status, cancelamento, regras de horário do painel, políticas de reserva (booking-policy.ts)
 │   │   ├── auth/            # login, sessão, troca de senha (password-rules.ts)
 │   │   ├── business/        # Configurações do negócio: validação pura (business-rules.ts) + leitura/gravação por seção
-│   │   ├── staff/           # convite de acesso da equipe (token, aceite, revogar)
+│   │   ├── staff/           # convite de acesso da equipe e primeiro acesso do dono (token, aceite, revogar)
+│   │   ├── onboarding/      # cliente novo: arquivo do cliente (client-file.ts, puro), catálogos por nicho, criação e mensagem de entrega
 │   │   ├── client/          # mini-CRM: lista/filtros, ficha, notas e tags, busca por telefone
 │   │   ├── dashboard/       # métricas do Início (reusadas no perfil do profissional)
 │   │   ├── professional/
@@ -66,12 +67,16 @@ src/
 │   └── brand.ts             # marca do PRODUTO (Aprazzo: nome, logos, capa): login, título, "Agendamento por", .ics
 ├── lib/                     # date.ts (timezone), rate-limit, .ics, formatadores pt-BR, professional-colors.ts
 └── components/              # ui/ (shadcn) + componentes de domínio + admin/ (shell do painel)
+scripts/
+└── novo-cliente.ts          # npm run novo-cliente -- clientes/<slug>.json [--simular] [--producao]
 tests/
 ├── unit/
-└── e2e/
+├── e2e/
+└── fixtures/                # cliente-e2e.json (arquivo de cliente usado no E2E)
+clientes/                    # arquivos e imagens de clientes reais: FORA do git
 docs/
 ```
-`admin` e `api` são slugs reservados (não podem ser slug de negócio).
+Slugs reservados (não podem ser slug de negócio): `admin`, `api`, `agendamento` e os guardados para páginas da Aprazzo (`precos`, `contato`, `termos`, `privacidade`, `entrar`, `cadastro`, `ajuda`, `blog`, `app`), em `src/lib/reserved-slugs.ts`.
 
 ## Projeto base e clonagem
 **Customizável por cliente** (sem tocar em lógica):
@@ -136,7 +141,9 @@ npm run build
 npm run lint
 npm run test                # Vitest
 npm run test:e2e            # Playwright
+npm run novo-cliente -- clientes/<slug>.json [--simular] [--producao]   # cliente novo (docs/como-clonar.md)
 ```
+Arquivos de ambiente (todos fora do git): `.env` (banco local), `.env.local` (token da Vercel criado pelo `vercel link`), `.env.vercel.local` (`vercel env pull`: credenciais do Blob) e `.env.producao.local` (`DATABASE_URL` do Neon, à mão). **Nunca `.env.production.local`**: o Next carrega esse nome sozinho no build/start local.
 Pré-requisitos: Node ≥20.19, Docker.
 
 **Dados de teste (só banco local):** admin `dono@navalhadeouro.com` / `senha123`; profissional `joao@navalhadeouro.com` / `senha123` (criado pelo seed; num banco antigo, convide pelo cadastro do João); página pública `/navalha-de-ouro`. Use-os para testar fluxos e tirar screenshots sozinho.
@@ -176,6 +183,8 @@ Pré-requisitos: Node ≥20.19, Docker.
   - Páginas de dono usam `requirePagePermission` (volta ao Início). O menu vem filtrado por `useAdminAccess()`.
 - **Cliente atendido por dois profissionais:** um cadastro só (telefone). Cada profissional vê só o próprio histórico, sem o total gasto. Notas e tags são compartilhadas, com "editado por". O profissional não renomeia cadastro existente, e a busca por telefone não revela cliente de colega.
 - **Convite da equipe:** link com token aleatório (no banco só o sha256), 7 dias, uso único (`StaffInvite`), enviado pelo dono (WhatsApp/copiar). Página `/admin/convite/[token]` fora do proxy de sessão. Revogar grava `User.disabledAt` + `tokenVersion`: o acesso cai em até 15 min (mesma janela do access token).
+- **Primeiro acesso do dono:** o mesmo convite, com `StaffInvite.role = OWNER` e sem `professionalId`, gerado por `npm run novo-cliente` (`createOwnerInvite`). O dono escolhe o próprio e-mail e senha; ninguém cria nem vê a senha dele. Um link novo invalida o anterior não usado.
+- **Cliente novo = negócio cadastrado, não código copiado** (multi-inquilino). Logo e capa vão para o Vercel Blob (pasta `clientes/<slug>/`; testes locais em `local/`). O comando recusa `--producao` com banco local e o contrário.
 - **"Quem fez":** `Appointment.createdByUserId`/`cancelledByUserId`, `Payment.createdByUserId`, `Client.notesUpdatedByUserId`. Registros antigos ficam sem autor e a tela não mostra a linha (não dá para distinguir "página pública" de "antes do controle").
 - Rate limit em memória via `globalThis`: funciona só em instância única. Limitação conhecida; Redis/Upstash só quando pedido.
 

@@ -1,0 +1,46 @@
+{
+  "nome": "Barbearia do Zé",
+  "slug": "barbearia-do-ze",
+  "nicho": "barbershop",
+  "fuso": "America/Sao_Paulo",
+  "endereco": "Rua das Flores, 45 - Centro, Campinas/SP",
+  "whatsapp": "(19) 99999-0000",
+  "instagram": "@barbeariadoze",
+  "cor": "#B45309",
+  "logo": "barbearia-do-ze/logo.png",
+  "capa": "barbearia-do-ze/capa.jpg",
+  "horarioFuncionamento": [
+    { "dias": "ter-sex", "horario": "09:00-20:00" },
+    { "dias": "sab", "horario": "08:00-18:00" }
+  ],
+  "politicas": {
+    "antecedenciaMinutos": 60,
+    "janelaDias": 30,
+    "cancelamentoHoras": 2,
+    "texto": "Chegue com 5 minutos de antecedência. Atrasos acima de 15 minutos podem precisar remarcar."
+  },
+  "servicos": [
+    { "nome": "Corte", "categoria": "Cabelo", "duracao": 30, "preco": 40 },
+    { "nome": "Corte e barba", "categoria": "Cabelo", "duracao": 60, "preco": "65,00" },
+    { "nome": "Barba", "categoria": "Barba", "duracao": 30, "preco": 30 },
+    { "nome": "Pigmentação", "categoria": "Cabelo", "duracao": 40, "preco": 45, "aPartirDe": true, "descricao": "Valor final conforme a área" }
+  ],
+  "profissionais": [
+    {
+      "nome": "Zé",
+      "especialidade": "Degradê e navalhado",
+      "comissao": 0,
+      "cor": "orange",
+      "expediente": [
+        { "dias": "ter-sex", "horario": "09:00-20:00", "intervalo": "12:00-13:00" },
+        { "dias": "sab", "horario": "08:00-18:00" }
+      ]
+    },
+    {
+      "nome": "Rafa",
+      "comissao": 45,
+      "servicos": ["Corte", "Barba", "Corte e barba"],
+      "expediente": [{ "dias": "qua-sab", "horario": "10:00-19:00", "intervalo": "14:00-15:00" }]
+    }
+  ]
+}

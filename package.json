@@ -8,13 +8,15 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "novo-cliente": "tsx --tsconfig tsconfig.json scripts/novo-cliente.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
     "@dnd-kit/core": "^6.3.1",
     "@prisma/adapter-pg": "6.19.3",
     "@prisma/client": "6.19.3",
+    "@vercel/blob": "2.8.0",
     "class-variance-authority": "^0.7.1",
     "cmdk": "^1.1.1",
     "cn": "^0.4.0",
