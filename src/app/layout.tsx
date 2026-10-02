@@ -1,15 +1,24 @@
 import type { Metadata } from "next";
-import { Roboto, Geist_Mono } from "next/font/google";
+import { Bricolage_Grotesque, Geist_Mono, Instrument_Sans } from "next/font/google";
 import "./globals.css";
 
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { BRAND } from "@/config/brand";
 
-const roboto = Roboto({
-  variable: "--font-roboto",
+// Tipografia da marca Aprazzo (design system): Instrument Sans na interface;
+// Bricolage Grotesque só em títulos de marca (24px ou mais). Variáveis: o Next
+// baixa no build e serve do próprio site (sem pedido ao Google no navegador).
+const instrumentSans = Instrument_Sans({
+  variable: "--font-instrument-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  axes: ["wdth"],
+});
+
+const bricolageGrotesque = Bricolage_Grotesque({
+  variable: "--font-bricolage",
+  subsets: ["latin"],
+  axes: ["opsz"],
 });
 
 const geistMono = Geist_Mono({
@@ -18,8 +27,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  // Endereço público (APP_BASE_URL): a prévia de link precisa de URL absoluta.
+  metadataBase: new URL(process.env.APP_BASE_URL ?? "http://localhost:3000"),
   title: { default: BRAND.name, template: `%s · ${BRAND.name}` },
   description: BRAND.tagline,
+  openGraph: { siteName: BRAND.name, images: [{ url: BRAND.ogImagePath, width: 1200, height: 630 }] },
 };
 
 // Aplica o tema salvo (ou a preferência do sistema) antes da primeira pintura,
@@ -37,7 +49,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="pt-BR"
       suppressHydrationWarning
-      className={`${roboto.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${instrumentSans.variable} ${bricolageGrotesque.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />

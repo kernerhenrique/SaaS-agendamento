@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BrandLogo } from "@/components/brand-logo";
 import { BRAND } from "@/config/brand";
 
 const MIN_PASSWORD = 8; // mesma regra do servidor (password-rules.ts)
@@ -67,8 +68,9 @@ export function InviteForm({
     <Card className="w-full max-w-sm shadow-lg">
       <CardHeader className="text-center">
         {BRAND.logoPath ? (
-          // eslint-disable-next-line @next/next/no-img-element -- logo da marca em /public, dimensões definidas pelo asset
-          <img src={BRAND.logoPath} alt={BRAND.name} className="mx-auto mb-2 h-12 w-auto" />
+          <div className="mx-auto mb-2">
+            <BrandLogo />
+          </div>
         ) : (
           <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
             <UserPlus className="size-6" />

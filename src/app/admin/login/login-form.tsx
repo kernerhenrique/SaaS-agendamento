@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BrandLogo } from "@/components/brand-logo";
 import { BRAND } from "@/config/brand";
 
 export function LoginForm() {
@@ -49,8 +50,9 @@ export function LoginForm() {
       <CardHeader className="text-center">
         {/* CardHeader é grid: `mx-auto` centraliza o ícone (items-center não teria efeito). */}
         {BRAND.logoPath ? (
-          // eslint-disable-next-line @next/next/no-img-element -- logo da marca em /public, dimensões definidas pelo asset
-          <img src={BRAND.logoPath} alt={BRAND.name} className="mx-auto mb-2 h-12 w-auto" />
+          <div className="mx-auto mb-2">
+            <BrandLogo />
+          </div>
         ) : (
           <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
             <CalendarClock className="size-6" />

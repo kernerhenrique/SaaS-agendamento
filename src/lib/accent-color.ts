@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 
-export const DEFAULT_ACCENT_COLOR = "#4F46E5";
+/** Cor de marca padrão = primary do design system Aprazzo (negócio sem cor escolhida). */
+export const DEFAULT_ACCENT_COLOR = "#0F766E";
 
 const HEX_PATTERN = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i;
 

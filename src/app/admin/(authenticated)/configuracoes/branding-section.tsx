@@ -134,7 +134,7 @@ export function BrandingSection({ business }: { business: BusinessSettings }) {
             </span>
           </div>
         </div>
-        {!validColor ? <p className="text-sm text-destructive">Use o formato #RRGGBB, por exemplo #4F46E5.</p> : null}
+        {!validColor ? <p className="text-sm text-destructive">Use o formato #RRGGBB, por exemplo #0F766E.</p> : null}
         <ul className="flex flex-col gap-1 text-caption">
           <li className={cn("flex items-center gap-1.5", buttonOk ? "text-muted-foreground" : "text-destructive")}>
             {buttonOk ? <CircleCheck className="size-3.5 text-success" /> : <CircleAlert className="size-3.5" />}
