@@ -1,0 +1,43 @@
+{
+  "nome": "Barbearia Modelo",
+  "slug": "demo",
+  "nicho": "barbershop",
+  "endereco": "Rua do Exemplo, 100 - Centro, São Paulo/SP",
+  "horarioFuncionamento": [
+    { "dias": "seg-sex", "horario": "09:00-20:00" },
+    { "dias": "sab", "horario": "08:00-18:00" }
+  ],
+  "politicas": {
+    "antecedenciaMinutos": 30,
+    "janelaDias": 30,
+    "cancelamentoHoras": 2,
+    "texto": "Chegue com 5 minutos de antecedência. Cancelamentos com menos de 2 horas podem ser cobrados."
+  },
+  "profissionais": [
+    {
+      "nome": "Carlos Mendes",
+      "especialidade": "Degradê e navalhado",
+      "comissao": 50,
+      "cor": "blue",
+      "expediente": [
+        { "dias": "seg-sex", "horario": "09:00-19:00", "intervalo": "12:00-13:00" },
+        { "dias": "sab", "horario": "08:00-14:00" }
+      ]
+    },
+    {
+      "nome": "Rafael Souza",
+      "especialidade": "Barba e acabamento",
+      "comissao": 45,
+      "cor": "orange",
+      "expediente": [{ "dias": "ter-sab", "horario": "10:00-20:00", "intervalo": "14:00-15:00" }]
+    },
+    {
+      "nome": "Lucas Pereira",
+      "especialidade": "Cortes infantis e pigmentação",
+      "comissao": 40,
+      "cor": "green",
+      "servicos": ["Corte de cabelo", "Corte infantil", "Pigmentação", "Sobrancelha"],
+      "expediente": [{ "dias": "seg,qua,sex,sab", "horario": "09:00-18:00", "intervalo": "13:00-14:00" }]
+    }
+  ]
+}

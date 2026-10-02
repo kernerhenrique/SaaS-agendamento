@@ -52,6 +52,7 @@ src/
 │   │   ├── business/        # Configurações do negócio: validação pura (business-rules.ts) + leitura/gravação por seção
 │   │   ├── staff/           # convite de acesso da equipe e primeiro acesso do dono (token, aceite, revogar)
 │   │   ├── onboarding/      # cliente novo: arquivo do cliente (client-file.ts, puro), catálogos por nicho, criação e mensagem de entrega
+│   │   ├── demo/            # demonstração: dados de exemplo relativos a hoje (demo-data.ts, puro), criar/recriar, bloqueio (assertNotDemo), cron
 │   │   ├── client/          # mini-CRM: lista/filtros, ficha, notas e tags, busca por telefone
 │   │   ├── dashboard/       # métricas do Início (reusadas no perfil do profissional)
 │   │   ├── professional/
@@ -185,6 +186,11 @@ Pré-requisitos: Node ≥20.19, Docker.
 - **Convite da equipe:** link com token aleatório (no banco só o sha256), 7 dias, uso único (`StaffInvite`), enviado pelo dono (WhatsApp/copiar). Página `/admin/convite/[token]` fora do proxy de sessão. Revogar grava `User.disabledAt` + `tokenVersion`: o acesso cai em até 15 min (mesma janela do access token).
 - **Primeiro acesso do dono:** o mesmo convite, com `StaffInvite.role = OWNER` e sem `professionalId`, gerado por `npm run novo-cliente` (`createOwnerInvite`). O dono escolhe o próprio e-mail e senha; ninguém cria nem vê a senha dele. Um link novo invalida o anterior não usado.
 - **Cliente novo = negócio cadastrado, não código copiado** (multi-inquilino). Logo e capa vão para o Vercel Blob (pasta `clientes/<slug>/`; testes locais em `local/`). O comando recusa `--producao` com banco local e o contrário.
+- **Demonstração** (`Business.isDemo`, `novo-cliente --demo [--permanente]`): demo pública em `/demo` e prévias por prospect (`<slug>-demo`, `demoExpiresAt` = 7 dias). Só por link (`noindex`, nenhum botão no site leva a ela).
+  - Painel sem senha pelo botão da página (`POST /api/public/demo/[slug]/entrar`, só em demo ativa, limite por IP), como um OWNER "Visitante" com senha aleatória descartada e e-mail `.invalid`.
+  - O bloqueio NÃO está no token nem na matriz de permissões: `assertNotDemo(businessId)` (uma leitura no banco) nas rotas que mudariam a demo para todos — configurações e horário, senha, modelos de mensagem, convites, editar/apagar profissional, apagar/esconder serviço. A tela mostra a mensagem da API.
+  - Reserva pública na demo não envia e-mail. `resetDemoData` recusa negócio que não seja demo (apaga dados).
+  - Vercel Cron diário (`vercel.json`, 06:00 UTC = 03:00 BRT) chama `/api/cron/demos` com `CRON_SECRET`: apaga prévias vencidas e recria os dados das demos. Agendamentos são apagados antes do negócio (FK `Restrict`).
 - **"Quem fez":** `Appointment.createdByUserId`/`cancelledByUserId`, `Payment.createdByUserId`, `Client.notesUpdatedByUserId`. Registros antigos ficam sem autor e a tela não mostra a linha (não dá para distinguir "página pública" de "antes do controle").
 - Rate limit em memória via `globalThis`: funciona só em instância única. Limitação conhecida; Redis/Upstash só quando pedido.
 

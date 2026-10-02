@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "regions": ["gru1"],
-  "buildCommand": "npx prisma generate && if [ \"$VERCEL_ENV\" = \"production\" ]; then (if [ -n \"$DATABASE_URL_UNPOOLED\" ]; then export DATABASE_URL=\"$DATABASE_URL_UNPOOLED\"; fi; npx prisma migrate deploy); fi && npx next build"
+  "buildCommand": "npx prisma generate && if [ \"$VERCEL_ENV\" = \"production\" ]; then (if [ -n \"$DATABASE_URL_UNPOOLED\" ]; then export DATABASE_URL=\"$DATABASE_URL_UNPOOLED\"; fi; npx prisma migrate deploy); fi && npx next build",
+  "crons": [{ "path": "/api/cron/demos", "schedule": "0 6 * * *" }]
 }

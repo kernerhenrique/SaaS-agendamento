@@ -55,7 +55,8 @@ export async function POST(request: NextRequest) {
     // continua disponível na própria tela de confirmação.
     // `after`: envia DEPOIS de responder — o cliente vê a confirmação na hora,
     // sem esperar o SMTP (que pode levar segundos ou dar timeout).
-    if (email) {
+    // Demonstração: o visitante digita um e-mail qualquer; nada é enviado.
+    if (email && !appointment.business.isDemo) {
       after(async () => {
         try {
           await sendAppointmentConfirmationEmail({

@@ -8,6 +8,7 @@ import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { SIDEBAR_COOKIE } from "@/components/admin/sidebar-cookie";
 import { AdminTopbar } from "@/components/admin/admin-topbar";
 import { AdminAccessProvider } from "@/components/admin/admin-access-context";
+import { DemoBanner } from "@/components/admin/demo-banner";
 import { getVertical } from "@/config/vertical";
 import { VerticalProvider } from "@/config/vertical-context";
 import { prisma } from "@/server/db/prisma";
@@ -37,6 +38,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <AdminSidebar business={businessBadge} defaultCollapsed={sidebarCollapsed} />
             {/* pb-20 no celular: espaço para a navegação inferior fixa. */}
             <div className="flex min-w-0 flex-1 flex-col pb-20 sm:pb-0">
+              {business.isDemo ? <DemoBanner slug={business.slug} /> : null}
               <AdminTopbar business={businessBadge} userName={user.name} roleLabel={roleLabel} />
               {children}
             </div>

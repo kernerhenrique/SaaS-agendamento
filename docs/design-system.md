@@ -193,6 +193,13 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
   - sem autor registrado, a linha não aparece.
 - **Barra superior:** o menu da conta mostra nome e papel ("Dono" ou o termo do nicho).
 
+## Demonstração
+
+Só em negócio de demonstração (`Business.isDemo`, ver `docs/como-clonar.md`):
+- **`DemoBar`** (`src/components/demo-bar.tsx`), no topo da página pública: fundo `muted`, ícone `Sparkles` em `primary`, "Demonstração da Aprazzo" e o botão "Ver o painel da demonstração". É um `<form method="post">` comum (funciona sem JS); no celular o botão ocupa a largura toda.
+- **`DemoBanner`** (`src/components/admin/demo-banner.tsx`), acima da barra superior do painel: "Você está numa demonstração", com link "Página de reservas" (nova aba, anunciado ao leitor de tela).
+- Ações bloqueadas não somem da tela: o salvar mostra a mensagem da API ("Na demonstração, isso fica desativado…") no lugar de erro, para o visitante ver a tela inteira.
+
 ## Quando usar drawer vs. modal vs. página
 
 - **Drawer** (`Sheet` + `DetailDrawerContent`, `src/components/detail-drawer.tsx`): detalhe de um registro existente (agendamento, cliente, profissional) — mantém a lista de fundo visível/no contexto.

@@ -15,13 +15,29 @@ export async function createClientBusiness(
   input: NewClientInput,
   images: { logoUrl: string | null; coverUrl: string | null },
 ): Promise<{ businessId: string; publicUrl: string; ownerInvite: { url: string; expiresAt: string } }> {
+  const businessId = await insertClientBusiness(input, images);
+  const ownerInvite = await createOwnerInvite(businessId);
+  return { businessId, publicUrl: `${getAppBaseUrl()}/${input.slug}`, ownerInvite };
+}
+
+/**
+ * Grava o negócio com tudo o que vem do arquivo (sem usuários). Usado pelo
+ * cliente real (`createClientBusiness`) e pela demonstração (`createDemoBusiness`).
+ */
+export async function insertClientBusiness(
+  input: NewClientInput,
+  images: { logoUrl: string | null; coverUrl: string | null },
+  demo?: { expiresAt: Date | null },
+): Promise<string> {
   // Inclui negócios removidos: o slug é único no banco e reaproveitar quebraria links antigos.
   const taken = await prisma.business.findUnique({ where: { slug: input.slug }, select: { id: true } });
   if (taken) throw new ValidationError(`O endereço "${input.slug}" já está em uso; escolha outro slug`);
 
-  const businessId = await prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
     const business = await tx.business.create({
       data: {
+        isDemo: Boolean(demo),
+        demoExpiresAt: demo?.expiresAt ?? null,
         name: input.name,
         slug: input.slug,
         timezone: input.timezone,
@@ -83,7 +99,4 @@ export async function createClientBusiness(
     }
     return business.id;
   });
-
-  const ownerInvite = await createOwnerInvite(businessId);
-  return { businessId, publicUrl: `${getAppBaseUrl()}/${input.slug}`, ownerInvite };
 }

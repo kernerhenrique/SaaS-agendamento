@@ -43,6 +43,7 @@ Com a verificação em duas etapas ligada na conta, criar uma **senha de app** e
 | `APP_BASE_URL` | `https://aprazzo.com.br` |
 | `GMAIL_USER` | e-mail do Gmail |
 | `GMAIL_APP_PASSWORD` | senha de app do passo 3 |
+| `CRON_SECRET` | outro valor aleatório gerado como no passo 2; a Vercel o envia ao chamar a rotina da madrugada das demos (`vercel.json` → `/api/cron/demos`). Sem ele, a rotina recusa |
 
 3. **Deploy**. No log do build deve aparecer "All migrations have been successfully applied".
 4. Conferir o endereço provisório `*.vercel.app`: a página inicial da Aprazzo e `/admin/login` devem abrir.

@@ -32,6 +32,20 @@ export function buildOwnerMessage(info: DeliveryInfo): string {
   ].join("\n");
 }
 
+/** Mensagem para o prospect com a prévia de demonstração (`novo-cliente --demo`). */
+export function buildDemoMessage(info: { businessName: string; publicUrl: string; expiresAt: Date | null; timezone: string }): string {
+  const lines = [
+    `Oi! Montei uma prévia de como ficaria o sistema da ${info.businessName}:`,
+    info.publicUrl,
+    "",
+    'Faça uma reserva de teste, como se fosse um cliente, e depois toque em "Ver o painel da demonstração" para ver como ela chega para você: agenda, clientes, financeiro e relatórios.',
+  ];
+  if (info.expiresAt) {
+    lines.push("", `A prévia fica no ar até ${formatDateLabel(utcToLocalDate(info.expiresAt, info.timezone), info.timezone)}.`);
+  }
+  return lines.join("\n");
+}
+
 export function buildDeliveryChecklist(info: DeliveryInfo): string[] {
   return [
     `Abrir ${info.publicUrl} no celular: logo, cor, serviços e equipe certos`,

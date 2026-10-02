@@ -9,6 +9,7 @@ import {
 } from "@/server/modules/professional/professional.service";
 import { handleApiError } from "@/server/http";
 import { parseProfessionalInput } from "../parse";
+import { assertNotDemo } from "@/server/modules/demo/demo.service";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -29,6 +30,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requirePermission("catalog.manage");
+    await assertNotDemo(session.businessId);
     const { id } = await params;
     const body = await request.json().catch(() => null);
     const input = parseProfessionalInput(body);
@@ -42,6 +44,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requirePermission("catalog.manage");
+    await assertNotDemo(session.businessId);
     const { id } = await params;
     await deleteProfessional(session.businessId, id);
     return NextResponse.json({ ok: true });

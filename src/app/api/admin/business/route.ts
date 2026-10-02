@@ -10,6 +10,7 @@ import {
   updateBranding,
   updateBusinessProfile,
 } from "@/server/modules/business/business.service";
+import { assertNotDemo } from "@/server/modules/demo/demo.service";
 
 export async function GET() {
   try {
@@ -24,6 +25,7 @@ export async function GET() {
 export async function PATCH(request: NextRequest) {
   try {
     const session = await requirePermission("settings.manage");
+    await assertNotDemo(session.businessId);
     const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
     if (!body) throw new ValidationError("Corpo da requisição inválido");
 

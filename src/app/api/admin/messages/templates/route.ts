@@ -8,6 +8,7 @@ import {
   resetMessageTemplate,
   saveMessageTemplate,
 } from "@/server/modules/notification/whatsapp/message.service";
+import { assertNotDemo } from "@/server/modules/demo/demo.service";
 
 export async function GET() {
   try {
@@ -22,6 +23,7 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const session = await requirePermission("templates.manage");
+    await assertNotDemo(session.businessId);
     const body = (await request.json().catch(() => null)) as { kind?: unknown; body?: unknown } | null;
     return NextResponse.json({ template: await saveMessageTemplate(session.businessId, parseMessageKind(body?.kind), body?.body) });
   } catch (error) {
@@ -33,6 +35,7 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const session = await requirePermission("templates.manage");
+    await assertNotDemo(session.businessId);
     const kind = parseMessageKind(request.nextUrl.searchParams.get("kind"));
     return NextResponse.json({ template: await resetMessageTemplate(session.businessId, kind) });
   } catch (error) {

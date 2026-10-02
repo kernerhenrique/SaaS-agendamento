@@ -34,6 +34,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { BookingTimeNotice } from "@/components/admin/booking-time-notice";
 import { PaymentIndicator } from "@/components/admin/payment-indicator";
 import { StaffAccessCard } from "@/components/admin/staff-access-card";
+import { DemoBanner } from "@/components/admin/demo-banner";
+import { DemoBar } from "@/components/demo-bar";
 import { MoneyInput } from "@/components/money-input";
 import { ProfessionalAvatar } from "@/components/admin/professional-avatar";
 import { PROFESSIONAL_COLORS } from "@/lib/professional-colors";
@@ -456,6 +458,18 @@ export default function DesignSystemPage() {
               <StatusBadge tone="cancelled">Cancelado</StatusBadge>
               <p className="text-caption text-muted-foreground">Marcado por Carlos (dono) · Cancelado por João (barbeiro)</p>
               <p className="text-caption text-muted-foreground">R$ 35,00 · PIX · Registrado por João</p>
+            </div>
+          </Section>
+
+          <Section
+            title="Demonstração (DemoBar, DemoBanner)"
+            description="Só em negócio isDemo: faixa da página pública com o botão que entra no painel sem senha, e a faixa do painel. O botão aqui leva à demo /demo, se ela existir no banco."
+          >
+            <div className="overflow-hidden rounded-lg border">
+              <DemoBar slug="demo" />
+            </div>
+            <div className="overflow-hidden rounded-lg border">
+              <DemoBanner slug="demo" />
             </div>
           </Section>
         </TabsContent>

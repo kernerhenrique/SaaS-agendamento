@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { handleApiError } from "@/server/http";
 import { requirePermission } from "@/server/modules/auth/session";
 import { getStaffAccess, revokeStaffAccess } from "@/server/modules/staff/staff.service";
+import { assertNotDemo } from "@/server/modules/demo/demo.service";
 
 type RouteParams = { params: Promise<{ professionalId: string }> };
 
@@ -21,6 +22,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requirePermission("staff.manage");
+    await assertNotDemo(session.businessId);
     const { professionalId } = await params;
     await revokeStaffAccess(session.businessId, professionalId);
     return NextResponse.json({ access: await getStaffAccess(session.businessId, professionalId) });

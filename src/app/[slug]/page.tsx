@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { DemoBar } from "@/components/demo-bar";
 import { prisma } from "@/server/db/prisma";
 import { SERVICE_ORDER_BY } from "@/server/modules/service/service.service";
 
@@ -14,9 +15,11 @@ export async function generateMetadata({
   const { slug } = await params;
   const business = await prisma.business.findFirst({
     where: { slug, deletedAt: null },
-    select: { name: true, address: true, logoUrl: true },
+    select: { name: true, address: true, logoUrl: true, isDemo: true },
   });
   if (!business) return {};
+  // Demonstrações só circulam por link: fora das buscas.
+  const robots = business.isDemo ? { index: false, follow: false } : undefined;
 
   const title = `${business.name} — agende online`;
   const description = business.address
@@ -27,6 +30,7 @@ export async function generateMetadata({
     // `absolute`: a página pública é do negócio, sem o sufixo da marca do produto.
     title: { absolute: title },
     description,
+    robots,
     openGraph: {
       title,
       description,
@@ -46,7 +50,8 @@ export default async function PublicBookingPage({
     where: { slug, deletedAt: null },
     include: { workingHours: { select: { weekday: true, startMinute: true, endMinute: true } } },
   });
-  if (!business) {
+  // Prévia de demonstração vencida (o cron apaga na madrugada): já some antes disso.
+  if (!business || (business.isDemo && business.demoExpiresAt && business.demoExpiresAt <= new Date())) {
     notFound();
   }
 
@@ -67,43 +72,46 @@ export default async function PublicBookingPage({
   ]);
 
   return (
-    <BookingFlow
-      business={{
-        id: business.id,
-        name: business.name,
-        slug: business.slug,
-        timezone: business.timezone,
-        address: business.address,
-        accentColor: business.accentColor,
-        logoUrl: business.logoUrl,
-        whatsapp: business.whatsapp,
-        instagramUrl: business.instagramUrl,
-        policyText: business.policyText,
-        businessType: business.businessType,
-        coverUrl: business.coverUrl,
-        workingHours: business.workingHours,
-        minBookingNoticeMinutes: business.minBookingNoticeMinutes,
-        maxBookingWindowDays: business.maxBookingWindowDays,
-        cancellationDeadlineHours: business.cancellationDeadlineHours,
-      }}
-      services={services.map((service) => ({
-        id: service.id,
-        name: service.name,
-        description: service.description,
-        durationMin: service.durationMin,
-        priceCents: service.priceCents,
-        priceType: service.priceType,
-        categoryName: service.category?.name ?? null,
-      }))}
-      professionals={professionals.map((professional) => ({
-        id: professional.id,
-        name: professional.name,
-        photoUrl: professional.photoUrl,
-        bio: professional.bio,
-        specialty: professional.specialty,
-        photoUrls: professional.photos.map((photo) => photo.url),
-        serviceIds: professional.professionalServices.map((ps) => ps.serviceId),
-      }))}
-    />
+    <>
+      {business.isDemo ? <DemoBar slug={business.slug} /> : null}
+      <BookingFlow
+        business={{
+          id: business.id,
+          name: business.name,
+          slug: business.slug,
+          timezone: business.timezone,
+          address: business.address,
+          accentColor: business.accentColor,
+          logoUrl: business.logoUrl,
+          whatsapp: business.whatsapp,
+          instagramUrl: business.instagramUrl,
+          policyText: business.policyText,
+          businessType: business.businessType,
+          coverUrl: business.coverUrl,
+          workingHours: business.workingHours,
+          minBookingNoticeMinutes: business.minBookingNoticeMinutes,
+          maxBookingWindowDays: business.maxBookingWindowDays,
+          cancellationDeadlineHours: business.cancellationDeadlineHours,
+        }}
+        services={services.map((service) => ({
+          id: service.id,
+          name: service.name,
+          description: service.description,
+          durationMin: service.durationMin,
+          priceCents: service.priceCents,
+          priceType: service.priceType,
+          categoryName: service.category?.name ?? null,
+        }))}
+        professionals={professionals.map((professional) => ({
+          id: professional.id,
+          name: professional.name,
+          photoUrl: professional.photoUrl,
+          bio: professional.bio,
+          specialty: professional.specialty,
+          photoUrls: professional.photos.map((photo) => photo.url),
+          serviceIds: professional.professionalServices.map((ps) => ps.serviceId),
+        }))}
+      />
+    </>
   );
 }

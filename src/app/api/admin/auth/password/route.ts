@@ -6,6 +6,7 @@ import { handleApiError, rateLimitedResponse } from "@/server/http";
 import { changeOwnPassword } from "@/server/modules/auth/auth.service";
 import { setAuthCookies } from "@/server/modules/auth/cookies";
 import { requireAdminSession } from "@/server/modules/auth/session";
+import { assertNotDemo } from "@/server/modules/demo/demo.service";
 
 // Limita tentativas de adivinhar a senha atual com uma sessão roubada.
 const PASSWORD_CHANGE_RATE_LIMIT = { limit: 10, windowMs: 15 * 60 * 1000 };
@@ -18,6 +19,7 @@ const PASSWORD_CHANGE_RATE_LIMIT = { limit: 10, windowMs: 15 * 60 * 1000 };
 export async function POST(request: NextRequest) {
   try {
     const session = await requireAdminSession();
+    await assertNotDemo(session.businessId);
     const rateLimit = checkRateLimit(`change-password:${session.userId}`, PASSWORD_CHANGE_RATE_LIMIT);
     if (!rateLimit.allowed) {
       return rateLimitedResponse(rateLimit.retryAfterSeconds);

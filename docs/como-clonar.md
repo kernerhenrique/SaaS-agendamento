@@ -65,6 +65,20 @@ npm run novo-cliente -- clientes/barbearia-do-ze.json --producao
 
 Se o link do dono expirar antes do uso: gerar outro com `createOwnerInvite(businessId)` (`staff.service.ts`), que invalida o anterior.
 
+## Demonstração (para vender)
+
+Uma demo é um negócio comum marcado como demonstração (`Business.isDemo`): sem dono, com dados de exemplo **sempre relativos a hoje** (60 dias de histórico com pagamentos, faltas e comissões; 7 dias à frente com horários livres) e só por link (fora do Google).
+
+| | Comando | Endereço | Validade |
+|---|---|---|---|
+| Demo pública | `npm run novo-cliente -- docs/demo-aprazzo.json --demo --permanente --producao` | `aprazzo.com.br/demo` | sem prazo |
+| Prévia para um prospect | `npm run novo-cliente -- clientes/barbearia-do-ze.json --demo --producao` | `aprazzo.com.br/barbearia-do-ze-demo` | 7 dias |
+
+- A prévia usa o mesmo arquivo do cliente (nome, logo, cor, nicho, serviços e equipe dele) e o comando imprime a mensagem pronta para o prospect. Se ele fechar, crie o cliente de verdade com o comando normal (sem `--demo`): dados limpos, endereço sem "-demo".
+- **Na página da demo**: faixa "Demonstração da Aprazzo" com o botão **"Ver o painel da demonstração"**, que entra sem senha como o dono visitante (só funciona em negócio de demonstração).
+- **No painel**: faixa "Você está numa demonstração". O visitante marca, remarca, cancela, conclui, recebe e mexe em clientes à vontade. Ficam bloqueados (a API responde "Na demonstração, isso fica desativado"): salvar Configurações e horário, trocar senha, editar modelos de mensagem, convites da equipe, editar ou apagar profissional, apagar ou esconder serviço. Nenhum e-mail sai para o endereço que ele digitar.
+- **Toda madrugada** (03:00, Vercel Cron → `/api/cron/demos`): as prévias vencidas são apagadas e os dados de todas as demos voltam ao original, com as datas do dia.
+
 ## O que o dono ajusta sozinho depois
 
 Em **Configurações**: nome, endereço, WhatsApp, Instagram, logo e capa (por link), cor, horário, políticas e a própria senha. Em **Serviços** e **Profissionais**: catálogo, equipe, expedientes e comissões. Slug, fuso e nicho ficam de fora de propósito (ver CLAUDE.md).

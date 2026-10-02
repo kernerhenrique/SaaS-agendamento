@@ -74,6 +74,12 @@ model Business {
   maxBookingWindowDays      Int @default(60)
   cancellationDeadlineHours Int @default(0)
 
+  // Demonstração (aprazzo.com.br/demo e as prévias por prospect): dados de
+  // exemplo recriados toda madrugada, painel sem senha e ações perigosas
+  // bloqueadas. Com demoExpiresAt, é apagada depois dessa data.
+  isDemo        Boolean   @default(false)
+  demoExpiresAt DateTime? @db.Timestamptz(6)
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?

@@ -4,6 +4,7 @@ import { handleApiError } from "@/server/http";
 import { requirePermission } from "@/server/modules/auth/session";
 import { deleteService, updateService } from "@/server/modules/service/service.service";
 import { parseServiceInput } from "../parse";
+import { assertNotDemo } from "@/server/modules/demo/demo.service";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -25,6 +26,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requirePermission("catalog.manage");
+    await assertNotDemo(session.businessId);
     const { id } = await params;
     await deleteService(session.businessId, id);
     return NextResponse.json({ ok: true });

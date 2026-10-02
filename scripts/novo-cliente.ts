@@ -5,6 +5,11 @@
  *   npm run novo-cliente -- clientes/barbearia-do-ze.json --simular    só valida e mostra o resumo
  *   npm run novo-cliente -- clientes/barbearia-do-ze.json --producao   aprazzo.com.br
  *
+ * Demonstração (sem dono, painel pelo botão da página, dados de exemplo recriados toda madrugada):
+ *   npm run novo-cliente -- clientes/barbearia-do-ze.json --demo [--producao]   prévia para um prospect:
+ *                                                    endereço <slug>-demo, apagada depois de 7 dias
+ *   npm run novo-cliente -- docs/demo-aprazzo.json --demo --permanente --producao   a demo pública (/demo)
+ *
  * Outras opções: --slug <endereço> (troca o do arquivo), --json (saída para máquina).
  * Formato do arquivo: docs/exemplo-cliente.json. Passo a passo: docs/como-clonar.md.
  *
@@ -35,20 +40,25 @@ interface Options {
   dryRun: boolean;
   slug: string | null;
   json: boolean;
+  demo: boolean;
+  permanent: boolean;
 }
 
 function parseArgs(argv: string[]): Options {
-  const options: Options = { file: "", production: false, dryRun: false, slug: null, json: false };
+  const options: Options = { file: "", production: false, dryRun: false, slug: null, json: false, demo: false, permanent: false };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === "--producao") options.production = true;
     else if (arg === "--simular") options.dryRun = true;
     else if (arg === "--json") options.json = true;
+    else if (arg === "--demo") options.demo = true;
+    else if (arg === "--permanente") options.permanent = true;
     else if (arg === "--slug") options.slug = argv[++i] ?? null;
     else if (arg.startsWith("--")) fail(`Opção desconhecida: ${arg}`);
     else options.file = arg;
   }
   if (!options.file) fail("Informe o arquivo do cliente: npm run novo-cliente -- clientes/<slug>.json");
+  if (options.permanent && !options.demo) fail("--permanente só vale junto com --demo");
   return options;
 }
 
@@ -109,8 +119,8 @@ async function main() {
   loadEnvironment(options.production);
 
   // Só depois do ambiente carregado: o client do Prisma lê a DATABASE_URL ao ser importado.
-  const { parseClientFile } = await import("@/server/modules/onboarding/client-file");
-  const { buildDeliveryChecklist, buildOwnerMessage } = await import("@/server/modules/onboarding/delivery-messages");
+  const { parseClientFile, parseSlug } = await import("@/server/modules/onboarding/client-file");
+  const { buildDeliveryChecklist, buildDemoMessage, buildOwnerMessage } = await import("@/server/modules/onboarding/delivery-messages");
   const { ValidationError } = await import("@/server/errors");
   const { getVertical } = await import("@/config/vertical");
 
@@ -127,15 +137,22 @@ async function main() {
   let parsed: ReturnType<typeof parseClientFile>;
   try {
     parsed = parseClientFile(raw);
+    // Prévia por prospect: endereço próprio de demonstração, nunca o slug que o cliente real vai usar.
+    if (options.demo && !options.permanent && !parsed.input.slug.endsWith("-demo")) {
+      parsed.input.slug = parseSlug(`${parsed.input.slug}-demo`);
+    }
   } catch (error) {
     if (error instanceof ValidationError) fail(error.message);
     throw error;
   }
   const { input, warnings } = parsed;
   const vertical = getVertical(input.businessType);
+  const { DEMO_PREVIEW_DAYS } = await import("@/server/modules/demo/demo.service");
+  const demoExpiresAt = options.demo && !options.permanent ? new Date(Date.now() + DEMO_PREVIEW_DAYS * 24 * 60 * 60 * 1000) : null;
 
   if (!options.json) {
-    console.log(`\n${options.production ? "PRODUÇÃO" : "Banco local"} · ${input.name} (${vertical.label})`);
+    const kind = options.demo ? (options.permanent ? " · DEMONSTRAÇÃO PERMANENTE" : ` · DEMONSTRAÇÃO (${DEMO_PREVIEW_DAYS} dias)`) : "";
+    console.log(`\n${options.production ? "PRODUÇÃO" : "Banco local"}${kind} · ${input.name} (${vertical.label})`);
     console.log(`  Endereço: ${process.env.APP_BASE_URL}/${input.slug}`);
     console.log(`  ${input.services.length} ${vertical.terms.service.plural.toLowerCase()} · ${input.professionals.length} ${vertical.terms.professional.plural.toLowerCase()}: ${input.professionals.map((p) => p.name).join(", ")}`);
     console.log(`  Cor ${input.accentColor} · logo: ${input.logoFile ?? "sem"} · capa: ${input.coverFile ?? "sem"}`);
@@ -148,13 +165,32 @@ async function main() {
   }
 
   const baseDir = path.dirname(filePath);
-  const folder = `${options.production ? "clientes" : "local"}/${input.slug}`;
+  const folder = `${options.production ? (options.demo ? "demos" : "clientes") : "local"}/${input.slug}`;
   const logoUrl = input.logoFile ? await uploadImage(input.logoFile, baseDir, folder, "logo") : null;
   const coverUrl = input.coverFile ? await uploadImage(input.coverFile, baseDir, folder, "capa") : null;
 
   const { createClientBusiness } = await import("@/server/modules/onboarding/onboarding.service");
+  const { createDemoBusiness } = await import("@/server/modules/demo/demo.service");
   const { prisma } = await import("@/server/db/prisma");
   try {
+    if (options.demo) {
+      const demo = await createDemoBusiness(input, { logoUrl, coverUrl }, { expiresAt: demoExpiresAt });
+      if (options.json) {
+        console.log(JSON.stringify({ ok: true, demo: true, slug: input.slug, publicUrl: demo.publicUrl, expiresAt: demo.expiresAt, warnings }));
+        return;
+      }
+      console.log("\n✔ Demonstração criada.\n");
+      console.log(`  Link: ${demo.publicUrl}`);
+      console.log('  Painel: botão "Ver o painel da demonstração" na própria página (sem senha)');
+      console.log("  Dados de exemplo recriados toda madrugada; fora das buscas do Google.\n");
+      if (!options.permanent) {
+        console.log("Mensagem para o prospect (WhatsApp):\n");
+        console.log(buildDemoMessage({ businessName: input.name, publicUrl: demo.publicUrl, expiresAt: demo.expiresAt, timezone: input.timezone }).replace(/^/gm, "  "));
+        console.log("");
+      }
+      return;
+    }
+
     const result = await createClientBusiness(input, { logoUrl, coverUrl });
     const info = {
       businessName: input.name,
