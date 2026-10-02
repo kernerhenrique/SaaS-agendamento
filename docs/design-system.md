@@ -186,6 +186,7 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
   - ao gerar, o link aparece uma única vez, com "Copiar" e "Enviar pelo WhatsApp" (`buildWhatsAppShareUrl`, sem destinatário fixo);
   - revogar e cancelar convite passam por modal de confirmação.
 - **Página do convite** `/admin/convite/[token]`: cartão no padrão do login (marca do produto), nome já preenchido e e-mail e senha escolhidos pelo profissional. Link inválido ou usado mostra mensagem genérica.
+  - No **primeiro acesso do dono** (cliente novo, `npm run novo-cliente`) o mesmo cartão diz "O painel de {negócio} está pronto. Crie o seu acesso de dono", com o nome em branco.
 - **"Quem fez":**
   - linha em `text-caption` no drawer do agendamento ("Marcado por Carlos (dono) · Cancelado por João (barbeiro)");
   - "Registrado por" em cada recebimento;

@@ -106,27 +106,50 @@ async function findValidInvite(token: string) {
     !invite ||
     inviteState(invite, new Date()) !== "valid" ||
     invite.business.deletedAt ||
-    invite.professional.deletedAt
+    // Convite de profissional depende do cadastro; o de dono não tem cadastro.
+    (invite.role === "PROFESSIONAL" && (!invite.professional || invite.professional.deletedAt))
   ) {
     throw new NotFoundError(GENERIC_INVITE_ERROR);
   }
   return invite;
 }
 
-/** O que a página do convite mostra: negócio, nome do cadastro e o termo do nicho ("Barbeiro"). */
+/**
+ * O que a página do convite mostra: negócio, papel e, para profissional, o
+ * nome do cadastro e o termo do nicho ("Barbeiro").
+ */
 export async function getInviteSummary(token: string) {
   const invite = await findValidInvite(token);
   return {
     businessName: invite.business.name,
-    professionalName: invite.professional.name,
+    role: invite.role,
+    professionalName: invite.professional?.name ?? null,
     professionalTerm: getVertical(invite.business.businessType).terms.professional.singular,
   };
 }
 
 /**
- * Aceite: cria o usuário PROFESSIONAL ligado ao cadastro (ou reativa um
- * acesso revogado) e marca o convite como usado — numa transação, e o convite
- * só pode ser "gasto" uma vez mesmo com dois cliques simultâneos.
+ * Primeiro acesso do dono, gerado na criação do cliente (`npm run novo-cliente`):
+ * o dono escolhe o próprio e-mail e senha pelo link — ninguém cria nem vê a
+ * senha dele. Um link novo invalida o anterior ainda não usado.
+ */
+export async function createOwnerInvite(businessId: string): Promise<{ url: string; expiresAt: string }> {
+  const token = generateInviteToken();
+  const expiresAt = inviteExpiresAt(new Date());
+  await prisma.$transaction([
+    prisma.staffInvite.deleteMany({ where: { businessId, role: "OWNER", usedAt: null } }),
+    prisma.staffInvite.create({
+      data: { businessId, role: "OWNER", tokenHash: hashInviteToken(token), expiresAt },
+    }),
+  ]);
+  return { url: `${getAppBaseUrl()}/admin/convite/${token}`, expiresAt: expiresAt.toISOString() };
+}
+
+/**
+ * Aceite, numa transação, e o convite só pode ser "gasto" uma vez mesmo com
+ * dois cliques simultâneos:
+ * - profissional: cria o usuário PROFESSIONAL ligado ao cadastro (ou reativa um acesso revogado);
+ * - dono: cria um usuário OWNER do negócio (sem cadastro da agenda).
  */
 export async function acceptStaffInvite(token: string, input: InviteAcceptance) {
   const invite = await findValidInvite(token);
@@ -139,7 +162,9 @@ export async function acceptStaffInvite(token: string, input: InviteAcceptance) 
     });
     if (claimed.count !== 1) throw new NotFoundError(GENERIC_INVITE_ERROR);
 
-    const existing = await tx.user.findUnique({ where: { professionalId: invite.professionalId } });
+    const existing = invite.professionalId
+      ? await tx.user.findUnique({ where: { professionalId: invite.professionalId } })
+      : null;
     const emailOwner = await tx.user.findUnique({ where: { email: input.email }, select: { id: true } });
     if (emailOwner && emailOwner.id !== existing?.id) {
       throw new ValidationError("Esse e-mail já é usado por outra conta. Use outro e-mail.");
@@ -149,9 +174,9 @@ export async function acceptStaffInvite(token: string, input: InviteAcceptance) 
       name: input.name,
       email: input.email,
       passwordHash,
-      role: "PROFESSIONAL" as const,
+      role: invite.role,
       businessId: invite.businessId,
-      professionalId: invite.professionalId,
+      professionalId: invite.role === "PROFESSIONAL" ? invite.professionalId : null,
       disabledAt: null,
     };
     return existing

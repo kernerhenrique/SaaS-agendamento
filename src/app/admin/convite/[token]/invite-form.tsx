@@ -14,18 +14,19 @@ import { BRAND } from "@/config/brand";
 const MIN_PASSWORD = 8; // mesma regra do servidor (password-rules.ts)
 
 /**
- * Aceite do convite: o profissional escolhe nome, e-mail (login) e senha.
- * Ao criar, já entra no painel (a API devolve os cookies da sessão).
+ * Aceite do convite: quem foi convidado (profissional ou o dono, no primeiro
+ * acesso) escolhe nome, e-mail (login) e senha. Ao criar, já entra no painel
+ * (a API devolve os cookies da sessão).
  */
 export function InviteForm({
   token,
   invite,
 }: {
   token: string;
-  invite: { businessName: string; professionalName: string; professionalTerm: string };
+  invite: { businessName: string; role: "OWNER" | "PROFESSIONAL"; professionalName: string | null; professionalTerm: string };
 }) {
   const router = useRouter();
-  const [name, setName] = useState(invite.professionalName);
+  const [name, setName] = useState(invite.professionalName ?? "");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -78,8 +79,17 @@ export function InviteForm({
         )}
         <CardTitle className="text-lg">Criar seu acesso</CardTitle>
         <CardDescription>
-          {invite.businessName} convidou você como {invite.professionalTerm.toLowerCase()} ({invite.professionalName}). Você
-          vai ver a sua agenda e os seus clientes.
+          {invite.role === "OWNER" ? (
+            <>
+              O painel de {invite.businessName} está pronto. Crie o seu acesso de dono: você vai ver a agenda da equipe, os
+              clientes, o financeiro e as configurações.
+            </>
+          ) : (
+            <>
+              {invite.businessName} convidou você como {invite.professionalTerm.toLowerCase()} ({invite.professionalName}).
+              Você vai ver a sua agenda e os seus clientes.
+            </>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent>

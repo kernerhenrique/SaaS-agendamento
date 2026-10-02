@@ -59,7 +59,7 @@ model Business {
   timezone     String
   address      String?
   logoUrl      String?
-  accentColor  String?   @default("#4F46E5")
+  accentColor  String?   @default("#0F766E")
   whatsapp     String?
   instagramUrl String?
   policyText   String?
@@ -167,11 +167,14 @@ model User {
 // Convite de acesso ao painel para um profissional (link enviado pelo dono).
 // Só o hash do token é gravado; o link em si aparece uma vez para o dono.
 model StaffInvite {
-  id              String       @id @default(cuid())
+  id              String        @id @default(cuid())
   businessId      String
-  business        Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  professionalId  String
-  professional    Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  business        Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  // PROFESSIONAL: acesso ligado a um cadastro da agenda (professionalId obrigatório).
+  // OWNER: primeiro acesso do dono, gerado na criação do cliente (sem cadastro).
+  role            UserRole      @default(PROFESSIONAL)
+  professionalId  String?
+  professional    Professional? @relation(fields: [professionalId], references: [id], onDelete: Cascade)
   tokenHash       String       @unique
   expiresAt       DateTime     @db.Timestamptz(6)
   usedAt          DateTime?    @db.Timestamptz(6)

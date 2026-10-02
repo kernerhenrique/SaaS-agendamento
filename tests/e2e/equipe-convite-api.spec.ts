@@ -34,6 +34,7 @@ test("convite de acesso: gerar, aceitar uma vez, entrar e revogar", async ({ pag
     expect(summary.status()).toBe(200);
     expect((await summary.json()).invite).toEqual({
       businessName: expect.any(String),
+      role: "PROFESSIONAL",
       professionalName: "Marcos Estilista",
       professionalTerm: "Barbeiro",
     });
