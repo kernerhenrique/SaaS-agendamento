@@ -31,7 +31,8 @@ test("relatórios mostram as cinco abas com comparação e o menu de exportaçã
   // Clientes: novos x que voltaram e ranking com link para a ficha.
   await page.getByRole("tab", { name: "Clientes" }).click();
   await expect(page.getByText("Quem mais gastou no período")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Maria Cliente" })).toHaveAttribute("href", /\/admin\/clientes\?cliente=/);
+  // Qualquer cliente do mês (um nome fixo do seed some quando o mês vira).
+  await expect(page.locator('a[href*="/admin/clientes?cliente="]').first()).toBeVisible();
 
   // Exportar: menu com as duas planilhas e download do CSV de recebimentos.
   await page.getByRole("button", { name: "Exportar CSV" }).click();

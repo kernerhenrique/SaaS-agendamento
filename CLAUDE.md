@@ -62,7 +62,7 @@ src/
 ├── config/
 │   ├── vertical.ts          # preset do nicho: terminologia + feature flags (ativo = Business.businessType)
 │   ├── vertical-context.tsx # VerticalProvider / useVertical() para client components
-│   └── brand.ts             # marca do PRODUTO (nome, logo): login, título, "feito com", .ics
+│   └── brand.ts             # marca do PRODUTO (Aprazzo: nome, logos, capa): login, título, "Agendamento por", .ics
 ├── lib/                     # date.ts (timezone), rate-limit, .ics, formatadores pt-BR, professional-colors.ts
 └── components/              # ui/ (shadcn) + componentes de domínio + admin/ (shell do painel)
 tests/
@@ -75,7 +75,7 @@ docs/
 ## Projeto base e clonagem
 **Customizável por cliente** (sem tocar em lógica):
 - Preset de vertical em `src/config/vertical.ts`, escolhido por `Business.businessType`: terminologia (Profissional → Barbeiro/Tatuador/Especialista; Serviço → Procedimento; Cliente → Paciente) e feature flags (portfólio, preço "a partir de", categorias; sinal e comissões na Fase 4). Textos visíveis usam os helpers com concordância (`newLabel`, `emptyLabel`, `selectLabel`…), nunca string fixa com o termo. Mensagens de erro da API ficam neutras ("Cadastro não encontrado").
-- Marca do produto em `src/config/brand.ts` (placeholder até a identidade existir) — separada da marca do negócio cliente (`Business.accentColor`/`logoUrl`).
+- Marca do produto **Aprazzo** em `src/config/brand.ts` + tokens/fontes do design system (https://claude.ai/artifact/5EVQG5BRicTfK4M4X5AKNB) — separada da marca do negócio cliente (`Business.accentColor`/`logoUrl`), que substitui só a família `primary`. O nome é sempre "Aprazzo", com A maiúsculo.
 - Identidade: logo, capa, cor de marca, textos (via Configurações do negócio no painel)
 - Tokens do design system
 - Seed de exemplo do nicho

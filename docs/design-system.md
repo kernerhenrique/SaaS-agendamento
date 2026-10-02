@@ -229,5 +229,24 @@ Hoje (antes da Fase 7 formalizar o processo completo em `docs/como-clonar.md`):
 ## Marca do produto (a plataforma) vs. marca do cliente
 
 Duas camadas independentes:
-- **Marca do produto** — `src/config/brand.ts` (nome, logo, "feito com") + tokens de `globals.css` (cores neutras, fonte, raio). Aparece no login, no título da aba do painel, no rodapé "feito com" da página pública e nos `.ics`. Para aplicar a identidade final: trocar `BRAND`, os tokens base (claro e escuro), a fonte em `src/app/layout.tsx`, `DEFAULT_ACCENT_COLOR` em `src/lib/accent-color.ts` e o favicon; conferir tudo em `/admin/design-system`.
-- **Marca do cliente** — `Business.accentColor`/`logoUrl`, aplicada via `AccentColorScope` sobre `--primary` no painel e na página pública.
+- **Marca do produto: Aprazzo** (aplicada em 2026-10-01). Fonte da verdade: o design system em https://claude.ai/artifact/5EVQG5BRicTfK4M4X5AKNB.
+  - `src/config/brand.ts`: nome "Aprazzo" (sempre com A maiúsculo), logos claro/escuro, capa do login, prévia de link e "Agendamento por Aprazzo" no rodapé da página pública.
+  - **Cores** (`globals.css`), com os tokens do design system mapeados para os do shadcn:
+    - `surface` → `background`, `surface-raised` → `card`/`popover`, `surface-muted` → `muted`/`secondary`/`accent`;
+    - `ink` → `foreground`, `ink-muted` → `muted-foreground`;
+    - `border-strong` → `input` (contorno de campos, 3:1);
+    - `danger` → `destructive`; `chart-1..4`.
+    - `--brand-cover` é o verde fixo das capas (igual nos dois temas).
+  - **Fontes** (`app/layout.tsx`, via `next/font`, servidas pelo próprio site): Instrument Sans na interface (`--font-sans`) e Bricolage Grotesque nos títulos de marca (`--font-heading`, aplicada no `h1` de 24px).
+  - `BrandLogo` (`src/components/brand-logo.tsx`) troca o logo claro/escuro só por CSS. O favicon é `src/app/icon.svg`. Login com a capa 1920×1080 inteira ao lado no desktop.
+  - `DEFAULT_ACCENT_COLOR` = `#0F766E` (primary da marca) para negócio sem cor escolhida.
+- **Marca do cliente** — `Business.accentColor`/`logoUrl`, aplicada via `AccentColorScope` sobre `--primary` no painel e na página pública. Só a família `primary` muda por cliente: `--primary-hover` e `--primary-soft` são calculados de `--primary` com `color-mix` em `globals.css`, então seguem a cor do cliente. Neutros, status, gráficos e fontes continuam os da Aprazzo.
+- **Status:**
+  - agendamento: pendente `warning`, confirmado `info`, concluído `success`, falta `destructive`, cancelado neutro (`muted-foreground`);
+  - pagamento: pendente neutro, parcial `warning`, pago `success`.
+
+## Horários na página pública
+
+- A grade (`TimeSlotGrid`) mostra também os **horários ocupados**, riscados e desabilitados (anunciados como "ocupado" no leitor de tela), em vez de escondê-los. O **primeiro horário livre** ganha o selo "Mais próximo".
+- Os ocupados vêm de `/api/availability?ocupados=1` (`occupied-slots.ts`): a grade do expediente sem ocupação, menos os livres. É só exibição: os horários livres e a revalidação da reserva continuam vindo de `getAvailableSlots`, sem mudança.
+- Se o dia está todo ocupado, aparece o estado vazio "Todos os horários deste dia estão ocupados".
