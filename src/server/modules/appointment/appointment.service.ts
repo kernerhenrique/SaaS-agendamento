@@ -264,9 +264,9 @@ export async function updateAppointmentStatus(
 
 export function isOverlapConstraintViolation(error: unknown): boolean {
   const prismaError = error as Prisma.PrismaClientKnownRequestError | undefined;
-  // P2010: erro de execução de query bruta / constraint do banco não mapeada
-  // pelo Prisma; checamos a mensagem porque a exclusion constraint do
-  // Postgres não tem um código de erro Prisma dedicado.
+  // A exclusion constraint do Postgres não tem código de erro Prisma dedicado:
+  // com o driver adapter (`pg`) o erro chega como DriverAdapterError, com o
+  // nome da constraint na mensagem. Checamos a mensagem (e `meta`, por garantia).
   return Boolean(
     prismaError?.message?.includes("no_overlapping_appointments") ||
       (prismaError as { meta?: { constraint?: string } })?.meta?.constraint ===

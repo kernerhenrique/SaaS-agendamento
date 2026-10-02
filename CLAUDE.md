@@ -27,7 +27,7 @@ Se algum desses arquivos ainda não existir, crie-o quando a tarefa tocar no ass
 ## Stack
 - Next.js 16 (App Router) + TypeScript estrito + Tailwind CSS v4 + shadcn/ui (Base UI), Lucide, Motion, Sonner
 - Backend: Route Handlers do próprio Next.js (sem servidor separado)
-- PostgreSQL + Prisma
+- PostgreSQL + Prisma 6 com **driver adapter** (`@prisma/adapter-pg`, `engineType = "client"`): sem query engine nativo, que não era empacotado nas funções da Vercel. Todo `new PrismaClient` recebe o adaptador (`src/server/db/prisma.ts`, `prisma/seed.ts`). Erros do banco chegam como `DriverAdapterError` (o conflito de horário é reconhecido pelo nome da constraint).
 - Auth: JWT (access 15min + refresh 7 dias) com bcrypt, em cookies `httpOnly`; só para usuários do negócio. Papéis: **dono** (`OWNER`) e **profissional** (`PROFESSIONAL`, ligado a um `Professional`); matriz em `src/server/modules/auth/permissions.ts`
 - E-mail: Nodemailer (Gmail SMTP); sem credenciais, o e-mail é apenas logado no console. A confirmação da reserva é enviada com `after()` (depois da resposta): o cliente não espera o SMTP.
 - Testes: Vitest (unitário) + Playwright (E2E)

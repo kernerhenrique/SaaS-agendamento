@@ -1,6 +1,10 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider   = "prisma-client"
+  output     = "../src/generated/prisma"
+  // Sem query engine nativo: as consultas passam pelo driver `pg` (adaptador em
+  // src/server/db/prisma.ts). O binário nativo não era empacotado nas funções
+  // da Vercel com o client gerado fora do node_modules.
+  engineType = "client"
 }
 
 datasource db {
