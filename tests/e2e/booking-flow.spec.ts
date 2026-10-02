@@ -20,7 +20,8 @@ test("cliente consegue agendar um horário do início ao fim", async ({ page }) 
   // evita depender de uma data fixa (que ficaria inválida com o tempo ou
   // colidiria com bloqueios manuais/feriados do seed).
   const dateChips = page.getByTestId("date-strip-day");
-  const timeSlot = page.getByTestId("time-slot").first();
+  // Só horários livres: os ocupados também aparecem na grade, desabilitados.
+  const timeSlot = page.locator('[data-testid="time-slot"]:not([data-unavailable])').first();
   for (let dayIndex = 0; dayIndex < 21; dayIndex++) {
     if (await timeSlot.isVisible().catch(() => false)) break;
     await dateChips.nth(dayIndex).click();

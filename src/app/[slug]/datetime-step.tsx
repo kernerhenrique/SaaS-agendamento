@@ -24,18 +24,21 @@ async function fetchSlotsForDate(params: {
   serviceId: string;
   professionalId: string | typeof NO_PREFERENCE;
   date: string;
-}): Promise<AvailableSlot[]> {
+  /** Também os horários ocupados (para exibir desabilitados na grade). */
+  includeOccupied?: boolean;
+}): Promise<{ slots: AvailableSlot[]; occupied: string[] }> {
   const query = new URLSearchParams({
     businessId: params.businessId,
     serviceId: params.serviceId,
     date: params.date,
   });
+  if (params.includeOccupied) query.set("ocupados", "1");
   if (params.professionalId !== NO_PREFERENCE) {
     query.set("professionalId", params.professionalId);
   }
   const response = await fetch(`/api/availability?${query.toString()}`);
   const data = await response.json();
-  return data.slots ?? [];
+  return { slots: data.slots ?? [], occupied: data.occupied ?? [] };
 }
 
 export function DatetimeStep({
@@ -58,6 +61,7 @@ export function DatetimeStep({
   const lastDate = addDaysToIsoDate(today, maxWindowDays);
   const [date, setDate] = useState(today);
   const [slots, setSlots] = useState<AvailableSlot[]>([]);
+  const [occupied, setOccupied] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearchingNext, setIsSearchingNext] = useState(false);
   const [searchNextError, setSearchNextError] = useState<string | null>(null);
@@ -69,9 +73,11 @@ export function DatetimeStep({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
 
-    fetchSlotsForDate({ businessId, serviceId, professionalId, date })
+    fetchSlotsForDate({ businessId, serviceId, professionalId, date, includeOccupied: true })
       .then((result) => {
-        if (!cancelled) setSlots(result);
+        if (cancelled) return;
+        setSlots(result.slots);
+        setOccupied(result.occupied);
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -92,10 +98,15 @@ export function DatetimeStep({
     }
   }
   const displaySlots = Array.from(uniqueSlotsByTime.values());
-  const timeSlots: TimeSlot[] = displaySlots.map((slot) => ({
-    key: slot.startAt,
-    label: formatTime(slot.startAt, timezone),
-    minutesFromMidnight: utcToLocalMinutes(new Date(slot.startAt), timezone),
+  // Livres + ocupados (desabilitados): a grade mostra o dia como ele é, sem esconder o que já foi reservado.
+  const timeSlots: TimeSlot[] = [
+    ...displaySlots.map((slot) => ({ startAt: slot.startAt, unavailable: false })),
+    ...occupied.filter((startAt) => !uniqueSlotsByTime.has(startAt)).map((startAt) => ({ startAt, unavailable: true })),
+  ].map(({ startAt, unavailable }) => ({
+    key: startAt,
+    label: formatTime(startAt, timezone),
+    minutesFromMidnight: utcToLocalMinutes(new Date(startAt), timezone),
+    unavailable,
   }));
 
   async function handleFindNextAvailable() {
@@ -106,7 +117,7 @@ export function DatetimeStep({
         const candidateISO = addDaysToIsoDate(date, offset);
         if (candidateISO > lastDate) break;
 
-        const candidateSlots = await fetchSlotsForDate({
+        const { slots: candidateSlots } = await fetchSlotsForDate({
           businessId,
           serviceId,
           professionalId,
