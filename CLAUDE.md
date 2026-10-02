@@ -15,6 +15,7 @@ Antes de qualquer mudança de schema, autenticação ou lógica de disponibilida
 - Design system (tokens, componentes, padrões de tela): @docs/design-system.md
 - Como criar um novo cliente a partir do base: @docs/como-clonar.md
 - Referências de mercado e padrões adotados: @docs/pesquisa-referencias.md
+- Publicação (Vercel + Neon + domínio): `docs/publicacao.md`. Venda e preços (negócio, não técnico): `docs/guia-de-vendas.md`
 
 Se algum desses arquivos ainda não existir, crie-o quando a tarefa tocar no assunto. Se este CLAUDE.md divergir do código real, **o código manda**: avise e atualize este arquivo.
 
@@ -30,7 +31,7 @@ Se algum desses arquivos ainda não existir, crie-o quando a tarefa tocar no ass
 - Auth: JWT (access 15min + refresh 7 dias) com bcrypt, em cookies `httpOnly`; só para usuários do negócio. Papéis: **dono** (`OWNER`) e **profissional** (`PROFESSIONAL`, ligado a um `Professional`); matriz em `src/server/modules/auth/permissions.ts`
 - E-mail: Nodemailer (Gmail SMTP); sem credenciais, o e-mail é apenas logado no console. A confirmação da reserva é enviada com `after()` (depois da resposta): o cliente não espera o SMTP.
 - Testes: Vitest (unitário) + Playwright (E2E)
-- Deploy: Vercel + Postgres gerenciado (Supabase, Neon, Railway)
+- Deploy: Vercel (região `gru1`) + Neon em São Paulo, um app e um banco para todos os negócios. `vercel.json` roda `prisma generate`, `prisma migrate deploy` **só em produção** (conexão direta `DATABASE_URL_UNPOOLED`) e `next build`. O banco de produção não recebe o seed de teste.
 
 ## Estrutura real de diretórios
 ```
