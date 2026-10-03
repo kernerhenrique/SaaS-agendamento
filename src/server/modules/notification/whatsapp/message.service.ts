@@ -1,7 +1,7 @@
 import { AppointmentStatus, type MessageKind } from "@/generated/prisma/enums";
 import type { AppointmentGetPayload } from "@/generated/prisma/models";
 import { addDaysToIsoDate, localDayRangeUtc, todayInTimeZone } from "@/lib/date";
-import { buildManageUrl } from "@/server/app-url";
+import { buildBookingUrl, buildManageUrl } from "@/server/app-url";
 import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
 
@@ -63,7 +63,7 @@ const APPOINTMENT_MESSAGE_INCLUDE = {
   client: { select: { name: true, phone: true } },
   service: { select: { name: true } },
   professional: { select: { name: true } },
-  business: { select: { name: true, address: true, timezone: true } },
+  business: { select: { name: true, address: true, timezone: true, slug: true } },
   messageLogs: { select: { kind: true, sentAt: true } },
 } as const;
 
@@ -90,6 +90,7 @@ function prepareMessages(
     startAt: appointment.startAt,
     timeZone: appointment.business.timezone,
     manageUrl: buildManageUrl(appointment.manageToken),
+    bookingUrl: buildBookingUrl(appointment.business.slug),
   });
   return kinds.map((kind) => {
     const text = renderTemplate(templates.find((template) => template.kind === kind)!.body, values);

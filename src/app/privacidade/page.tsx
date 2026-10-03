@@ -39,7 +39,7 @@ export default function PrivacyPage() {
         <ul>
           <li>
             <strong>De quem agenda:</strong> nome, telefone/WhatsApp, e-mail (opcional), os agendamentos feitos (serviço,
-            profissional, data e hora), pagamentos registrados pelo negócio, avaliações que você enviar e anotações que o
+            profissional, data e hora), pagamentos registrados pelo negócio e anotações que o
             negócio fizer sobre o atendimento.
           </li>
           <li>

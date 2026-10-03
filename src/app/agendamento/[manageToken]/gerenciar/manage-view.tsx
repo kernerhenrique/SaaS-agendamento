@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CircleCheck, MessageCircle } from "lucide-react";
+import { CalendarPlus, CircleCheck, MessageCircle } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useVertical } from "@/config/vertical-context";
@@ -11,7 +11,6 @@ import { formatMinutesDuration } from "@/lib/business-info";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 import { RescheduleSection } from "./reschedule-section";
-import { ReviewForm } from "./review-form";
 import type { ManagedAppointment } from "./types";
 
 function formatFullDateTime(dateISO: string, timeZone: string): string {
@@ -199,18 +198,18 @@ export function ManageView({
       ) : null}
 
       {appointment.status === AppointmentStatus.COMPLETED ? (
-        appointment.review ? (
-          <div className="rounded-lg border p-4 text-sm">
-            <p className="font-medium">Sua avaliação</p>
-            <p>{"★".repeat(appointment.review.rating)}</p>
-            {appointment.review.comment ? <p className="text-muted-foreground">{appointment.review.comment}</p> : null}
+        <section aria-labelledby="thanks-title" className="flex flex-col gap-3 rounded-lg border p-4">
+          <div className="flex flex-col gap-1">
+            <h2 id="thanks-title" className="font-medium">
+              Obrigado pela visita!
+            </h2>
+            <p className="text-sm text-muted-foreground">Quando quiser voltar, reserve o próximo horário em poucos toques.</p>
           </div>
-        ) : (
-          <ReviewForm
-            token={token}
-            onSubmitted={(review) => setAppointment((prev) => ({ ...prev, review }))}
-          />
-        )
+          <a href={`/${appointment.business.slug}`} className={buttonVariants({ className: "w-full sm:w-fit" })}>
+            <CalendarPlus />
+            Reservar de novo
+          </a>
+        </section>
       ) : null}
     </main>
   );

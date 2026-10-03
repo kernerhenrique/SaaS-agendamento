@@ -69,10 +69,10 @@ export function MessagesView({
           <MessageQueueList
             queue="pos-atendimento"
             timezone={timezone}
-            sendLabel="Pedir avaliação"
+            sendLabel="Agradecer"
             emptyIcon={HeartHandshake}
             emptyTitle="Nenhum atendimento concluído ontem ou hoje"
-            emptyDescription="Ao concluir um atendimento na agenda, ele aparece aqui para você agradecer e pedir uma avaliação."
+            emptyDescription="Ao concluir um atendimento na agenda, ele aparece aqui para você agradecer e convidar para voltar."
           />
         </TabsContent>
 

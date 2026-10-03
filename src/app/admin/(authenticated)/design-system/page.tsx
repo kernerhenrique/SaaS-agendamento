@@ -487,6 +487,7 @@ const DEMO_MESSAGE_VALUES = buildTemplateValues({
   startAt: new Date("2026-09-30T17:30:00Z"),
   timeZone: "America/Sao_Paulo",
   manageUrl: "https://exemplo.com/agendamento/exemplo/gerenciar",
+  bookingUrl: "https://exemplo.com/barbearia-exemplo",
 });
 
 function demoQueueItem(appointmentId: string, clientName: string, startAt: string): QueueItem {

@@ -7,6 +7,7 @@ export interface ManagedAppointment {
   business: {
     id: string;
     name: string;
+    slug: string;
     timezone: string;
     address: string | null;
     whatsapp: string | null;
@@ -16,5 +17,4 @@ export interface ManagedAppointment {
   professional: { id: string; name: string };
   service: { id: string; name: string; durationMin: number };
   client: { name: string };
-  review: { rating: number; comment: string | null } | null;
 }

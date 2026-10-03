@@ -18,6 +18,7 @@ const values: TemplateValues = buildTemplateValues({
   startAt: localMinutesToUtc("2026-09-30", 17 * 60 + 30, "America/Sao_Paulo"),
   timeZone: "America/Sao_Paulo",
   manageUrl: "https://exemplo.com/agendamento/abc/gerenciar",
+  bookingUrl: "https://exemplo.com/navalha-de-ouro",
 });
 
 describe("buildTemplateValues", () => {
@@ -26,6 +27,15 @@ describe("buildTemplateValues", () => {
     expect(values.primeiro_nome).toBe("Maria");
     expect(values.data).toBe("quarta-feira, 30/09");
     expect(values.hora).toBe("17:30");
+  });
+});
+
+describe("pós-atendimento", () => {
+  it("agradece e convida a reservar de novo pela página, sem pedir avaliação", () => {
+    const text = renderTemplate(DEFAULT_TEMPLATES.FOLLOW_UP, values);
+    expect(text).toContain("Obrigado pela visita em Navalha de Ouro");
+    expect(text).toContain("https://exemplo.com/navalha-de-ouro");
+    expect(text).not.toMatch(/avalia/i);
   });
 });
 

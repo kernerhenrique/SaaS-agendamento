@@ -58,7 +58,8 @@ export function TemplateEditor({
     hora: "Hora",
     negocio: "Nome do negócio",
     endereco: "Endereço",
-    link: "Link para gerenciar",
+    link: "Link do agendamento",
+    link_reserva: "Link para reservar",
   };
 
   function insertVariable(variable: TemplateVariable) {

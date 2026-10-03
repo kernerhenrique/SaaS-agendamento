@@ -50,6 +50,7 @@ export default async function ManageAppointmentPage({
         business: {
           id: appointment.business.id,
           name: appointment.business.name,
+          slug: appointment.business.slug,
           timezone: appointment.business.timezone,
           address: appointment.business.address,
           whatsapp: appointment.business.whatsapp,
@@ -63,9 +64,6 @@ export default async function ManageAppointmentPage({
           durationMin: appointment.service.durationMin,
         },
         client: { name: appointment.client.name },
-        review: appointment.review
-          ? { rating: appointment.review.rating, comment: appointment.review.comment }
-          : null,
       }}
     />
     </VerticalProvider>

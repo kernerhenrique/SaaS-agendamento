@@ -17,7 +17,7 @@ export const MESSAGE_KIND_LABELS: Record<MessageKind, string> = {
 export const MESSAGE_KIND_DESCRIPTIONS: Record<MessageKind, string> = {
   CONFIRMATION: "Logo depois de marcar, com o link para confirmar presença, remarcar ou cancelar.",
   REMINDER: "Na véspera, pedindo para confirmar presença pelo link: diminui as faltas.",
-  FOLLOW_UP: "Depois do atendimento, pedindo uma avaliação.",
+  FOLLOW_UP: "Depois do atendimento, agradecendo e com o link para reservar de novo.",
 };
 
 /** Textos neutros (sem termo de nicho): os termos entram pelas variáveis. */
@@ -41,7 +41,7 @@ export const DEFAULT_TEMPLATES: Record<MessageKind, string> = {
   ].join("\n"),
   FOLLOW_UP: [
     "Olá, {primeiro_nome}! Obrigado pela visita em {negocio}.",
-    "Conta pra gente como foi? A avaliação leva 1 minuto: {link}",
+    "Quando quiser voltar, é só reservar por aqui: {link_reserva}",
   ].join("\n"),
 };
 
@@ -57,6 +57,7 @@ export const TEMPLATE_VARIABLES = [
   "negocio",
   "endereco",
   "link",
+  "link_reserva",
 ] as const;
 
 export type TemplateVariable = (typeof TEMPLATE_VARIABLES)[number];
@@ -97,6 +98,8 @@ export interface MessageContext {
   startAt: Date;
   timeZone: string;
   manageUrl: string;
+  /** Página de reservas do negócio (aprazzo.com.br/{slug}), para "reservar de novo". */
+  bookingUrl: string;
 }
 
 /** Valores das variáveis para um agendamento. Data "quarta-feira, 30/09"; hora "17:30". */
@@ -114,5 +117,6 @@ export function buildTemplateValues(context: MessageContext): TemplateValues {
     negocio: context.businessName,
     endereco: context.businessAddress ?? "",
     link: context.manageUrl,
+    link_reserva: context.bookingUrl,
   };
 }

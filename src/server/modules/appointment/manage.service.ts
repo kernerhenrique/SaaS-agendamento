@@ -25,7 +25,7 @@ function isTokenExpired(expiresAt: Date | null): boolean {
 export async function getAppointmentForManagement(token: string) {
   const appointment = await prisma.appointment.findUnique({
     where: { manageToken: token },
-    include: { business: true, professional: true, service: true, client: true, review: true },
+    include: { business: true, professional: true, service: true, client: true },
   });
 
   if (!appointment || isTokenExpired(appointment.manageTokenExpiresAt)) {
@@ -131,22 +131,4 @@ export async function rescheduleAppointmentByToken(token: string, newStartAt: Da
     }
     throw error;
   }
-}
-
-export async function addReviewByToken(token: string, rating: number, comment?: string) {
-  const appointment = await getAppointmentForManagement(token);
-
-  if (appointment.status !== AppointmentStatus.COMPLETED) {
-    throw new ValidationError("Só é possível avaliar depois que o atendimento for concluído");
-  }
-  if (appointment.review) {
-    throw new ValidationError("Este agendamento já foi avaliado");
-  }
-  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    throw new ValidationError("A nota deve ser um número inteiro de 1 a 5");
-  }
-
-  return prisma.review.create({
-    data: { appointmentId: appointment.id, rating, comment: comment ?? null },
-  });
 }
