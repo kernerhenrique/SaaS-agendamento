@@ -4,6 +4,7 @@ import {
   OUTSIDE_WORKING_HOURS,
   PAST_MESSAGE,
   checkAdminBookingTime,
+  evaluateLocalSlot,
   isInPast,
   workingHoursProblem,
 } from "@/server/modules/appointment/admin-booking-rules";
@@ -84,5 +85,30 @@ describe("checkAdminBookingTime", () => {
   it("passado é recusado mesmo com allowOutsideHours, e sem code", () => {
     const result = check("2026-09-25T10:00:00-03:00", { allowOutsideHours: true });
     expect(result).toEqual({ message: PAST_MESSAGE });
+  });
+});
+
+describe("encaixe em dia fechado (feriado, férias)", () => {
+  const closures = [{ startDate: "2026-10-12", endDate: "2026-10-12", reason: "Nossa Senhora Aparecida" }];
+
+  it("dentro do expediente, mas com o negócio fechado: pede confirmação com o motivo", () => {
+    // 12/10/2026 é segunda-feira, 10:00 está no expediente.
+    expect(check("2026-10-12T10:00:00-03:00", { closures })).toEqual({
+      message: "O negócio está fechado neste dia (Nossa Senhora Aparecida)",
+      code: OUTSIDE_WORKING_HOURS,
+    });
+    expect(check("2026-10-19T10:00:00-03:00", { closures })).toBeNull();
+  });
+
+  it("com \"mesmo assim\" o encaixe passa; passado continua recusado", () => {
+    expect(check("2026-10-12T10:00:00-03:00", { closures, allowOutsideHours: true })).toBeNull();
+    expect(check("2026-09-21T10:00:00-03:00", { closures: [{ startDate: "2026-09-21", endDate: "2026-09-21", reason: "x" }] })).toEqual({ message: PAST_MESSAGE });
+  });
+
+  it("a tela avisa o motivo e trata como fora do expediente", () => {
+    const slot = evaluateLocalSlot({ date: "2026-10-12", startMinute: 600, durationMin: 30, timeZone: TZ, now: new Date("2026-10-01T12:00:00-03:00"), weeklyHours: [MONDAY], closures });
+    expect(slot).toMatchObject({ isOutsideHours: true, closedReason: "Nossa Senhora Aparecida" });
+    const open = evaluateLocalSlot({ date: "2026-10-19", startMinute: 600, durationMin: 30, timeZone: TZ, now: new Date("2026-10-01T12:00:00-03:00"), weeklyHours: [MONDAY], closures });
+    expect(open).toMatchObject({ isOutsideHours: false, closedReason: null });
   });
 });

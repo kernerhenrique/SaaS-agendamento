@@ -175,9 +175,11 @@ async function assertAdminBookingTime(
   durationMin: number,
   allowOutsideHours: boolean,
 ) {
-  const [business, weeklyHours] = await Promise.all([
+  const [business, weeklyHours, closures] = await Promise.all([
     prisma.business.findUniqueOrThrow({ where: { id: businessId }, select: { timezone: true } }),
     prisma.workingHours.findMany({ where: { professionalId, professional: { businessId } } }),
+    // Poucos registros por negócio: a regra pura escolhe o que cobre a data.
+    prisma.businessClosure.findMany({ where: { businessId }, select: { startDate: true, endDate: true, reason: true } }),
   ]);
   const problem = checkAdminBookingTime({
     startAt,
@@ -186,6 +188,7 @@ async function assertAdminBookingTime(
     timeZone: business.timezone,
     weeklyHours,
     allowOutsideHours,
+    closures,
   });
   if (problem) throw new ValidationError(problem.message, problem.code);
 }

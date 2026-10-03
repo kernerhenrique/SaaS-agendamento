@@ -17,6 +17,8 @@ export interface BusinessInfo {
   minBookingNoticeMinutes: number;
   maxBookingWindowDays: number;
   cancellationDeadlineHours: number;
+  /** Dias fechados de hoje em diante (feriados, férias): riscados na faixa de datas. */
+  closures: { startDate: string; endDate: string; reason: string }[];
 }
 
 export interface ServiceOption {

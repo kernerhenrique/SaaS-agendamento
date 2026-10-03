@@ -53,6 +53,8 @@ export interface GridColumn {
   isToday: boolean;
   /** Dia anterior a hoje: a coluna inteira aparece como "já passou". */
   isBeforeToday: boolean;
+  /** Negócio fechado no dia (feriado, férias): faixa hachurada com o motivo; encaixe só com confirmação. */
+  closedReason: string | null;
 }
 
 export interface AppointmentDrop {
@@ -258,6 +260,22 @@ function ColumnView({
             }}
             aria-hidden
           />
+        ) : null}
+
+        {column.closedReason ? (
+          // Clique continua chegando ao espaço vazio: o encaixe avisa e pede "mesmo assim".
+          <div
+            className="pointer-events-none absolute inset-0 flex justify-center pt-2"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(45deg, var(--color-muted), var(--color-muted) 6px, transparent 6px, transparent 12px)",
+            }}
+          >
+            <span className="flex h-fit max-w-full items-center gap-1 truncate rounded-md bg-card px-2 py-1 text-caption font-medium text-muted-foreground ring-1 ring-border">
+              <Ban className="size-3 shrink-0" aria-hidden />
+              Fechado: {column.closedReason}
+            </span>
+          </div>
         ) : null}
 
         {column.timeBlocks.map((block) => {

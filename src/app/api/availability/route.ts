@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getAvailableSlots } from "@/server/modules/appointment/availability";
 import { getOccupiedSlotTimes } from "@/server/modules/appointment/occupied-slots";
+import { findClosureForDate } from "@/server/modules/business/closure.service";
 import { NotFoundError, ValidationError } from "@/server/errors";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
     // `?ocupados=1`: também os horários ocupados (só para exibir desabilitados;
     // nunca entram na reserva, que revalida pelos livres).
     const occupied = searchParams.get("ocupados") === "1" ? await getOccupiedSlotTimes(params, slots) : undefined;
+    const closure = await findClosureForDate(businessId, date);
     return NextResponse.json({
       slots: slots.map((slot) => ({
         professionalId: slot.professionalId,
@@ -39,6 +41,8 @@ export async function GET(request: NextRequest) {
         endAt: slot.endAt.toISOString(),
       })),
       ...(occupied ? { occupied } : {}),
+      // Dia fechado: a página mostra o motivo no lugar de "sem horários".
+      ...(closure ? { closedReason: closure.reason } : {}),
     });
   } catch (error) {
     if (error instanceof NotFoundError) {

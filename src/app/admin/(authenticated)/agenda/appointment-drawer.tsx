@@ -28,6 +28,7 @@ import { localMinutesToUtc, utcToLocalDate, utcToLocalMinutes } from "@/lib/date
 import { formatPhoneBR } from "@/lib/phone";
 import { minutesToTimeInput, timeInputToMinutes } from "@/lib/weekday";
 import { BookingTimeNotice, useNow } from "@/components/admin/booking-time-notice";
+import { useBusinessClosures } from "@/components/admin/use-business-closures";
 import { WhatsAppMessageMenu } from "@/components/admin/whatsapp-message-menu";
 import { evaluateLocalSlot } from "@/server/modules/appointment/admin-booking-rules";
 import { RESCHEDULABLE_STATUSES } from "@/server/modules/appointment/reschedule-rules";
@@ -361,11 +362,12 @@ function RescheduleForm({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const now = useNow();
+  const closures = useBusinessClosures();
   const selected = eligible.find((p) => p.id === professionalId);
   const startMinute = timeInputToMinutes(time);
   const slot =
     selected && date && startMinute !== null
-      ? evaluateLocalSlot({ date, startMinute, durationMin, timeZone: timezone, now, weeklyHours: selected.workingHours })
+      ? evaluateLocalSlot({ date, startMinute, durationMin, timeZone: timezone, now, weeklyHours: selected.workingHours, closures })
       : null;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -433,6 +435,7 @@ function RescheduleForm({
           isPast={slot.isPast}
           isOutsideHours={slot.isOutsideHours}
           workingHours={slot.workingHours}
+          closedReason={slot.closedReason}
         />
       ) : null}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}

@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, SparklesIcon } from "lucide-react";
+import { CalendarOff, Loader2, SparklesIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { DateStrip } from "@/components/date-strip";
 import { SlotGridSkeleton } from "@/components/slot-grid-skeleton";
 import { TimeSlotGrid, type TimeSlot } from "@/components/time-slot-grid";
 import { addDaysToIsoDate, formatDateLabel, todayInTimeZone, utcToLocalMinutes } from "@/lib/date";
+import { findClosure, type ClosureRange } from "@/server/modules/business/closure-rules";
 
 import { NO_PREFERENCE, type AvailableSlot } from "./types";
 
@@ -47,6 +48,7 @@ export function DatetimeStep({
   professionalId,
   timezone,
   maxWindowDays,
+  closures,
   onSelect,
 }: {
   businessId: string;
@@ -55,11 +57,14 @@ export function DatetimeStep({
   timezone: string;
   /** Janela de reserva do negócio: hoje + N dias, inclusive (mesma regra do servidor). */
   maxWindowDays: number;
+  /** Dias fechados do negócio (riscados na faixa; o dia fechado mostra o motivo no lugar da grade). */
+  closures: ClosureRange[];
   onSelect: (slot: AvailableSlot) => void;
 }) {
   const [today] = useState(() => todayInTimeZone(timezone));
   const lastDate = addDaysToIsoDate(today, maxWindowDays);
   const [date, setDate] = useState(today);
+  const closedReason = findClosure(date, closures)?.reason ?? null;
   const [slots, setSlots] = useState<AvailableSlot[]>([]);
   const [occupied, setOccupied] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -142,7 +147,7 @@ export function DatetimeStep({
     <div className="flex flex-col gap-4">
       <h2 className="text-lg font-semibold">Escolha data e horário</h2>
 
-      <DateStrip minDate={today} days={maxWindowDays + 1} selectedDate={date} timezone={timezone} onSelect={setDate} />
+      <DateStrip minDate={today} days={maxWindowDays + 1} selectedDate={date} timezone={timezone} closures={closures} onSelect={setDate} />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-medium first-letter:uppercase">{formatDateLabel(date, timezone)}</p>
@@ -153,7 +158,16 @@ export function DatetimeStep({
       </div>
       {searchNextError ? <p className="text-sm text-muted-foreground">{searchNextError}</p> : null}
 
-      {isLoading ? <SlotGridSkeleton /> : <TimeSlotGrid slots={timeSlots} onSelect={(slot) => onSelect(uniqueSlotsByTime.get(slot.key)!)} />}
+      {closedReason ? (
+        <p role="status" className="flex items-center gap-2 rounded-lg border bg-muted p-4 text-sm text-muted-foreground">
+          <CalendarOff className="size-4 shrink-0" aria-hidden />
+          Fechado neste dia: {closedReason}. Escolha outra data ou use “Próximo horário disponível”.
+        </p>
+      ) : isLoading ? (
+        <SlotGridSkeleton />
+      ) : (
+        <TimeSlotGrid slots={timeSlots} onSelect={(slot) => onSelect(uniqueSlotsByTime.get(slot.key)!)} />
+      )}
     </div>
   );
 }

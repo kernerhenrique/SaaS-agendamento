@@ -26,6 +26,7 @@ import type { Weekday } from "@/generated/prisma/enums";
 import { evaluateLocalSlot, type WorkingHoursWindow } from "@/server/modules/appointment/admin-booking-rules";
 
 import { BookingTimeNotice, useNow } from "./booking-time-notice";
+import { useBusinessClosures } from "./use-business-closures";
 
 export interface NewAppointmentInitial {
   date?: string;
@@ -198,6 +199,7 @@ function NewAppointmentForm({
   const selectedProfessional = professionals?.find((p) => p.id === professionalId);
   const availableServices = useMemo(() => selectedProfessional?.services ?? [], [selectedProfessional]);
   const now = useNow();
+  const closures = useBusinessClosures();
   const startMinute = parseTimeToMinutes(time);
   const selectedService = availableServices.find((s) => s.id === serviceId);
   // Sem serviço escolhido ainda, avalia com 1 min: já avisa passado/dia sem expediente.
@@ -210,6 +212,7 @@ function NewAppointmentForm({
           timeZone: timezone,
           now,
           weeklyHours: selectedProfessional.workingHours,
+          closures,
         })
       : null;
 
@@ -335,6 +338,7 @@ function NewAppointmentForm({
           isPast={slot.isPast}
           isOutsideHours={slot.isOutsideHours}
           workingHours={slot.workingHours}
+          closedReason={slot.closedReason}
         />
       ) : null}
 

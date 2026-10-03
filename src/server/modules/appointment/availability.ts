@@ -3,6 +3,8 @@ import { localDayRangeUtc, localMinutesToUtc, rangesOverlap, utcToLocalDate, wee
 import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
 
+import { findClosureForDate } from "@/server/modules/business/closure.service";
+
 import { bookingWindow } from "./booking-policy";
 
 export const DEFAULT_SLOT_GRANULARITY_MINUTES = 15;
@@ -126,6 +128,10 @@ export async function getAvailableSlots(params: GetAvailableSlotsParams): Promis
     maxWindowDays: business.maxBookingWindowDays,
   });
   if (dateISO > lastDate) {
+    return [];
+  }
+  // Negócio fechado no dia (feriado, férias): nenhum horário, para nenhum profissional.
+  if (await findClosureForDate(businessId, dateISO)) {
     return [];
   }
 

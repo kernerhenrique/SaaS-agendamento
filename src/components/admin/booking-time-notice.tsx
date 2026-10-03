@@ -33,11 +33,14 @@ export function BookingTimeNotice({
   isPast,
   isOutsideHours,
   workingHours,
+  closedReason = null,
 }: {
   professionalName: string;
   isPast: boolean;
   isOutsideHours: boolean;
   workingHours: WorkingHoursWindow | null;
+  /** Negócio fechado no dia (feriado, férias): o aviso diz o motivo. */
+  closedReason?: string | null;
 }) {
   if (isPast) {
     return (
@@ -52,10 +55,14 @@ export function BookingTimeNotice({
     <div role="status" className="flex gap-3 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">
       <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
       <p>
-        {workingHours
-          ? `${professionalName} não atende neste horário (expediente ${describeHours(workingHours)}).`
-          : `${professionalName} não tem expediente neste dia.`}{" "}
-        <span className="text-muted-foreground">Se estiver cobrindo, confirme em “Agendar mesmo assim”.</span>
+        {closedReason
+          ? `O negócio está fechado neste dia (${closedReason}).`
+          : workingHours
+            ? `${professionalName} não atende neste horário (expediente ${describeHours(workingHours)}).`
+            : `${professionalName} não tem expediente neste dia.`}{" "}
+        <span className="text-muted-foreground">
+          {closedReason ? "Se for abrir mesmo assim" : "Se estiver cobrindo"}, confirme em “Agendar mesmo assim”.
+        </span>
       </p>
     </div>
   );

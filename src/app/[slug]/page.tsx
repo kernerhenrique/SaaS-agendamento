@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { DemoBar } from "@/components/demo-bar";
 import { prisma } from "@/server/db/prisma";
+import { listUpcomingClosures } from "@/server/modules/business/closure.service";
 import { SERVICE_ORDER_BY } from "@/server/modules/service/service.service";
 
 import { BookingFlow } from "./booking-flow";
@@ -55,7 +56,7 @@ export default async function PublicBookingPage({
     notFound();
   }
 
-  const [services, professionals] = await Promise.all([
+  const [services, professionals, closures] = await Promise.all([
     prisma.service.findMany({
       where: { businessId: business.id, active: true, visibleOnline: true, deletedAt: null },
       orderBy: SERVICE_ORDER_BY,
@@ -69,6 +70,7 @@ export default async function PublicBookingPage({
         photos: { orderBy: { position: "asc" } },
       },
     }),
+    listUpcomingClosures(business.id, business.timezone),
   ]);
 
   return (
@@ -92,6 +94,7 @@ export default async function PublicBookingPage({
           minBookingNoticeMinutes: business.minBookingNoticeMinutes,
           maxBookingWindowDays: business.maxBookingWindowDays,
           cancellationDeadlineHours: business.cancellationDeadlineHours,
+          closures: closures.map(({ startDate, endDate, reason }) => ({ startDate, endDate, reason })),
         }}
         services={services.map((service) => ({
           id: service.id,

@@ -1,12 +1,13 @@
 "use client";
 
-import { CalendarCheck, Clock, KeyRound, Palette, Store, type LucideIcon } from "lucide-react";
+import { CalendarCheck, CalendarOff, Clock, KeyRound, Palette, Store, type LucideIcon } from "lucide-react";
 
 import type { BusinessSettings } from "@/server/modules/business/business.service";
 
 import { AccountSection } from "./account-section";
 import { BrandingSection } from "./branding-section";
 import { BusinessSection } from "./business-section";
+import { ClosuresSection } from "./closures-section";
 import { HoursSection } from "./hours-section";
 import { PoliciesSection } from "./policies-section";
 
@@ -14,6 +15,7 @@ const SECTIONS: { id: string; label: string; icon: LucideIcon }[] = [
   { id: "negocio", label: "Negócio", icon: Store },
   { id: "identidade", label: "Identidade", icon: Palette },
   { id: "horario", label: "Horário", icon: Clock },
+  { id: "fechados", label: "Dias fechados", icon: CalendarOff },
   { id: "reservas", label: "Reservas", icon: CalendarCheck },
   { id: "conta", label: "Conta", icon: KeyRound },
 ];
@@ -57,6 +59,7 @@ export function SettingsView({ business, email }: { business: BusinessSettings |
               <BusinessSection business={business} />
               <BrandingSection business={business} />
               <HoursSection business={business} />
+              <ClosuresSection timezone={business.timezone} />
               <PoliciesSection business={business} />
             </>
           ) : null}

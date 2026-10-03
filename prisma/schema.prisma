@@ -95,8 +95,24 @@ model Business {
   messageTemplates  MessageTemplate[]
   messageLogs       MessageLog[]
   staffInvites      StaffInvite[]
+  closures          BusinessClosure[]
 
   @@index([deletedAt])
+}
+
+// Dia(s) em que o negócio inteiro fecha (feriado, férias coletivas). Datas de
+// calendário no fuso do negócio ("YYYY-MM-DD", fim inclusivo): sem horário,
+// não há o que converter. Sem horários na página; encaixe só com confirmação.
+model BusinessClosure {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  startDate  String
+  endDate    String
+  reason     String
+  createdAt  DateTime @default(now())
+
+  @@index([businessId, endDate])
 }
 
 // Horário de funcionamento do negócio, só informativo (página pública). A

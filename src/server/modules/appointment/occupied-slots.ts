@@ -1,5 +1,6 @@
 import { weekdayOfLocalDate } from "@/lib/date";
 import { prisma } from "@/server/db/prisma";
+import { findClosureForDate } from "@/server/modules/business/closure.service";
 
 import { computeSlotsForProfessional, type GetAvailableSlotsParams, type Slot } from "./availability";
 import { bookingWindow } from "./booking-policy";
@@ -47,6 +48,8 @@ export async function getOccupiedSlotTimes(params: GetAvailableSlotsParams, free
     maxWindowDays: business.maxBookingWindowDays,
   });
   if (dateISO > lastDate) return [];
+  // Dia fechado: nada aparece riscado (a página mostra "Fechado" com o motivo).
+  if (await findClosureForDate(businessId, dateISO)) return [];
 
   const professionals = await prisma.professional.findMany({
     where: {

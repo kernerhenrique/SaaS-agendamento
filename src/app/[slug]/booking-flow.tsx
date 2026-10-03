@@ -203,6 +203,7 @@ export function BookingFlow({
                   professionalId={selection.professionalId}
                   timezone={business.timezone}
                   maxWindowDays={business.maxBookingWindowDays}
+                  closures={business.closures}
                   onSelect={handleSelectSlot}
                 />
               ) : null}

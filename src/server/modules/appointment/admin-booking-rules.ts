@@ -1,5 +1,6 @@
 import type { Weekday } from "@/generated/prisma/enums";
 import { localMinutesToUtc, utcToLocalDate, utcToLocalMinutes, weekdayOfLocalDate } from "@/lib/date";
+import { findClosure, type ClosureRange } from "@/server/modules/business/closure-rules";
 
 /**
  * Regras de horário para agendamentos criados ou remarcados pelo painel
@@ -64,13 +65,17 @@ export function evaluateLocalSlot(slot: {
   timeZone: string;
   now: Date;
   weeklyHours: (WorkingHoursWindow & { weekday: Weekday })[];
-}): { isPast: boolean; workingHours: WorkingHoursWindow | null; isOutsideHours: boolean } {
+  /** Dias fechados do negócio: encaixe neles também pede "mesmo assim". */
+  closures?: ClosureRange[];
+}): { isPast: boolean; workingHours: WorkingHoursWindow | null; isOutsideHours: boolean; closedReason: string | null } {
   const weekday = weekdayOfLocalDate(slot.date);
   const workingHours = slot.weeklyHours.find((wh) => wh.weekday === weekday) ?? null;
+  const closedReason = findClosure(slot.date, slot.closures ?? [])?.reason ?? null;
   return {
     isPast: isInPast(localMinutesToUtc(slot.date, slot.startMinute, slot.timeZone), slot.now),
     workingHours,
-    isOutsideHours: !isWithinWorkingHours(workingHours, slot.startMinute, slot.startMinute + slot.durationMin),
+    isOutsideHours: closedReason !== null || !isWithinWorkingHours(workingHours, slot.startMinute, slot.startMinute + slot.durationMin),
+    closedReason,
   };
 }
 
@@ -81,6 +86,7 @@ export interface AdminBookingCheck {
   timeZone: string;
   weeklyHours: (WorkingHoursWindow & { weekday: Weekday })[];
   allowOutsideHours: boolean;
+  closures?: ClosureRange[];
 }
 
 /**
@@ -91,7 +97,10 @@ export function checkAdminBookingTime(check: AdminBookingCheck): { message: stri
   if (isInPast(check.startAt, check.now)) return { message: PAST_MESSAGE };
   if (check.allowOutsideHours) return null;
 
-  const weekday = weekdayOfLocalDate(utcToLocalDate(check.startAt, check.timeZone));
+  const date = utcToLocalDate(check.startAt, check.timeZone);
+  const closure = findClosure(date, check.closures ?? []);
+  if (closure) return { message: `O negócio está fechado neste dia (${closure.reason})`, code: OUTSIDE_WORKING_HOURS };
+  const weekday = weekdayOfLocalDate(date);
   const startMinute = utcToLocalMinutes(check.startAt, check.timeZone);
   const workingHours = check.weeklyHours.find((wh) => wh.weekday === weekday) ?? null;
   const problem = workingHoursProblem(workingHours, startMinute, startMinute + check.durationMin);

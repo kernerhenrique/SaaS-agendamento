@@ -268,3 +268,10 @@ Duas camadas independentes:
 - **Início**: o `Alert` ganhou o tom `info` (azul, ícone `CalendarPlus`) para "reservas novas pela página", com as três últimas em `text-caption`.
 - **Esqueci minha senha** e **Criar senha nova**: cartões no padrão do login (marca do produto); a resposta do pedido é sempre a mesma.
 - **`LegalPage`** (`src/components/legal-page.tsx`): moldura de `/termos` e `/privacidade` (logo, título, data, artigo com `h2` de seção e rodapé com o contato).
+
+## Dias fechados (Bloco D)
+
+- **Configurações › Dias fechados** (`closures-section.tsx`): lista com "Reabrir" (modal de confirmação), formulário Data · Até (opcional) · Motivo, e o diálogo **"Adicionar feriados nacionais"** (próximos 12 meses; facultativos desmarcados; os já fechados aparecem desabilitados). Ao fechar, alerta `warning` com os agendamentos já marcados no período, com link para a agenda do dia.
+- **Página pública**: na `DateStrip`, o dia fechado fica `bg-muted` riscado, com o motivo no `title` e no nome acessível; selecionado, mostra "Fechado neste dia: {motivo}" no lugar da grade (o botão "Próximo horário disponível" continua).
+- **Agenda**: coluna hachurada (mesmo padrão dos bloqueios) com o selo "Fechado: {motivo}"; o clique continua abrindo o encaixe, que avisa no `BookingTimeNotice` (`closedReason`). Arrastar para o dia abre o modal "Negócio fechado". No celular, aviso no topo da lista.
+- `useBusinessClosures()` (`components/admin/use-business-closures.ts`) carrega os dias fechados para a agenda e o encaixe.

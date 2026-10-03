@@ -5,6 +5,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAdminShell } from "@/components/admin/admin-shell-context";
+import { useBusinessClosures } from "@/components/admin/use-business-closures";
+import { findClosure } from "@/server/modules/business/closure-rules";
 import { ProfessionalAvatar } from "@/components/admin/professional-avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,6 +55,7 @@ export function AgendaView({
 }) {
   const { terms } = useVertical();
   const { appointmentsVersion, setContextDate, openNewAppointment } = useAdminShell();
+  const closures = useBusinessClosures();
   const today = useMemo(() => todayInTimeZone(timezone), [timezone]);
   const [date, setDate] = useState(() => initialDate ?? today);
   const [view, setView] = useState<View>("day");
@@ -118,6 +121,7 @@ export function AgendaView({
       timeBlocks: timeBlocks.filter((b) => b.professionalId === professional.id && inDay(b.startAt, b.endAt, columnDate)),
       isToday: columnDate === today,
       isBeforeToday: columnDate < today,
+      closedReason: findClosure(columnDate, closures)?.reason ?? null,
     });
 
     if (view === "week") {
@@ -156,7 +160,7 @@ export function AgendaView({
           </>,
         ),
       );
-  }, [view, professionals, weekProfessionalId, dayFilter, week, date, today, timezone, appointments, timeBlocks]);
+  }, [view, professionals, weekProfessionalId, dayFilter, week, date, today, timezone, appointments, timeBlocks, closures]);
 
   function step(direction: 1 | -1) {
     setDate((d) => addDaysToIsoDate(d, direction * (view === "week" ? 7 : 1)));
@@ -179,7 +183,7 @@ export function AgendaView({
       toast.error("Esse horário está bloqueado na agenda.");
       return;
     }
-    if (!isWithinWorkingHours(drop.column.workingHours, drop.startMinute, drop.endMinute)) {
+    if (drop.column.closedReason || !isWithinWorkingHours(drop.column.workingHours, drop.startMinute, drop.endMinute)) {
       setPendingDrop(drop);
       return;
     }
@@ -349,6 +353,7 @@ export function AgendaView({
           timezone={timezone}
           isLoading={isLoading}
           onAppointmentClick={(appointment) => setSelectedId(appointment.id)}
+          closedReason={findClosure(date, closures)?.reason ?? null}
         />
       </div>
 
@@ -363,10 +368,12 @@ export function AgendaView({
       <Dialog open={pendingDrop != null} onOpenChange={(open) => !open && setPendingDrop(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Fora do expediente</DialogTitle>
+            <DialogTitle>{pendingDrop?.column.closedReason ? "Negócio fechado" : "Fora do expediente"}</DialogTitle>
             <DialogDescription>
               {pendingDrop
-                ? pendingDrop.column.workingHours
+                ? pendingDrop.column.closedReason
+                  ? `O negócio está fechado neste dia (${pendingDrop.column.closedReason}). Mover mesmo assim?`
+                  : pendingDrop.column.workingHours
                   ? `${minutesToTimeInput(pendingDrop.startMinute)}–${minutesToTimeInput(pendingDrop.endMinute)} fica fora do expediente. Mover mesmo assim?`
                   : "Não há expediente neste dia. Mover mesmo assim?"
                 : null}

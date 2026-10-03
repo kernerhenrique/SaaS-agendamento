@@ -89,7 +89,7 @@ Uma demo é um negócio comum marcado como demonstração (`Business.isDemo`): s
 
 ## O que o dono ajusta sozinho depois
 
-Em **Configurações**: nome, endereço, WhatsApp, Instagram, logo e capa (por link), cor, horário, políticas e a própria senha. Em **Serviços** e **Profissionais**: catálogo, equipe, expedientes e comissões. Slug, fuso e nicho ficam de fora de propósito (ver CLAUDE.md).
+Em **Configurações**: nome, endereço, WhatsApp, Instagram, logo e capa (por link), cor, horário, **dias fechados** (feriados e férias, com os feriados nacionais em um clique), políticas e a própria senha. Em **Serviços** e **Profissionais**: catálogo, equipe, expedientes e comissões. Slug, fuso e nicho ficam de fora de propósito (ver CLAUDE.md).
 
 ## Nunca muda entre clientes
 
