@@ -34,7 +34,7 @@ export const STATUS_BLOCK_CLASSES: Record<AppointmentStatus, string> = {
 
 export const NEXT_STATUS_ACTIONS: Record<AppointmentStatus, { status: AppointmentStatus; label: string }[]> = {
   PENDING: [
-    { status: AppointmentStatus.CONFIRMED, label: "Confirmar presença" },
+    { status: AppointmentStatus.CONFIRMED, label: "Confirmar" },
     { status: AppointmentStatus.COMPLETED, label: "Concluir" },
     { status: AppointmentStatus.NO_SHOW, label: "Não compareceu" },
     { status: AppointmentStatus.CANCELLED, label: "Cancelar" },

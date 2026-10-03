@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarPlus, CircleCheck, MessageCircle, Repeat } from "lucide-react";
+import { CalendarClock, CalendarPlus, CalendarX, MessageCircle, Repeat } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useVertical } from "@/config/vertical-context";
@@ -52,13 +52,10 @@ export function ManageView({
   const [isCancelling, setIsCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isRescheduling, setIsRescheduling] = useState(false);
-  const [isConfirming, setIsConfirming] = useState(false);
-  const [justConfirmed, setJustConfirmed] = useState(false);
   const [seriesUpcoming, setSeriesUpcoming] = useState(series?.upcoming ?? []);
   const [cancellingSeries, setCancellingSeries] = useState<string | null>(null);
 
   const isOpen = CANCELLABLE_STATUSES.includes(appointment.status) && initialIsFuture;
-  const needsConfirmation = appointment.status === AppointmentStatus.PENDING && initialIsFuture;
 
   async function cancelSeries(targetId: string, scope: "one" | "following") {
     const question = scope === "one" ? "Cancelar só esta data?" : "Cancelar esta data e todas as próximas do horário fixo?";
@@ -89,24 +86,6 @@ export function ManageView({
     }
   }
 
-  async function handleConfirm() {
-    setError(null);
-    setIsConfirming(true);
-    try {
-      const response = await fetch(`/api/public/appointments/manage/${token}/confirm`, { method: "POST" });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data?.error ?? "Não foi possível confirmar");
-        return;
-      }
-      setAppointment((prev) => ({ ...prev, status: AppointmentStatus.CONFIRMED }));
-      setJustConfirmed(true);
-    } catch {
-      setError("Sem conexão. Tente de novo.");
-    } finally {
-      setIsConfirming(false);
-    }
-  }
   const canManage = isOpen && initialCanChange;
   const deadlineHours = appointment.business.cancellationDeadlineHours;
 
@@ -132,6 +111,9 @@ export function ManageView({
       <div>
         <h1 className="text-xl font-semibold">Seu agendamento</h1>
         <p className="text-sm text-muted-foreground">{appointment.business.name}</p>
+        {isOpen ? (
+          <p className="pt-2 text-sm">Seu horário está confirmado. Use esta página se precisar cancelar ou remarcar.</p>
+        ) : null}
       </div>
 
       <dl className="flex flex-col gap-1 rounded-lg border p-4 text-sm">
@@ -155,28 +137,48 @@ export function ManageView({
         </div>
       </dl>
 
-      {needsConfirmation ? (
-        <section aria-labelledby="confirm-title" className="flex flex-col gap-3 rounded-lg border border-primary/30 bg-primary/10 p-4">
-          <div className="flex flex-col gap-1">
-            <h2 id="confirm-title" className="font-medium">
-              Confirme sua presença
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Seu horário está reservado. Confirmar avisa {appointment.business.name} que você vai: leva um toque.
-            </p>
-          </div>
-          <Button className="w-full sm:w-fit" disabled={isConfirming} onClick={handleConfirm}>
-            <CircleCheck />
-            {isConfirming ? "Confirmando..." : "Confirmar presença"}
-          </Button>
-        </section>
-      ) : null}
+      {canManage ? (
+        <div className="flex flex-col gap-3">
+          <section aria-labelledby="cancel-title" className="flex flex-col gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+            <div className="flex flex-col gap-1">
+              <h2 id="cancel-title" className="font-medium">
+                Não vai poder ir?
+              </h2>
+              <p className="text-sm text-muted-foreground">Cancele aqui para liberar o horário. {appointment.business.name} é avisado na hora.</p>
+            </div>
+            <Button variant="destructive" className="w-full sm:w-fit" disabled={isCancelling} onClick={handleCancel}>
+              <CalendarX />
+              {isCancelling ? "Cancelando..." : "Cancelar agendamento"}
+            </Button>
+          </section>
 
-      {justConfirmed ? (
-        <p role="status" className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 p-4 text-sm">
-          <CircleCheck className="size-4 shrink-0 text-success" aria-hidden />
-          Presença confirmada: já aparece na agenda de {appointment.business.name}. Até lá!
-        </p>
+          <section aria-labelledby="reschedule-title" className="flex flex-col gap-3 rounded-lg border border-warning/30 bg-warning/10 p-4">
+            <div className="flex flex-col gap-1">
+              <h2 id="reschedule-title" className="font-medium">
+                Precisa de outro horário?
+              </h2>
+              <p className="text-sm text-muted-foreground">Escolha um novo dia e horário. O atual fica livre para outra pessoa.</p>
+            </div>
+            <Button variant="outline" className="w-full bg-background sm:w-fit" onClick={() => setIsRescheduling((prev) => !prev)}>
+              <CalendarClock />
+              {isRescheduling ? "Fechar" : "Remarcar"}
+            </Button>
+            {isRescheduling ? (
+              <RescheduleSection
+                token={token}
+                businessId={appointment.business.id}
+                serviceId={appointment.service.id}
+                professionalId={appointment.professional.id}
+                timezone={appointment.business.timezone}
+                maxWindowDays={appointment.business.maxBookingWindowDays}
+                onRescheduled={(newStartAt, newEndAt) => {
+                  setAppointment((prev) => ({ ...prev, startAt: newStartAt, endAt: newEndAt }));
+                  setIsRescheduling(false);
+                }}
+              />
+            ) : null}
+          </section>
+        </div>
       ) : null}
 
       {series && seriesUpcoming.length > 0 ? (
@@ -223,34 +225,6 @@ export function ManageView({
       ) : null}
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
-
-      {canManage ? (
-        <div className="flex flex-col gap-4">
-          <div className="flex gap-2">
-            <Button variant="outline" disabled={isCancelling} onClick={handleCancel}>
-              {isCancelling ? "Cancelando..." : "Cancelar agendamento"}
-            </Button>
-            <Button variant="outline" onClick={() => setIsRescheduling((prev) => !prev)}>
-              {isRescheduling ? "Fechar" : "Reagendar"}
-            </Button>
-          </div>
-
-          {isRescheduling ? (
-            <RescheduleSection
-              token={token}
-              businessId={appointment.business.id}
-              serviceId={appointment.service.id}
-              professionalId={appointment.professional.id}
-              timezone={appointment.business.timezone}
-              maxWindowDays={appointment.business.maxBookingWindowDays}
-              onRescheduled={(newStartAt, newEndAt) => {
-                setAppointment((prev) => ({ ...prev, startAt: newStartAt, endAt: newEndAt }));
-                setIsRescheduling(false);
-              }}
-            />
-          ) : null}
-        </div>
-      ) : null}
 
       {isOpen && !canManage ? (
         <div role="status" className="flex flex-col gap-3 rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm">

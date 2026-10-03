@@ -106,14 +106,6 @@ function fillRate(dayOffset: number): number {
   return Math.max(0.15, 0.6 - dayOffset * 0.07);
 }
 
-/**
- * Quem já confirmou presença: hoje e amanhã quase todos (o lembrete da véspera
- * já saiu); mais adiante, a maioria ainda só "agendado".
- */
-function confirmedRate(dayOffset: number): number {
-  return dayOffset <= 1 ? 0.85 : 0.25;
-}
-
 function pastStatus(random: () => number): AppointmentStatus {
   const roll = random();
   if (roll < 0.85) return "COMPLETED";
@@ -196,9 +188,7 @@ export function buildDemoSchedule(input: {
           ? pastStatus(random)
           : random() < 0.05
             ? "CANCELLED"
-            : random() < confirmedRate(offset)
-              ? "CONFIRMED"
-              : "PENDING";
+            : "CONFIRMED";
         const appointment: DemoAppointment = {
           professionalId: professional.id,
           serviceId: service.id,

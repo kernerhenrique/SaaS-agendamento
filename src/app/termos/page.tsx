@@ -37,7 +37,7 @@ export default function TermsPage() {
         <ul>
           <li>Não é preciso criar conta. Informe dados verdadeiros: o negócio usa o telefone para falar com você.</li>
           <li>
-            Pelo link do agendamento você confirma presença, remarca ou cancela, dentro das regras de cada negócio (por
+            Pelo link do agendamento você cancela ou remarca, dentro das regras de cada negócio (por
             exemplo, o prazo mínimo para cancelar pelo link).
           </li>
           <li>

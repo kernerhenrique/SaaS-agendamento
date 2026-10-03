@@ -77,7 +77,7 @@ describe("buildDemoSchedule", () => {
     const past = schedule.filter((a) => a.endAt <= NOW);
     const future = schedule.filter((a) => a.endAt > NOW);
     expect(past.every((a) => ["COMPLETED", "NO_SHOW", "CANCELLED"].includes(a.status))).toBe(true);
-    expect(future.every((a) => ["PENDING", "CONFIRMED", "CANCELLED"].includes(a.status))).toBe(true);
+    expect(future.every((a) => ["CONFIRMED", "CANCELLED"].includes(a.status))).toBe(true);
     expect(schedule.filter((a) => a.status !== "COMPLETED").every((a) => a.payments.length === 0)).toBe(true);
 
     const completed = past.filter((a) => a.status === "COMPLETED");
@@ -93,18 +93,9 @@ describe("buildDemoSchedule", () => {
     expect(past.some((a) => a.status === "NO_SHOW")).toBe(true);
   });
 
-  it("perto do dia, quase todos já confirmaram presença; mais adiante, a maioria só agendou", () => {
-    // Várias sementes: com uma só, a amostra dos dias distantes é pequena e oscila.
-    const active = Array.from({ length: 10 }, (_, i) =>
-      buildDemoSchedule({ now: NOW, timezone: TZ, professionals, services, clientCount: 40, seed: `demo:${i}` }),
-    )
-      .flat()
-      .filter((a) => a.endAt > NOW && a.status !== "CANCELLED");
-    const near = active.filter((a) => utcToLocalDate(a.startAt, TZ) <= "2026-10-08");
-    const far = active.filter((a) => utcToLocalDate(a.startAt, TZ) >= "2026-10-10");
-    const share = (list: typeof active) => list.filter((a) => a.status === "CONFIRMED").length / list.length;
-    expect(share(near)).toBeGreaterThan(0.6);
-    expect(share(far)).toBeLessThan(0.5);
+  it("o futuro já vem confirmado (reserva nasce confirmada), com alguns cancelamentos", () => {
+    const future = schedule.filter((a) => a.endAt > NOW);
+    expect(future.every((a) => a.status === "CONFIRMED" || a.status === "CANCELLED")).toBe(true);
   });
 
   it("deixa horários livres amanhã para o visitante reservar", () => {

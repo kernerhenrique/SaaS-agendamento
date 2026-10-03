@@ -21,7 +21,7 @@ test("D1: atendimento concluído agradece e convida a reservar de novo, sem pedi
   expect(booked.status()).toBe(201);
   const { id, manageToken } = (await booked.json()).appointment as { id: string; manageToken: string };
 
-  // Agendado pode ser concluído direto (o cliente veio sem confirmar presença).
+  // Concluir direto pelo painel.
   expect((await api.patch(`/api/admin/appointments/${id}/status`, { data: { status: "COMPLETED" } })).status()).toBe(200);
 
   await page.goto(`/agendamento/${manageToken}/gerenciar`);

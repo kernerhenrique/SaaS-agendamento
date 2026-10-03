@@ -48,7 +48,7 @@ export function ConfirmationStep({ appointment }: { appointment: ConfirmedAppoin
   const dateTime = formatFullDateTime(appointment.startAt, appointment.timezone);
   const saveToWhatsAppUrl = buildWhatsAppShareUrl(
     `Meu horário em ${appointment.businessName}: ${appointment.serviceName} com ${appointment.professionalName}, ${dateTime}.\n` +
-      `Confirmar presença, remarcar ou cancelar: ${manageUrl}`,
+      `Para cancelar ou remarcar: ${manageUrl}`,
   );
 
   async function copyLink() {
@@ -64,15 +64,15 @@ export function ConfirmationStep({ appointment }: { appointment: ConfirmedAppoin
     <div className="flex flex-col items-center gap-4 text-center sm:items-start sm:text-left">
       <div className="flex flex-col items-center gap-2 sm:items-start">
         <CircleCheckBig className="size-12 text-primary" />
-        <h2 className="text-lg font-medium">Horário reservado!</h2>
+        <h2 className="text-lg font-medium">Horário confirmado!</h2>
         <p className="text-sm text-muted-foreground">
           {appointment.clientEmail ? (
             <>
               Enviamos os detalhes para <strong className="font-medium text-foreground">{appointment.clientEmail}</strong>.
-              O link abaixo também serve para confirmar presença, remarcar ou cancelar.
+              Se precisar cancelar ou remarcar, é pelo link abaixo.
             </>
           ) : (
-            <>Guarde o link abaixo: é por ele que você confirma presença, remarca ou cancela.</>
+            <>Guarde o link abaixo: se precisar cancelar ou remarcar, é por ele.</>
           )}
         </p>
       </div>

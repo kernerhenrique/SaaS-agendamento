@@ -35,12 +35,12 @@ async function bookUntilContact(page: Page) {
   await page.getByLabel("WhatsApp").fill(`119${Date.now().toString().slice(-8)}`);
 }
 
-test("cliente agenda, recebe o link em destaque e confirma presença por ele", async ({ page }) => {
+test("cliente agenda, já fica confirmado e o link mostra cancelar (vermelho) e remarcar (amarelo)", async ({ page }) => {
   await bookUntilContact(page);
   await page.getByLabel("E-mail").fill("cliente.e2e@example.com");
   await page.getByRole("button", { name: "Confirmar agendamento" }).click();
 
-  await expect(page.getByRole("heading", { name: "Horário reservado!" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Horário confirmado!" })).toBeVisible();
   await expect(page.getByText("cliente.e2e@example.com")).toBeVisible();
   await expect(page.getByText("Corte de cabelo")).toBeVisible();
   await expect(page.getByText("João Barbeiro")).toBeVisible();
@@ -53,13 +53,14 @@ test("cliente agenda, recebe o link em destaque e confirma presença por ele", a
   expect(saveHref).toMatch(/^https:\/\/wa\.me\/\?text=/);
   expect(decodeURIComponent(saveHref!)).toMatch(/\/agendamento\/[\w-]+\/gerenciar/);
 
-  // Abre o link e confirma presença: agendado → confirmado.
+  // O link: reserva já confirmada; o que dá para fazer é cancelar ou remarcar.
   await page.getByRole("link", { name: "Abrir meu agendamento" }).click();
   await expect(page.getByRole("heading", { name: "Seu agendamento" })).toBeVisible();
-  await expect(page.getByText("Agendado", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Confirmar presença" }).click();
-  await expect(page.getByText(/Presença confirmada/)).toBeVisible();
   await expect(page.getByText("Confirmado", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Use esta página se precisar cancelar ou remarcar/)).toBeVisible();
+  await expect(page.getByRole("region", { name: "Não vai poder ir?" }).getByRole("button", { name: "Cancelar agendamento" })).toBeVisible();
+  await page.getByRole("region", { name: "Precisa de outro horário?" }).getByRole("button", { name: "Remarcar" }).click();
+  await expect(page.getByRole("button", { name: "Fechar" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Confirmar presença" })).toHaveCount(0);
 });
 
@@ -67,7 +68,7 @@ test("sem e-mail, a confirmação não promete e-mail e pede para guardar o link
   await bookUntilContact(page);
   await page.getByRole("button", { name: "Confirmar agendamento" }).click();
 
-  await expect(page.getByRole("heading", { name: "Horário reservado!" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Horário confirmado!" })).toBeVisible();
   await expect(page.getByText(/Guarde o link abaixo/)).toBeVisible();
   await expect(page.getByText(/Enviamos/)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Copiar link" })).toBeVisible();

@@ -15,20 +15,20 @@ export const MESSAGE_KIND_LABELS: Record<MessageKind, string> = {
 };
 
 export const MESSAGE_KIND_DESCRIPTIONS: Record<MessageKind, string> = {
-  CONFIRMATION: "Logo depois de marcar, com o link para confirmar presença, remarcar ou cancelar.",
-  REMINDER: "Na véspera, pedindo para confirmar presença pelo link: diminui as faltas.",
+  CONFIRMATION: "Logo depois de marcar, com o link para cancelar ou remarcar.",
+  REMINDER: "Na véspera, com o link para cancelar ou remarcar: quem não vai libera o horário.",
   FOLLOW_UP: "Depois do atendimento, agradecendo e com o link para reservar de novo.",
 };
 
 /** Textos neutros (sem termo de nicho): os termos entram pelas variáveis. */
 export const DEFAULT_TEMPLATES: Record<MessageKind, string> = {
   CONFIRMATION: [
-    "Olá, {primeiro_nome}! Seu horário em {negocio} está reservado:",
+    "Olá, {primeiro_nome}! Seu horário em {negocio} está confirmado:",
     "{servico} com {profissional}",
     "{data} às {hora}",
     "Endereço: {endereco}",
     "",
-    "Confirme sua presença, remarque ou cancele por aqui: {link}",
+    "Se precisar cancelar ou remarcar: {link}",
   ].join("\n"),
   REMINDER: [
     "Oi, {primeiro_nome}! Passando para lembrar do seu horário em {negocio}:",
@@ -36,8 +36,7 @@ export const DEFAULT_TEMPLATES: Record<MessageKind, string> = {
     "{data} às {hora}",
     "Endereço: {endereco}",
     "",
-    "Toque no link para confirmar sua presença: {link}",
-    "Se não puder vir, por ele mesmo você remarca ou cancela.",
+    "Se não puder vir, cancele ou remarque por aqui: {link}",
   ].join("\n"),
   FOLLOW_UP: [
     "Olá, {primeiro_nome}! Obrigado pela visita em {negocio}.",

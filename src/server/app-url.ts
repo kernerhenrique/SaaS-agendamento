@@ -3,7 +3,7 @@ export function getAppBaseUrl(): string {
   return process.env.APP_BASE_URL ?? "http://localhost:3000";
 }
 
-/** Link de gerenciar (confirmar presença, remarcar, cancelar) enviado ao cliente por e-mail e WhatsApp. */
+/** Link de gerenciar (cancelar ou remarcar) enviado ao cliente por e-mail e WhatsApp. */
 export function buildManageUrl(manageToken: string): string {
   return `${getAppBaseUrl()}/agendamento/${manageToken}/gerenciar`;
 }

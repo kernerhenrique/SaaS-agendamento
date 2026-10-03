@@ -74,10 +74,10 @@ test("reserva feita pela página aparece como novidade no Início do dono", asyn
   });
   expect(booked.status()).toBe(201);
 
-  // Reserva do cliente nasce "agendado" (a confirmação de presença vem pelo link).
+  // Reserva do cliente já nasce confirmada (o link serve para cancelar ou remarcar).
   const { id } = (await booked.json()).appointment as { id: string };
   const detail = (await (await api.get(`/api/admin/appointments/${id}`)).json()).appointment as { status: string };
-  expect(detail.status).toBe("PENDING");
+  expect(detail.status).toBe("CONFIRMED");
 
   await page.goto("/admin");
   const alert = page.getByRole("link", { name: /reservas? novas? pela página/ });

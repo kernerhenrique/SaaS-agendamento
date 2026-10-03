@@ -11,7 +11,7 @@ import { buildSeriesDates, planOccurrences, type OccurrenceContext, type Planned
  * existente (o que o cliente marcou, ou o recém-criado no "Novo agendamento"):
  * ele é a 1ª data; as próximas são agendamentos normais, ligados por `seriesId`.
  * Partindo da última data de uma série, as novas datas entram na mesma série ("Renovar").
- * As próximas datas nascem AGENDADO: o lembrete de cada semana pede a confirmação.
+ * As próximas datas nascem confirmadas, como qualquer reserva.
  */
 
 const ACTIVE: AppointmentStatus[] = [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED];
@@ -93,7 +93,7 @@ export async function createSeries(
           clientId: base.clientId,
           startAt: occurrence.startAt,
           endAt: occurrence.endAt,
-          status: AppointmentStatus.PENDING,
+          status: AppointmentStatus.CONFIRMED,
           priceCents: base.service.priceCents,
           notes: base.notes,
           seriesId,
