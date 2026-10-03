@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     });
 
     // O e-mail é uma notificação, não a fonte da verdade: se o envio falhar
-    // (ex. credenciais do Gmail não configuradas), o agendamento já foi
+    // (ex. credenciais de SMTP não configuradas), o agendamento já foi
     // criado com sucesso e a resposta deve refletir isso mesmo assim. Sem
     // e-mail informado, não há para onde enviar — o link de gerenciar
     // continua disponível na própria tela de confirmação.
@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
       after(async () => {
         try {
           await sendAppointmentConfirmationEmail({
+            businessId,
             clientName: appointment.client.name,
             clientEmail: email,
             businessName: appointment.business.name,

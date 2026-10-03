@@ -28,8 +28,13 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 O resultado será `JWT_SECRET`. Guarde num gerenciador de senhas.
 
-### 3. Gmail (e-mail de confirmação)
-Com a verificação em duas etapas ligada na conta, criar uma **senha de app** em myaccount.google.com/apppasswords (nome: "Aprazzo"). Sem ela o sistema funciona, mas só registra o e-mail no log, sem enviar.
+### 3. E-mail de envio (`nao-responda@aprazzo.com.br`)
+Uma caixa só envia para todos os negócios. O cliente final vê o **nome do negócio** no "De:" ("Barbearia do Zé" `<nao-responda@aprazzo.com.br>`), e o **"Responder para"** é o e-mail do dono, então a resposta chega à barbearia. Os avisos ao dono e o "esqueci a senha" saem como "Aprazzo". Não dá para enviar *do* e-mail da barbearia: o servidor não está autorizado naquele domínio (SPF/DKIM) e cairia no spam.
+1. Hostinger → **E-mails** → criar a caixa `nao-responda@aprazzo.com.br`.
+2. Na mesma tela, deixar a Hostinger configurar o DNS do e-mail (**MX, SPF, DKIM**; DMARC recomendado). Não mexe nos registros `A`/`CNAME` da Vercel.
+3. Dados do SMTP: `smtp.hostinger.com`, porta `465` (SSL), usuário = o próprio endereço, senha = a senha da caixa.
+
+A caixa da Hostinger tem limite diário de envio (ver o plano). Se apertar, trocar por um serviço transacional (Resend, Brevo) com o mesmo domínio: só mudam as variáveis `SMTP_*`. O Gmail (`GMAIL_USER` + `GMAIL_APP_PASSWORD`, senha de app) ainda funciona se as `SMTP_*` não existirem. Sem nenhum dos dois, o sistema funciona e só registra o e-mail no log.
 
 ### 4. Vercel (app)
 1. **Add New → Project**, importar o repositório `SaaS-agendamento` do GitHub. O framework (Next.js) é detectado; o comando de build vem do `vercel.json`.
@@ -41,8 +46,11 @@ Com a verificação em duas etapas ligada na conta, criar uma **senha de app** e
 | `DATABASE_URL_UNPOOLED` | string direta do Neon |
 | `JWT_SECRET` | valor do passo 2 |
 | `APP_BASE_URL` | `https://aprazzo.com.br` |
-| `GMAIL_USER` | e-mail do Gmail |
-| `GMAIL_APP_PASSWORD` | senha de app do passo 3 |
+| `SMTP_HOST` | `smtp.hostinger.com` |
+| `SMTP_PORT` | `465` |
+| `SMTP_USER` | `nao-responda@aprazzo.com.br` |
+| `SMTP_PASS` | senha da caixa (marcar como *Sensitive*) |
+| `EMAIL_FROM` | `nao-responda@aprazzo.com.br` |
 | `CRON_SECRET` | outro valor aleatório gerado como no passo 2; a Vercel o envia ao chamar a rotina da madrugada das demos (`vercel.json` → `/api/cron/demos`). Sem ele, a rotina recusa |
 
 3. **Deploy**. No log do build deve aparecer "All migrations have been successfully applied".

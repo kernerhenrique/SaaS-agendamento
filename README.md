@@ -27,7 +27,7 @@ SaaS multi-tenant de agendamento online para negócios baseados em horário marc
 - **Backend:** API Routes / Route Handlers do próprio Next.js — sem servidor separado
 - **Banco:** PostgreSQL + Prisma ORM
 - **Autenticação:** JWT (access + refresh token) com bcrypt, via cookies `httpOnly`
-- **E-mail:** Nodemailer via Gmail SMTP (App Password)
+- **E-mail:** Nodemailer via SMTP (caixa do domínio; Gmail com senha de app também funciona)
 - **Testes:** Vitest (unitário, lógica de disponibilidade/auth) + Playwright (E2E do fluxo de agendamento)
 
 ### Decisões técnicas e trade-offs
@@ -60,8 +60,8 @@ cd SaaS-agendamento
 npm install
 
 cp .env.example .env
-# edite .env: gere um JWT_SECRET, e opcionalmente preencha GMAIL_USER/
-# GMAIL_APP_PASSWORD (sem isso, o e-mail de confirmação só é logado no
+# edite .env: gere um JWT_SECRET, e opcionalmente preencha SMTP_*/
+# EMAIL_FROM (sem isso, o e-mail de confirmação só é logado no
 # console em vez de enviado — o fluxo de agendamento funciona igual)
 
 docker compose up -d          # Postgres local
@@ -117,7 +117,7 @@ tests/
 ### Deploy
 
 1. **Banco de dados:** crie um Postgres gerenciado (Supabase, Neon, Railway...). Rode `npx prisma migrate deploy` contra ele (não `migrate dev`).
-2. **Vercel:** conecte o repositório, configure as variáveis de ambiente (`DATABASE_URL`, `JWT_SECRET`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `APP_BASE_URL`) e faça o deploy — o projeto já é um app Next.js padrão, sem configuração extra necessária.
+2. **Vercel:** conecte o repositório, configure as variáveis de ambiente (`DATABASE_URL`, `JWT_SECRET`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM`, `APP_BASE_URL`) e faça o deploy — o projeto já é um app Next.js padrão, sem configuração extra necessária.
 3. Rode `npx prisma db seed` contra o banco de produção se quiser dados de demonstração.
 
 ### Fora do escopo do MVP
@@ -153,7 +153,7 @@ A multi-tenant SaaS for appointment-based businesses (barbershops, salons, clini
 - **Backend:** Next.js API Routes / Route Handlers — no separate server
 - **Database:** PostgreSQL + Prisma ORM
 - **Auth:** JWT (access + refresh token) with bcrypt, via `httpOnly` cookies
-- **Email:** Nodemailer via Gmail SMTP (App Password)
+- **Email:** Nodemailer via SMTP (domain mailbox; Gmail App Password also works)
 - **Testing:** Vitest (unit — availability/auth logic) + Playwright (E2E booking flow)
 
 ### Technical decisions and trade-offs
@@ -186,8 +186,8 @@ cd SaaS-agendamento
 npm install
 
 cp .env.example .env
-# edit .env: generate a JWT_SECRET, and optionally fill in GMAIL_USER/
-# GMAIL_APP_PASSWORD (without it, the confirmation email is just logged
+# edit .env: generate a JWT_SECRET, and optionally fill in SMTP_*/
+# EMAIL_FROM (without it, the confirmation email is just logged
 # to the console instead of sent — the booking flow works the same)
 
 docker compose up -d          # local Postgres
@@ -216,7 +216,7 @@ See the [Portuguese section above](#estrutura-do-projeto) — the tree is the sa
 ### Deployment
 
 1. **Database:** provision a managed Postgres (Supabase, Neon, Railway...). Run `npx prisma migrate deploy` against it (not `migrate dev`).
-2. **Vercel:** connect the repository, set the environment variables (`DATABASE_URL`, `JWT_SECRET`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `APP_BASE_URL`) and deploy — it's a standard Next.js app, no extra configuration needed.
+2. **Vercel:** connect the repository, set the environment variables (`DATABASE_URL`, `JWT_SECRET`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM`, `APP_BASE_URL`) and deploy — it's a standard Next.js app, no extra configuration needed.
 3. Run `npx prisma db seed` against the production database if you want demo data.
 
 ### Out of MVP scope
