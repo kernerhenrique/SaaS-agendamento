@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CalendarClock } from "lucide-react";
 
@@ -77,7 +78,12 @@ export function LoginForm() {
             />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="password">Senha</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="password">Senha</Label>
+              <Link href="/admin/esqueci-senha" className="text-caption text-primary underline-offset-4 hover:underline">
+                Esqueci minha senha
+              </Link>
+            </div>
             <Input
               id="password"
               type="password"

@@ -164,6 +164,7 @@ model User {
   professional   Professional? @relation(fields: [professionalId], references: [id], onDelete: SetNull)
   // Acesso revogado pelo dono: não entra nem renova a sessão.
   disabledAt     DateTime?
+  passwordResets PasswordReset[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -172,6 +173,20 @@ model User {
 
 // Convite de acesso ao painel para um profissional (link enviado pelo dono).
 // Só o hash do token é gravado; o link em si aparece uma vez para o dono.
+// "Esqueci minha senha": link de uso único e curta duração. Como no convite,
+// o token só existe no link; aqui fica o sha256.
+model PasswordReset {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime  @db.Timestamptz(6)
+  usedAt    DateTime? @db.Timestamptz(6)
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
 model StaffInvite {
   id              String        @id @default(cuid())
   businessId      String

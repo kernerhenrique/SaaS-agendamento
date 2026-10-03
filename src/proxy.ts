@@ -55,7 +55,8 @@ function loginUrl(request: NextRequest, pathname: string): URL {
 // (tokenVersion) e rotacionado a cada renovação, o que dá a janela deslizante
 // de 7 dias sem uso. Logout/troca de senha incrementam tokenVersion: nenhum
 // refresh anterior renova mais, e o access vigente vale no máximo 15 min.
-// `/admin/convite/*` fica de fora: quem abre o link ainda não tem conta.
+// `/admin/convite/*`, `/admin/esqueci-senha` e `/admin/redefinir-senha/*` ficam
+// de fora: quem abre ainda não tem conta ou não consegue entrar.
 export const config = {
-  matcher: ["/admin", "/admin/((?!login|convite).*)", "/api/admin/((?!auth/).*)"],
+  matcher: ["/admin", "/admin/((?!login|convite|esqueci-senha|redefinir-senha).*)", "/api/admin/((?!auth/).*)"],
 };
