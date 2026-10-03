@@ -3,6 +3,7 @@
   "slug": "demo",
   "nicho": "barbershop",
   "endereco": "Rua do Exemplo, 100 - Centro, São Paulo/SP",
+  "whatsapp": "(27) 99695-0409",
   "horarioFuncionamento": [
     { "dias": "seg-sex", "horario": "09:00-20:00" },
     { "dias": "sab", "horario": "08:00-18:00" }
