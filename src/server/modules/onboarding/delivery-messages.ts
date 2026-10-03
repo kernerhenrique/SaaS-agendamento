@@ -28,6 +28,7 @@ export function buildOwnerMessage(info: DeliveryInfo): string {
     info.publicUrl,
     "",
     `Depois de entrar, no menu ${professional.plural} você gera o convite de cada ${professional.singular.toLowerCase()} para ele ver a própria agenda.`,
+    "Dica: no celular, toque em Mais › Instalar no celular para ter o painel na tela inicial, como um app.",
     `Qualquer dúvida, é só me chamar. Equipe ${BRAND.name}`,
   ].join("\n");
 }

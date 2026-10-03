@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { LogOut, Menu, Plus } from "lucide-react";
+import { LogOut, Menu, Plus, Smartphone } from "lucide-react";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -89,6 +89,17 @@ export function AdminBottomNav() {
                 </Link>
               );
             })}
+            <Link
+              href="/admin/instalar"
+              onClick={() => setIsMoreOpen(false)}
+              className={cn(
+                "flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium",
+                pathname === "/admin/instalar" ? "bg-primary/10 text-primary" : "hover:bg-muted",
+              )}
+            >
+              <Smartphone className="size-5" />
+              Instalar no celular
+            </Link>
             <button
               type="button"
               onClick={logout}

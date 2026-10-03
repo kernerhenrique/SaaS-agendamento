@@ -98,3 +98,25 @@ test("D2: profissional vê os dias fechados, mas só o dono fecha e reabre", asy
     await context.close();
   }
 });
+
+test("D3: painel instalável — manifesto só no painel, ícones e guia de instalação", async ({ page, request }) => {
+  const manifest = await request.get("/admin.webmanifest");
+  expect(manifest.status()).toBe(200);
+  expect(await manifest.json()).toMatchObject({ name: "Aprazzo", start_url: "/admin", scope: "/admin", display: "standalone" });
+  for (const icon of ["/brand/app-icon-192.png", "/brand/app-icon-512.png", "/brand/app-icon-maskable-512.png"]) {
+    expect((await request.get(icon)).headers()["content-type"]).toContain("image/png");
+  }
+
+  // Só o painel aponta para o manifesto; a página de reservas do cliente, não.
+  await page.goto("/admin/login");
+  await expect(page.locator('link[rel="manifest"]')).toHaveAttribute("href", "/admin.webmanifest");
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveCount(1);
+  await page.goto("/navalha-de-ouro");
+  await expect(page.locator('link[rel="manifest"]')).toHaveCount(0);
+
+  await loginAsOwner(page);
+  await page.goto("/admin/instalar");
+  await expect(page.getByRole("heading", { name: "Instalar no celular" })).toBeVisible();
+  await expect(page.getByText("Adicionar à Tela de Início")).toBeVisible();
+  await expect(page.getByText("Instalar app")).toBeVisible();
+});

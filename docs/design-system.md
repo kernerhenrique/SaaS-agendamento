@@ -275,3 +275,9 @@ Duas camadas independentes:
 - **Página pública**: na `DateStrip`, o dia fechado fica `bg-muted` riscado, com o motivo no `title` e no nome acessível; selecionado, mostra "Fechado neste dia: {motivo}" no lugar da grade (o botão "Próximo horário disponível" continua).
 - **Agenda**: coluna hachurada (mesmo padrão dos bloqueios) com o selo "Fechado: {motivo}"; o clique continua abrindo o encaixe, que avisa no `BookingTimeNotice` (`closedReason`). Arrastar para o dia abre o modal "Negócio fechado". No celular, aviso no topo da lista.
 - `useBusinessClosures()` (`components/admin/use-business-closures.ts`) carrega os dias fechados para a agenda e o encaixe.
+
+## Painel instalável (Bloco D)
+
+- **`/admin/instalar`** (`install-guide.tsx`): três cartões numerados (Android, iPhone, Computador); o do aparelho de quem vê vem primeiro, com `ring-primary` e "seu aparelho". Quando o navegador permite, quadro `primary/10` com "Instalar agora". Já aberto como app: aviso `success`.
+- Atalhos: "Instalar no celular" no menu da conta (computador) e na gaveta "Mais" (celular). A mensagem de entrega ao dono também cita.
+- Ícones: o da marca (cantos arredondados) para "any"; quadrado cheio com o símbolo em 60% para "maskable" e 70% para o iPhone (o sistema recorta/arredonda).

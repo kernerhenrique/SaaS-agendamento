@@ -1,6 +1,7 @@
 "use client";
 
-import { LogOut, Plus, Search } from "lucide-react";
+import Link from "next/link";
+import { LogOut, Plus, Search, Smartphone } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -78,6 +79,10 @@ export function AdminTopbar({
             </DropdownMenuLabel>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
+          <DropdownMenuItem render={<Link href="/admin/instalar" />}>
+            <Smartphone />
+            Instalar no celular
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={logout} disabled={isLoggingOut}>
             <LogOut />
             {isLoggingOut ? "Saindo..." : "Sair"}
