@@ -285,3 +285,10 @@ Duas camadas independentes:
 ## Importar clientes (Bloco D)
 
 - **`/admin/clientes/importar`** (botão "Importar planilha" na tela de Clientes, só do dono), em 3 cartões numerados: 1) como a planilha deve estar (tabela de colunas com `*` obrigatória, "Baixar modelo" e o passo a passo do Excel e do Google Planilhas); 2) área de arquivo tracejada (`label` com `input` escondido, foco visível); 3) prévia com as 5 primeiras linhas, aviso `warning` com as linhas de fora (número da linha + motivo), escolha pular/atualizar para os já cadastrados e o botão "Importar N linhas". Concluído: aviso `success` com o resumo.
+
+## Horário fixo (Bloco D)
+
+- **`SeriesDialog`** (`components/admin/series-dialog.tsx`): frequência e quantidade em `Select`; prévia ao vivo com cada data ("Livre" em `success` ou o motivo em `warning`) e "Criar N horários" (só as livres). Usado no drawer ("Repetir este horário"), no "Novo agendamento" (caixa "Repetir este horário", abre depois de salvar) e no "Renovar".
+- **Drawer**: seção "Horário fixo · toda semana" com as próximas datas e "até dd/mm/aaaa", "Enviar as datas pelo WhatsApp" (texto pronto com o link de cancelar uma data), "Renovar" (só na última data) e "Cancelar datas" (modal com "Só esta data" / "Esta e as próximas").
+- **Agenda**: `SeriesIndicator` (ícone `Repeat`, `aria-label` "Horário fixo") ao lado do indicador de pagamento.
+- **Link do cliente**: quadro "Horário fixo" com a frase em linguagem simples, a lista das próximas datas com "Não vou neste dia" (ou "Perto demais: fale com o negócio" dentro do prazo) e "Cancelar todas as próximas".

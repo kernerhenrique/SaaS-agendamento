@@ -174,3 +174,77 @@ test("D4: importar clientes — prévia, importar, repetido pula ou atualiza, e 
     await context.close();
   }
 });
+
+test("D5: horário fixo — prévia com conflito, cria as livres, cliente cancela um dia ou as próximas, renovar só da última", async ({ page, request }) => {
+  await loginAsOwner(page);
+  const api = page.request;
+  const services = (await (await api.get("/api/admin/services")).json()).services as { id: string; name: string; businessId: string }[];
+  const professionals = (await (await api.get("/api/admin/professionals")).json()).professionals as { id: string; name: string }[];
+  const barba = services.find((s) => s.name === "Barba")!;
+  const joao = professionals.find((p) => p.name === "João Barbeiro")!;
+  const { startAt } = await findFreeSlot(request, { businessId: barba.businessId, serviceId: barba.id, professionalId: joao.id, weekday: 2 });
+
+  // 1ª data: encaixe pelo painel.
+  const first = await api.post("/api/admin/appointments", {
+    data: { professionalId: joao.id, serviceId: barba.id, startAt, client: { name: `Fixo ${Date.now()}`, phone: `119${Date.now().toString().slice(-8)}` } },
+  });
+  expect(first.status()).toBe(201);
+  const base = (await first.json()).appointment as { id: string; manageToken: string; startAt: string; endAt: string };
+
+  // Bloqueio na 2ª semana, no mesmo horário: a prévia aponta e a criação pula.
+  const week = 7 * 24 * 60 * 60 * 1000;
+  const blockStart = new Date(new Date(base.startAt).getTime() + week);
+  const blockEnd = new Date(new Date(base.endAt).getTime() + week);
+  const block = await api.post(`/api/admin/professionals/${joao.id}/time-blocks`, { data: { startAt: blockStart.toISOString(), endAt: blockEnd.toISOString(), reason: "Série E2E" } });
+  expect(block.status()).toBe(201);
+  const blockId = ((await block.json()).timeBlock as { id: string }).id;
+
+  try {
+    const preview = await (await api.post(`/api/admin/appointments/${base.id}/series/preview`, { data: { frequencyWeeks: 1, count: 4 } })).json();
+    expect(preview.occurrences).toHaveLength(3);
+    expect(preview.occurrences[0].problem).toBe("Bloqueio na agenda");
+
+    const created = await api.post(`/api/admin/appointments/${base.id}/series`, { data: { frequencyWeeks: 1, count: 4 } });
+    expect(created.status()).toBe(201);
+    const result = (await created.json()) as { seriesId: string; created: string[]; skipped: { problem: string }[] };
+    expect(result.skipped[0].problem).toBe("Bloqueio na agenda");
+    expect(result.created.length).toBeGreaterThanOrEqual(1);
+
+    // Detalhe: a série com as próximas datas; novas datas nascem "agendado"; só a última renova.
+    const detail = await (await api.get(`/api/admin/appointments/${base.id}`)).json();
+    expect(detail.series).toMatchObject({ seriesId: result.seriesId, frequencyWeeks: 1, isLast: false });
+    expect((await api.post(`/api/admin/appointments/${base.id}/series/preview`, { data: { frequencyWeeks: 1, count: 3 } })).status()).toBe(400);
+
+    // Link do cliente: vê o horário fixo e cancela uma data só, depois as próximas.
+    await page.goto(`/agendamento/${base.manageToken}/gerenciar`);
+    await expect(page.getByRole("heading", { name: "Horário fixo" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Não vou neste dia" }).first()).toBeVisible();
+    const upcomingIds = (detail.series.upcoming as { id: string }[]).map((o) => o.id).filter((id) => id !== base.id);
+    const one = await request.post(`/api/public/appointments/manage/${base.manageToken}/series/cancel`, { data: { appointmentId: upcomingIds[0], scope: "one" } });
+    expect(await one.json()).toEqual({ cancelled: [upcomingIds[0]] });
+    const following = await (await request.post(`/api/public/appointments/manage/${base.manageToken}/series/cancel`, { data: { appointmentId: base.id, scope: "following" } })).json();
+    expect(following.cancelled).toContain(base.id);
+    const after = await (await api.get(`/api/admin/appointments/${base.id}`)).json();
+    expect(after.appointment.status).toBe("CANCELLED");
+    expect(after.series.upcoming).toEqual([]);
+  } finally {
+    await api.delete(`/api/admin/professionals/${joao.id}/time-blocks/${blockId}`);
+  }
+});
+
+test("D5: cliente não cancela data de outra série nem de fora dela", async ({ page, request }) => {
+  await loginAsOwner(page);
+  const api = page.request;
+  const services = (await (await api.get("/api/admin/services")).json()).services as { id: string; name: string; businessId: string }[];
+  const professionals = (await (await api.get("/api/admin/professionals")).json()).professionals as { id: string; name: string }[];
+  const barba = services.find((s) => s.name === "Barba")!;
+  const joao = professionals.find((p) => p.name === "João Barbeiro")!;
+  const { startAt } = await findFreeSlot(request, { businessId: barba.businessId, serviceId: barba.id, professionalId: joao.id, weekday: 4 });
+  const single = (await (await api.post("/api/admin/appointments", {
+    data: { professionalId: joao.id, serviceId: barba.id, startAt, client: { name: `Avulso ${Date.now()}`, phone: `119${Date.now().toString().slice(-8)}` } },
+  })).json()).appointment as { id: string; manageToken: string };
+  // Agendamento avulso: não tem série.
+  const response = await request.post(`/api/public/appointments/manage/${single.manageToken}/series/cancel`, { data: { appointmentId: single.id, scope: "one" } });
+  expect(response.status()).toBe(400);
+  await api.patch(`/api/admin/appointments/${single.id}/status`, { data: { status: "CANCELLED" } });
+});

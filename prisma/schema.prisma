@@ -96,6 +96,7 @@ model Business {
   messageLogs       MessageLog[]
   staffInvites      StaffInvite[]
   closures          BusinessClosure[]
+  appointmentSeries AppointmentSeries[]
 
   @@index([deletedAt])
 }
@@ -387,6 +388,10 @@ model Appointment {
   cancelledByUserId    String?
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
+  // Horário fixo ("toda terça às 10h"): cada data é um agendamento normal,
+  // com status, pagamento e link próprios; a série só os agrupa.
+  seriesId             String?
+  series               AppointmentSeries? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
 
   review      Review?
   payments    Payment[]
@@ -394,6 +399,23 @@ model Appointment {
 
   @@index([businessId, startAt])
   @@index([professionalId, startAt, endAt])
+  @@index([seriesId])
+}
+
+// Agendamento recorrente criado pelo painel (até 12 datas por vez; "Renovar"
+// acrescenta mais). O cliente cancela uma data ou as próximas pelo link.
+model AppointmentSeries {
+  id              String        @id @default(cuid())
+  businessId      String
+  business        Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  // Intervalo em semanas: 1 (toda semana), 2 ou 4.
+  frequencyWeeks  Int
+  createdByUserId String?
+  createdAt       DateTime      @default(now())
+
+  appointments Appointment[]
+
+  @@index([businessId])
 }
 
 // Recebimento registrado de um atendimento (1:N — sinal + saldo, formas

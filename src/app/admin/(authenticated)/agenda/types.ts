@@ -29,6 +29,8 @@ export interface AppointmentDto {
   client: { id: string; name: string; phone: string };
   /** Só para concluídos; null nos demais. */
   paymentStatus: PaymentStatus | null;
+  /** Faz parte de um horário fixo (agendamento recorrente). */
+  seriesId: string | null;
 }
 
 export interface TimeBlockDto {

@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { VerticalProvider } from "@/config/vertical-context";
 import { checkRateLimit, getClientIp, MANAGE_TOKEN_RATE_LIMIT } from "@/lib/rate-limit";
 import { NotFoundError } from "@/server/errors";
-import { clientCanChange, getAppointmentForManagement } from "@/server/modules/appointment/manage.service";
+import { clientCanChange, getAppointmentForManagement, getSeriesForClient } from "@/server/modules/appointment/manage.service";
 
 import { ManageView } from "./manage-view";
 
@@ -36,6 +36,7 @@ export default async function ManageAppointmentPage({
   // eslint-plugin-react-hooks existe para prevenir em Client Components.
   // eslint-disable-next-line react-hooks/purity
   const initialIsFuture = appointment.startAt.getTime() > Date.now();
+  const series = await getSeriesForClient(appointment);
 
   return (
     <VerticalProvider verticalKey={appointment.business.businessType}>
@@ -43,6 +44,7 @@ export default async function ManageAppointmentPage({
       token={manageToken}
       initialIsFuture={initialIsFuture}
       initialCanChange={clientCanChange(appointment)}
+      series={series}
       appointment={{
         status: appointment.status,
         startAt: appointment.startAt.toISOString(),

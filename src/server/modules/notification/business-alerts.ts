@@ -36,7 +36,13 @@ export function alertRecipients(users: { email: string; role: string; profession
   ];
 }
 
-export async function notifyBusinessOfClientAction(appointmentId: string, action: ClientAction, previousStartAt?: Date): Promise<void> {
+export async function notifyBusinessOfClientAction(
+  appointmentId: string,
+  action: ClientAction,
+  previousStartAt?: Date,
+  /** Linha extra (ex.: "e as próximas 5 datas do horário fixo"). */
+  note?: string,
+): Promise<void> {
   const appointment = await prisma.appointment.findUnique({
     where: { id: appointmentId },
     include: {
@@ -62,6 +68,7 @@ export async function notifyBusinessOfClientAction(appointmentId: string, action
     [action === "RESCHEDULED" ? "Novo horário" : "Horário", when],
   ];
   if (action === "RESCHEDULED" && previousStartAt) lines.push(["Antes", format(previousStartAt)]);
+  if (note) lines.push(["Horário fixo", note]);
 
   const subject = `${SUBJECTS[action]} — ${appointment.service.name}, ${when}`;
   const text = [

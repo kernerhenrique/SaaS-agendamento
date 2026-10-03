@@ -5,6 +5,7 @@ import { UserCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,7 @@ import type { Weekday } from "@/generated/prisma/enums";
 import { evaluateLocalSlot, type WorkingHoursWindow } from "@/server/modules/appointment/admin-booking-rules";
 
 import { BookingTimeNotice, useNow } from "./booking-time-notice";
+import { SeriesDialog } from "./series-dialog";
 import { useBusinessClosures } from "./use-business-closures";
 
 export interface NewAppointmentInitial {
@@ -93,26 +95,39 @@ export function NewAppointmentDialog({
   onOpenChange: (open: boolean) => void;
   onCreated: () => void;
 }) {
+  /** Agendamento recém-criado com "Repetir este horário": abre a prévia da série. */
+  const [repeatFor, setRepeatFor] = useState<string | null>(null);
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Novo agendamento</DialogTitle>
-          <DialogDescription>Encaixe manual direto na agenda.</DialogDescription>
-        </DialogHeader>
-        {/* Só monta enquanto aberto: cada abertura começa do `initial` atual. */}
-        {open ? (
-          <NewAppointmentForm
-            initial={initial}
-            timezone={timezone}
-            onDone={() => {
-              onOpenChange(false);
-              onCreated();
-            }}
-          />
-        ) : null}
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Novo agendamento</DialogTitle>
+            <DialogDescription>Encaixe manual direto na agenda.</DialogDescription>
+          </DialogHeader>
+          {/* Só monta enquanto aberto: cada abertura começa do `initial` atual. */}
+          {open ? (
+            <NewAppointmentForm
+              initial={initial}
+              timezone={timezone}
+              onDone={(createdId, repeat) => {
+                onOpenChange(false);
+                onCreated();
+                if (repeat) setRepeatFor(createdId);
+              }}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
+      <SeriesDialog
+        key={repeatFor ?? "nenhum"}
+        appointmentId={repeatFor}
+        open={repeatFor != null}
+        timezone={timezone}
+        onOpenChange={(isOpen) => !isOpen && setRepeatFor(null)}
+        onCreated={onCreated}
+      />
+    </>
   );
 }
 
@@ -123,9 +138,10 @@ function NewAppointmentForm({
 }: {
   initial?: NewAppointmentInitial;
   timezone: string;
-  onDone: () => void;
+  onDone: (createdId: string, repeat: boolean) => void;
 }) {
   const { terms } = useVertical();
+  const [repeat, setRepeat] = useState(false);
   const [professionals, setProfessionals] = useState<ProfessionalChoice[] | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [date, setDate] = useState(initial?.date ?? todayInTimeZone(timezone));
@@ -246,8 +262,8 @@ function NewAppointmentForm({
         setError(data?.error ?? "Não foi possível criar o agendamento");
         return;
       }
-      toast.success("Agendamento criado.");
-      onDone();
+      toast.success(repeat ? "Agendamento criado. Agora escolha as repetições." : "Agendamento criado.");
+      onDone(data.appointment.id as string, repeat);
     } finally {
       setIsSubmitting(false);
     }
@@ -394,6 +410,11 @@ function NewAppointmentForm({
           onChange={(event) => setClientEmail(event.target.value)}
         />
       </div>
+
+      <Label className="flex items-center gap-2 text-sm font-normal">
+        <Checkbox checked={repeat} onCheckedChange={(checked) => setRepeat(checked === true)} />
+        Repetir este horário (horário fixo)
+      </Label>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 

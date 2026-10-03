@@ -6,6 +6,7 @@ import {
   getAppointmentDetail,
   rescheduleAppointmentAsAdmin,
 } from "@/server/modules/appointment/appointment.service";
+import { getSeriesSummary } from "@/server/modules/appointment/series.service";
 import { assertOwnProfessional, requireAppointmentAccess } from "@/server/modules/auth/appointment-access";
 import { professionalScope } from "@/server/modules/auth/permissions";
 import { requireAdminSession } from "@/server/modules/auth/session";
@@ -15,7 +16,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const session = await requireAdminSession();
     const { id } = await params;
     const detail = await getAppointmentDetail(session.businessId, id, professionalScope(session));
-    return NextResponse.json(detail);
+    // Horário fixo: frequência, próximas datas e se esta é a última (de onde se renova).
+    const series = detail.appointment.seriesId ? await getSeriesSummary(detail.appointment.seriesId, id) : null;
+    return NextResponse.json({ ...detail, series });
   } catch (error) {
     return handleApiError(error);
   }

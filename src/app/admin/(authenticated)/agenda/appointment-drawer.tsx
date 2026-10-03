@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { CalendarClock, RotateCcw } from "lucide-react";
+import { CalendarClock, MessageCircle, Repeat, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 import { DetailDrawerContent } from "@/components/detail-drawer";
 import { StatusBadge } from "@/components/status-badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -28,10 +28,13 @@ import { localMinutesToUtc, utcToLocalDate, utcToLocalMinutes } from "@/lib/date
 import { formatPhoneBR } from "@/lib/phone";
 import { minutesToTimeInput, timeInputToMinutes } from "@/lib/weekday";
 import { BookingTimeNotice, useNow } from "@/components/admin/booking-time-notice";
+import { SeriesDialog } from "@/components/admin/series-dialog";
 import { useBusinessClosures } from "@/components/admin/use-business-closures";
 import { WhatsAppMessageMenu } from "@/components/admin/whatsapp-message-menu";
 import { evaluateLocalSlot } from "@/server/modules/appointment/admin-booking-rules";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { RESCHEDULABLE_STATUSES } from "@/server/modules/appointment/reschedule-rules";
+import { describeFrequency } from "@/server/modules/appointment/series-rules";
 
 import { AppointmentPayments } from "./appointment-payments";
 
@@ -44,6 +47,7 @@ interface AppointmentDetail {
     startAt: string;
     endAt: string;
     notes: string | null;
+    manageToken: string;
     professional: { id: string; name: string };
     service: { id: string; name: string; durationMin: number; priceCents: number };
     client: { id: string; name: string; phone: string; email: string | null };
@@ -52,6 +56,14 @@ interface AppointmentDetail {
   clientStats: { completed: number; noShows: number };
   /** Quem marcou / cancelou pelo painel (null quando não há registro). */
   audit: { createdBy: Actor | null; cancelledBy: Actor | null };
+  /** Horário fixo (agendamento recorrente), ou null. */
+  series: {
+    seriesId: string;
+    frequencyWeeks: number;
+    upcoming: { id: string; startAt: string; status: AppointmentStatus }[];
+    lastStartAt: string | null;
+    isLast: boolean;
+  } | null;
 }
 
 interface Actor {
@@ -109,6 +121,10 @@ function DrawerBody({
   const [pendingStatus, setPendingStatus] = useState<AppointmentStatus | null>(null);
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [isConfirmingCancel, setIsConfirmingCancel] = useState(false);
+  /** Diálogo de repetir (série nova) ou renovar (última data da série). */
+  const [seriesDialog, setSeriesDialog] = useState<"repeat" | "renew" | null>(null);
+  const [isCancellingSeries, setIsCancellingSeries] = useState(false);
+  const now = useNow();
   /** "Concluir" abre o recebimento já preenchido (com "Só concluir"). */
   const [isCompleting, setIsCompleting] = useState(false);
 
@@ -151,6 +167,28 @@ function DrawerBody({
     }
   }
 
+  async function cancelFollowing() {
+    setIsCancellingSeries(true);
+    try {
+      const response = await fetch(`/api/admin/appointments/${appointmentId}/series/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scope: "following" }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        toast.error(data?.error ?? "Não foi possível cancelar");
+        return;
+      }
+      toast.success(data.cancelled === 1 ? "1 data cancelada" : `${data.cancelled} datas canceladas`);
+      setIsConfirmingCancel(false);
+      setReloadKey((k) => k + 1);
+      onChanged();
+    } finally {
+      setIsCancellingSeries(false);
+    }
+  }
+
   if (loadError) {
     return (
       <DetailDrawerContent title="Agendamento">
@@ -175,7 +213,8 @@ function DrawerBody({
     );
   }
 
-  const { appointment, history, clientStats, audit } = detail;
+  const { appointment, history, clientStats, audit, series } = detail;
+  const isFutureActive = RESCHEDULABLE_STATUSES.includes(appointment.status) && new Date(appointment.endAt).getTime() > now.getTime();
   const actorLabel = (actor: Actor) =>
     `${actor.name} (${actor.role === "OWNER" ? "dono" : lowerTerm(terms.professional.singular)})`;
   const actions = NEXT_STATUS_ACTIONS[appointment.status];
@@ -229,6 +268,61 @@ function DrawerBody({
             </p>
           ) : null}
         </div>
+
+        {series ? (
+          <section aria-label="Horário fixo" className="flex flex-col gap-2 rounded-lg border p-3">
+            <p className="flex items-center gap-2 font-medium">
+              <Repeat className="size-4 text-primary" aria-hidden />
+              Horário fixo · {describeFrequency(series.frequencyWeeks)}
+            </p>
+            {series.upcoming.length > 0 ? (
+              <p className="text-caption text-muted-foreground">
+                Próximas: {series.upcoming.slice(0, 4).map((o) => formatDateTime(o.startAt, { day: "2-digit", month: "2-digit" })).join(", ")}
+                {series.upcoming.length > 4 ? ` e mais ${series.upcoming.length - 4}` : ""}
+                {series.lastStartAt ? ` · até ${formatDateTime(series.lastStartAt, { day: "2-digit", month: "2-digit", year: "numeric" })}` : ""}
+              </p>
+            ) : (
+              <p className="text-caption text-muted-foreground">Nenhuma data futura ativa.</p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              {series.upcoming.length > 0 ? (
+                <a
+                  href={buildWhatsAppUrl(
+                    appointment.client.phone,
+                    [
+                      `Olá, ${appointment.client.name.split(/\s+/)[0]}! Seu horário fixo: ${describeFrequency(series.frequencyWeeks)} às ${formatDateTime(appointment.startAt, { hour: "2-digit", minute: "2-digit" })}.`,
+                      `Datas: ${series.upcoming.map((o) => formatDateTime(o.startAt, { day: "2-digit", month: "2-digit" })).join(", ")}.`,
+                      "",
+                      `Se não puder vir num dia, cancele só aquela data por aqui: ${window.location.origin}/agendamento/${appointment.manageToken}/gerenciar`,
+                    ].join("\n"),
+                  )}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                >
+                  <MessageCircle />
+                  Enviar as datas pelo WhatsApp
+                </a>
+              ) : null}
+              {series.isLast && isFutureActive ? (
+                <Button variant="outline" size="sm" onClick={() => setSeriesDialog("renew")}>
+                  <Repeat />
+                  Renovar
+                </Button>
+              ) : null}
+              {isFutureActive ? (
+                <Button variant="outline" size="sm" onClick={() => setIsConfirmingCancel(true)}>
+                  Cancelar datas
+                </Button>
+              ) : null}
+            </div>
+          </section>
+        ) : isFutureActive ? (
+          <Button variant="outline" size="sm" className="w-fit" onClick={() => setSeriesDialog("repeat")}>
+            <Repeat />
+            Repetir este horário
+          </Button>
+        ) : null}
 
         {isRescheduling ? (
           <RescheduleForm
@@ -308,29 +402,49 @@ function DrawerBody({
       <Dialog open={isConfirmingCancel} onOpenChange={setIsConfirmingCancel}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Cancelar agendamento?</DialogTitle>
+            <DialogTitle>{series ? "Cancelar datas do horário fixo?" : "Cancelar agendamento?"}</DialogTitle>
             <DialogDescription>
-              {appointment.client.name} · {whenLabel}. Não dá para desfazer; para voltar, será preciso criar um novo
-              agendamento.
+              {appointment.client.name} · {whenLabel}.{" "}
+              {series
+                ? "Cancele só esta data ou esta e todas as próximas. Não dá para desfazer."
+                : "Não dá para desfazer; para voltar, será preciso criar um novo agendamento."}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsConfirmingCancel(false)}>
               Voltar
             </Button>
+            {series ? (
+              <Button variant="destructive" disabled={isCancellingSeries || pendingStatus != null} onClick={() => void cancelFollowing()}>
+                {isCancellingSeries ? "Cancelando…" : "Esta e as próximas"}
+              </Button>
+            ) : null}
             <Button
               variant="destructive"
-              disabled={pendingStatus != null}
+              disabled={pendingStatus != null || isCancellingSeries}
               onClick={async () => {
                 await changeStatus("CANCELLED");
                 setIsConfirmingCancel(false);
               }}
             >
-              {pendingStatus === "CANCELLED" ? "Cancelando…" : "Cancelar agendamento"}
+              {pendingStatus === "CANCELLED" ? "Cancelando…" : series ? "Só esta data" : "Cancelar agendamento"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <SeriesDialog
+        key={`${appointment.id}:${seriesDialog}`}
+        appointmentId={appointment.id}
+        open={seriesDialog != null}
+        timezone={timezone}
+        renewFrequency={seriesDialog === "renew" ? (series?.frequencyWeeks ?? null) : null}
+        onOpenChange={(open) => !open && setSeriesDialog(null)}
+        onCreated={() => {
+          setReloadKey((k) => k + 1);
+          onChanged();
+        }}
+      />
     </DetailDrawerContent>
   );
 }

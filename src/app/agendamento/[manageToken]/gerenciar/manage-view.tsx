@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarPlus, CircleCheck, MessageCircle } from "lucide-react";
+import { CalendarPlus, CircleCheck, MessageCircle, Repeat } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useVertical } from "@/config/vertical-context";
@@ -9,9 +9,10 @@ import { AppointmentStatus } from "@/generated/prisma/enums";
 import { STATUS_LABELS } from "@/lib/appointment-status";
 import { formatMinutesDuration } from "@/lib/business-info";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { describeFrequency } from "@/server/modules/appointment/series-rules";
 
 import { RescheduleSection } from "./reschedule-section";
-import type { ManagedAppointment } from "./types";
+import type { ClientSeries, ManagedAppointment } from "./types";
 
 function formatFullDateTime(dateISO: string, timeZone: string): string {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -28,6 +29,7 @@ export function ManageView({
   appointment: initial,
   initialIsFuture,
   initialCanChange,
+  series = null,
 }: {
   token: string;
   appointment: ManagedAppointment;
@@ -42,6 +44,8 @@ export function ManageView({
   initialIsFuture: boolean;
   /** Fora do prazo de cancelamento do negócio? Calculado no servidor, pelo mesmo motivo acima. */
   initialCanChange: boolean;
+  /** Horário fixo (agendamento recorrente), se este agendamento fizer parte de um. */
+  series?: ClientSeries | null;
 }) {
   const { terms } = useVertical();
   const [appointment, setAppointment] = useState(initial);
@@ -50,9 +54,40 @@ export function ManageView({
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [justConfirmed, setJustConfirmed] = useState(false);
+  const [seriesUpcoming, setSeriesUpcoming] = useState(series?.upcoming ?? []);
+  const [cancellingSeries, setCancellingSeries] = useState<string | null>(null);
 
   const isOpen = CANCELLABLE_STATUSES.includes(appointment.status) && initialIsFuture;
   const needsConfirmation = appointment.status === AppointmentStatus.PENDING && initialIsFuture;
+
+  async function cancelSeries(targetId: string, scope: "one" | "following") {
+    const question = scope === "one" ? "Cancelar só esta data?" : "Cancelar esta data e todas as próximas do horário fixo?";
+    if (!window.confirm(question)) return;
+    setError(null);
+    setCancellingSeries(targetId + scope);
+    try {
+      const response = await fetch(`/api/public/appointments/manage/${token}/series/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appointmentId: targetId, scope }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        setError(data?.error ?? "Não foi possível cancelar");
+        return;
+      }
+      const cancelled = new Set<string>(data.cancelled as string[]);
+      setSeriesUpcoming((current) => current.filter((occurrence) => !cancelled.has(occurrence.id)));
+      // A própria data deste link foi junto: o status da tela acompanha.
+      if (seriesUpcoming.some((o) => cancelled.has(o.id) && o.startAt === appointment.startAt)) {
+        setAppointment((prev) => ({ ...prev, status: AppointmentStatus.CANCELLED }));
+      }
+    } catch {
+      setError("Sem conexão. Tente de novo.");
+    } finally {
+      setCancellingSeries(null);
+    }
+  }
 
   async function handleConfirm() {
     setError(null);
@@ -142,6 +177,49 @@ export function ManageView({
           <CircleCheck className="size-4 shrink-0 text-success" aria-hidden />
           Presença confirmada: já aparece na agenda de {appointment.business.name}. Até lá!
         </p>
+      ) : null}
+
+      {series && seriesUpcoming.length > 0 ? (
+        <section aria-labelledby="series-title" className="flex flex-col gap-3 rounded-lg border p-4">
+          <div className="flex flex-col gap-1">
+            <h2 id="series-title" className="flex items-center gap-2 font-medium">
+              <Repeat className="size-4 text-primary" aria-hidden />
+              Horário fixo
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Este horário se repete {describeFrequency(series.frequencyWeeks)} às{" "}
+              {new Intl.DateTimeFormat("pt-BR", { timeZone: appointment.business.timezone, hour: "2-digit", minute: "2-digit" }).format(new Date(appointment.startAt))}. Não pode ir num
+              dia? Toque em “Não vou neste dia”: só aquela data é cancelada.
+            </p>
+          </div>
+          <ul className="flex flex-col divide-y rounded-lg border text-sm">
+            {seriesUpcoming.map((occurrence) => (
+              <li key={occurrence.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                <span className="first-letter:uppercase">
+                  {new Intl.DateTimeFormat("pt-BR", { timeZone: appointment.business.timezone, weekday: "short", day: "2-digit", month: "2-digit" }).format(new Date(occurrence.startAt)).replace(".", "")}
+                </span>
+                {occurrence.canCancel ? (
+                  <Button variant="outline" size="sm" disabled={cancellingSeries != null} onClick={() => void cancelSeries(occurrence.id, "one")}>
+                    {cancellingSeries === occurrence.id + "one" ? "Cancelando..." : "Não vou neste dia"}
+                  </Button>
+                ) : (
+                  <span className="text-caption text-muted-foreground">Perto demais: fale com o negócio</span>
+                )}
+              </li>
+            ))}
+          </ul>
+          {seriesUpcoming.some((o) => o.canCancel) ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-fit"
+              disabled={cancellingSeries != null}
+              onClick={() => void cancelSeries(seriesUpcoming.find((o) => o.canCancel)!.id, "following")}
+            >
+              Cancelar todas as próximas
+            </Button>
+          ) : null}
+        </section>
       ) : null}
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}

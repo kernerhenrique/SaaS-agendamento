@@ -13,6 +13,7 @@ import {
 import { Ban } from "lucide-react";
 
 import { PaymentIndicator } from "@/components/admin/payment-indicator";
+import { SeriesIndicator } from "@/components/admin/series-indicator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { STATUS_BLOCK_CLASSES, STATUS_LABELS } from "@/lib/appointment-status";
 import { localDayRangeUtc, utcToLocalMinutes } from "@/lib/date";
@@ -381,6 +382,7 @@ function AppointmentBlock({
         <span className="truncate">
           <span className="inline-flex items-center gap-1 align-middle">
             <PaymentIndicator status={appointment.paymentStatus} />
+            <SeriesIndicator seriesId={appointment.seriesId} />
             <span className="font-semibold">{formatTime(appointment.startAt, timezone)}</span>
           </span>{" "}
           · {appointment.client.name}
@@ -391,6 +393,7 @@ function AppointmentBlock({
           <span className="flex items-center gap-1 truncate font-semibold">
             {timeLabel}
             <PaymentIndicator status={appointment.paymentStatus} />
+            <SeriesIndicator seriesId={appointment.seriesId} />
           </span>
           <span className="truncate">{appointment.client.name}</span>
           <span className="truncate opacity-80">{appointment.service.name}</span>

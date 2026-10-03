@@ -132,3 +132,62 @@ export async function rescheduleAppointmentByToken(token: string, newStartAt: Da
     throw error;
   }
 }
+
+/**
+ * Série vista pelo link do cliente: as próximas datas ativas, cada uma dizendo
+ * se ainda dá para cancelar pelo link (prazo do negócio).
+ */
+export async function getSeriesForClient(appointment: ManagedAppointment, now = new Date()) {
+  if (!appointment.seriesId) return null;
+  const series = await prisma.appointmentSeries.findUnique({
+    where: { id: appointment.seriesId },
+    include: {
+      appointments: {
+        where: { status: { in: RESCHEDULABLE_STATUSES }, startAt: { gt: now } },
+        orderBy: { startAt: "asc" },
+        select: { id: true, startAt: true },
+      },
+    },
+  });
+  if (!series) return null;
+  return {
+    frequencyWeeks: series.frequencyWeeks,
+    upcoming: series.appointments.map((occurrence) => ({
+      id: occurrence.id,
+      startAt: occurrence.startAt.toISOString(),
+      canCancel: canClientChange(occurrence.startAt, now, appointment.business.cancellationDeadlineHours),
+    })),
+  };
+}
+
+/**
+ * "Não vou neste dia" / "Cancelar todas as próximas" pelo link de qualquer data
+ * da série. Só datas da MESMA série do link, ativas, futuras e fora do prazo de
+ * cancelamento (as de dentro do prazo ficam: o cliente fala com o negócio).
+ */
+export async function cancelSeriesOccurrencesByToken(token: string, targetAppointmentId: string, scope: "one" | "following") {
+  const appointment = await getAppointmentForManagement(token);
+  if (!appointment.seriesId) throw new ValidationError("Este agendamento não faz parte de um horário fixo");
+  const target = await prisma.appointment.findFirst({
+    where: { id: targetAppointmentId, seriesId: appointment.seriesId },
+    select: { id: true, startAt: true },
+  });
+  if (!target) throw new NotFoundError(GENERIC_TOKEN_ERROR);
+
+  const now = new Date();
+  const deadlineHours = appointment.business.cancellationDeadlineHours;
+  if (!canClientChange(target.startAt, now, deadlineHours)) {
+    throw new ValidationError(clientChangeDeadlineMessage(deadlineHours));
+  }
+  const candidates = await prisma.appointment.findMany({
+    where: {
+      seriesId: appointment.seriesId,
+      status: { in: RESCHEDULABLE_STATUSES },
+      ...(scope === "following" ? { startAt: { gte: target.startAt } } : { id: target.id }),
+    },
+    select: { id: true, startAt: true },
+  });
+  const cancellable = candidates.filter((c) => c.startAt > now && canClientChange(c.startAt, now, deadlineHours)).map((c) => c.id);
+  await prisma.appointment.updateMany({ where: { id: { in: cancellable } }, data: { status: AppointmentStatus.CANCELLED } });
+  return cancellable;
+}
