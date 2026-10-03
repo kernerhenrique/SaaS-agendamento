@@ -4,6 +4,7 @@ import { ValidationError } from "@/server/errors";
 import { handleApiError } from "@/server/http";
 import { createPublicAppointment } from "@/server/modules/appointment/appointment.service";
 import { sendAppointmentConfirmationEmail } from "@/server/modules/appointment/confirmation-email";
+import { notifyBusinessOfClientAction } from "@/server/modules/notification/business-alerts";
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,6 +56,15 @@ export async function POST(request: NextRequest) {
     // continua disponível na própria tela de confirmação.
     // `after`: envia DEPOIS de responder — o cliente vê a confirmação na hora,
     // sem esperar o SMTP (que pode levar segundos ou dar timeout).
+    // Avisa o negócio (donos e o profissional) — a função ignora demonstrações.
+    after(async () => {
+      try {
+        await notifyBusinessOfClientAction(appointment.id, "NEW");
+      } catch (alertError) {
+        console.error("[appointments] falha ao avisar o negócio", alertError);
+      }
+    });
+
     // Demonstração: o visitante digita um e-mail qualquer; nada é enviado.
     if (email && !appointment.business.isDemo) {
       after(async () => {

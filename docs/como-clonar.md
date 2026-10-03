@@ -79,6 +79,14 @@ Uma demo é um negócio comum marcado como demonstração (`Business.isDemo`): s
 - **No painel**: faixa "Você está numa demonstração". O visitante marca, remarca, cancela, conclui, recebe e mexe em clientes à vontade. Ficam bloqueados (a API responde "Na demonstração, isso fica desativado"): salvar Configurações e horário, trocar senha, editar modelos de mensagem, convites da equipe, editar ou apagar profissional, apagar ou esconder serviço. Nenhum e-mail sai para o endereço que ele digitar.
 - **Toda madrugada** (03:00, Vercel Cron → `/api/cron/demos`): as prévias vencidas são apagadas e os dados de todas as demos voltam ao original, com as datas do dia.
 
+## Suporte do dia a dia
+
+| Situação | O que fazer |
+|---|---|
+| Alguém do painel esqueceu a senha | Primeiro, "Esqueci minha senha" na tela de login (link por e-mail, 1 h). Se o e-mail não chegar: `npm run link-senha -- email@do.dono --producao` e mande o link pelo WhatsApp (vale 24 h, uso único). |
+| O link de primeiro acesso do dono venceu | `createOwnerInvite(businessId)` gera outro (o anterior deixa de valer). |
+| Cliente saiu / negócio de teste | Exporte os dados (Relatórios › Exportar CSV) se for um cliente real; depois `npm run remover-cliente -- <slug> --producao` (só mostra) e `... --confirmar <slug> --producao` (apaga banco e imagens). |
+
 ## O que o dono ajusta sozinho depois
 
 Em **Configurações**: nome, endereço, WhatsApp, Instagram, logo e capa (por link), cor, horário, políticas e a própria senha. Em **Serviços** e **Profissionais**: catálogo, equipe, expedientes e comissões. Slug, fuso e nicho ficam de fora de propósito (ver CLAUDE.md).

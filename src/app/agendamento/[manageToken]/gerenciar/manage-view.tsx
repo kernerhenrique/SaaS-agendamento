@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MessageCircle } from "lucide-react";
+import { CircleCheck, MessageCircle } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useVertical } from "@/config/vertical-context";
@@ -49,8 +49,30 @@ export function ManageView({
   const [isCancelling, setIsCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isRescheduling, setIsRescheduling] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [justConfirmed, setJustConfirmed] = useState(false);
 
   const isOpen = CANCELLABLE_STATUSES.includes(appointment.status) && initialIsFuture;
+  const needsConfirmation = appointment.status === AppointmentStatus.PENDING && initialIsFuture;
+
+  async function handleConfirm() {
+    setError(null);
+    setIsConfirming(true);
+    try {
+      const response = await fetch(`/api/public/appointments/manage/${token}/confirm`, { method: "POST" });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data?.error ?? "Não foi possível confirmar");
+        return;
+      }
+      setAppointment((prev) => ({ ...prev, status: AppointmentStatus.CONFIRMED }));
+      setJustConfirmed(true);
+    } catch {
+      setError("Sem conexão. Tente de novo.");
+    } finally {
+      setIsConfirming(false);
+    }
+  }
   const canManage = isOpen && initialCanChange;
   const deadlineHours = appointment.business.cancellationDeadlineHours;
 
@@ -98,6 +120,30 @@ export function ManageView({
           <dd className="font-medium">{STATUS_LABELS[appointment.status]}</dd>
         </div>
       </dl>
+
+      {needsConfirmation ? (
+        <section aria-labelledby="confirm-title" className="flex flex-col gap-3 rounded-lg border border-primary/30 bg-primary/10 p-4">
+          <div className="flex flex-col gap-1">
+            <h2 id="confirm-title" className="font-medium">
+              Confirme sua presença
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Seu horário está reservado. Confirmar avisa {appointment.business.name} que você vai: leva um toque.
+            </p>
+          </div>
+          <Button className="w-full sm:w-fit" disabled={isConfirming} onClick={handleConfirm}>
+            <CircleCheck />
+            {isConfirming ? "Confirmando..." : "Confirmar presença"}
+          </Button>
+        </section>
+      ) : null}
+
+      {justConfirmed ? (
+        <p role="status" className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 p-4 text-sm">
+          <CircleCheck className="size-4 shrink-0 text-success" aria-hidden />
+          Presença confirmada: já aparece na agenda de {appointment.business.name}. Até lá!
+        </p>
+      ) : null}
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 

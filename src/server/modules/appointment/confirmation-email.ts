@@ -39,29 +39,29 @@ export async function sendAppointmentConfirmationEmail(
   const text = [
     `Olá ${data.clientName},`,
     "",
-    `Seu agendamento em ${data.businessName} foi confirmado!`,
+    `Seu horário em ${data.businessName} está reservado!`,
     "",
     `${terms.service.singular}: ${data.serviceName}`,
     `${terms.professional.singular}: ${data.professionalName}`,
     `Data/hora: ${formattedDateTime}`,
     "",
-    `Para cancelar ou reagendar, acesse: ${manageUrl}`,
+    `Confirme sua presença, remarque ou cancele por aqui: ${manageUrl}`,
   ].join("\n");
 
   const html = `
     <p>Olá ${escapeHtml(data.clientName)},</p>
-    <p>Seu agendamento em <strong>${escapeHtml(data.businessName)}</strong> foi confirmado!</p>
+    <p>Seu horário em <strong>${escapeHtml(data.businessName)}</strong> está reservado!</p>
     <ul>
       <li><strong>${terms.service.singular}:</strong> ${escapeHtml(data.serviceName)}</li>
       <li><strong>${terms.professional.singular}:</strong> ${escapeHtml(data.professionalName)}</li>
       <li><strong>Data/hora:</strong> ${formattedDateTime}</li>
     </ul>
-    <p>Para cancelar ou reagendar, <a href="${manageUrl}">acesse este link</a>.</p>
+    <p><a href="${manageUrl}"><strong>Confirmar presença</strong></a>: pelo mesmo link você remarca ou cancela.</p>
   `;
 
   await sendEmail({
     to: data.clientEmail,
-    subject: `Agendamento confirmado — ${data.businessName}`,
+    subject: `Horário reservado — ${data.businessName}`,
     html,
     text,
   });

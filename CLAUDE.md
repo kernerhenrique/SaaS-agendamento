@@ -69,7 +69,10 @@ src/
 ├── lib/                     # date.ts (timezone), rate-limit, .ics, formatadores pt-BR, professional-colors.ts
 └── components/              # ui/ (shadcn) + componentes de domínio + admin/ (shell do painel)
 scripts/
-└── novo-cliente.ts          # npm run novo-cliente -- clientes/<slug>.json [--simular] [--producao]
+├── novo-cliente.ts          # npm run novo-cliente -- clientes/<slug>.json [--simular] [--producao]
+├── link-senha.ts            # suporte: link de senha nova para mandar pelo WhatsApp
+├── remover-cliente.ts       # apaga um negócio inteiro (exige --confirmar <slug>)
+└── lib/script-env.ts        # ambiente local × produção e trava de banco errado
 tests/
 ├── unit/
 ├── e2e/
@@ -106,7 +109,7 @@ Regras:
 
 ## Glossário do domínio
 - **Business**: o negócio (tenant). **Professional**: quem atende. **Service**: o que é vendido (preço fixo ou "a partir de", duração, buffer). **Client**: cliente final, identificado principalmente pelo **telefone** (deduplicação por telefone, gravado **só com dígitos** via `normalizePhoneBR` em `insertAppointment`; exibição com `formatPhoneBR`). **Appointment**: atendimento marcado. **TimeBlock**: bloqueio de agenda (almoço, folga, férias). **WorkingHours**: padrão semanal em minutos desde meia-noite.
-- **Status do agendamento**: agendado → confirmado → concluído; ou → falta; ou → cancelado. Concluído, falta e cancelado são estados finais (não voltam a agendado/confirmado; para remarcar, cria-se um novo ou usa-se o fluxo de reagendamento).
+- **Status do agendamento**: agendado (`PENDING`, rótulo "Agendado") → confirmado → concluído; ou → falta; ou → cancelado. **Confirmado = presença confirmada.** Reserva feita pelo cliente na página nasce *agendado* e vira *confirmado* quando ele toca em "Confirmar presença" no link (ou o negócio marca); encaixe do painel nasce *confirmado*. Agendado também pode ir direto para concluído ou falta (o cliente que não confirmou pode vir ou faltar). Concluído, falta e cancelado são estados finais (não voltam a agendado/confirmado; para remarcar, cria-se um novo ou usa-se o fluxo de reagendamento).
 - **Pagamento**: o SaaS **não processa pagamentos**. O cliente paga fora (PIX, dinheiro, maquininha) e o sistema só **registra**: valor, desconto, forma, data de recebimento, observação. Suporta parcial e sinal. Status derivado: pendente / parcial / pago. Relatórios financeiros usam a **data de recebimento**.
 - **Comissão**: % por profissional aplicada sobre o recebido no período. A % é **congelada em cada pagamento** (`Payment.commissionPercent`): mudar a % do profissional não reescreve o passado.
 - **Valor do atendimento** (`Appointment.priceCents`): gravado na marcação a partir do preço do serviço; pode ser ajustado ao receber (ex.: preço "a partir de"). Status pago/parcial/pendente usa esse valor menos os descontos.
@@ -143,6 +146,8 @@ npm run lint
 npm run test                # Vitest
 npm run test:e2e            # Playwright
 npm run novo-cliente -- clientes/<slug>.json [--simular] [--producao]   # cliente novo (docs/como-clonar.md)
+npm run link-senha -- <email> [--producao]                              # suporte: link de senha nova (24 h)
+npm run remover-cliente -- <slug> [--confirmar <slug>] [--producao]     # sem --confirmar só mostra o que apagaria
 ```
 Arquivos de ambiente (todos fora do git): `.env` (banco local), `.env.local` (token da Vercel criado pelo `vercel link`), `.env.vercel.local` (`vercel env pull`: credenciais do Blob) e `.env.producao.local` (`DATABASE_URL` do Neon, à mão). **Nunca `.env.production.local`**: o Next carrega esse nome sozinho no build/start local.
 Pré-requisitos: Node ≥20.19, Docker.
@@ -176,6 +181,9 @@ Pré-requisitos: Node ≥20.19, Docker.
 - Slug e fuso do negócio não são editáveis em Configurações: trocar o slug quebra links já compartilhados; trocar o fuso deslocaria a agenda gravada. `BusinessWorkingHours` é só informativo (página pública); a disponibilidade vem do expediente de cada profissional.
 - WhatsApp sem API: o dono envia pelo próprio WhatsApp via link `wa.me` com o texto pronto; "enviado" (`MessageLog`) é marcado quando ele abre o link, e pode ser desmarcado. Os links são montados antes do clique (abrir depois de um fetch seria bloqueado como pop-up). Para plugar a API oficial, trocar a implementação de `WhatsAppSender` (`notification/whatsapp/sender.ts`). Links para o cliente usam `APP_BASE_URL` (`src/server/app-url.ts`).
 - Troca de senha exige a senha atual, derruba as outras sessões (`tokenVersion`) e reemite os cookies da sessão atual.
+- **Esqueci minha senha** (`auth/password-reset.service.ts`, tabela `PasswordReset`): link de uso único, só o sha256 no banco, 1 h por e-mail e 24 h pelo suporte (`npm run link-senha`). O pedido (`/api/admin/auth/forgot-password`) responde sempre igual e roda a busca e o envio depois da resposta (`after`): nem o tempo revela se o e-mail existe. Limite de 5 pedidos/15 min por IP. Usar o link sobe o `tokenVersion` (todas as sessões caem) e já entra no painel. Revogado e dono visitante da demo não recebem link. Páginas `/admin/esqueci-senha` e `/admin/redefinir-senha/[token]` ficam fora do proxy de sessão.
+- **Aviso ao negócio** (`notification/business-alerts.ts`): e-mail aos donos e ao profissional do atendimento (se tem acesso) quando o CLIENTE reserva, cancela ou remarca pela página/link, sempre com `after()`. Nunca de demonstração nem para e-mail `.invalid`. No Início, alerta azul "N reservas novas pela página nas últimas 24 horas" (reservas sem `createdByUserId`).
+- **Termos e privacidade**: `/termos` e `/privacidade` (texto-base para revisão de advogado), dados em `LEGAL` (`config/brand.ts`: razão social e CNPJ ficam null até existirem), link no rodapé da página de reservas e da página inicial.
 - **Equipe (dono + profissionais):**
   - o profissional vê e mexe só na própria agenda e nos próprios clientes (clientes com algum agendamento com ele);
   - pode confirmar, concluir, marcar falta, cancelar, remarcar e registrar pagamento, **sem** desconto nem mudar o valor;

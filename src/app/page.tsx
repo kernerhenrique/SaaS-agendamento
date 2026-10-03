@@ -42,8 +42,19 @@ export default function Home() {
         </ul>
       </section>
 
-      <footer className="mx-auto w-full max-w-5xl px-4 py-6 text-caption text-muted-foreground sm:px-6">
-        © {new Date().getFullYear()} {BRAND.name}
+      <footer className="mx-auto flex w-full max-w-5xl flex-wrap justify-between gap-2 px-4 py-6 text-caption text-muted-foreground sm:px-6">
+        <span>
+          © {new Date().getFullYear()} {BRAND.name}
+        </span>
+        <span>
+          <Link href="/privacidade" className="underline-offset-4 hover:underline">
+            Privacidade
+          </Link>{" "}
+          ·{" "}
+          <Link href="/termos" className="underline-offset-4 hover:underline">
+            Termos
+          </Link>
+        </span>
       </footer>
     </main>
   );

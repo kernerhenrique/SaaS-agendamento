@@ -132,6 +132,7 @@ export async function resetDemoData(businessId: string, now = new Date()): Promi
           endAt: appointment.endAt,
           status: appointment.status,
           priceCents: appointment.priceCents,
+          createdAt: appointment.createdAt,
           manageToken: randomUUID(),
         })),
       });

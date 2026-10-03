@@ -2,7 +2,7 @@ import type { StatusTone } from "@/components/status-badge";
 import { AppointmentStatus } from "@/generated/prisma/enums";
 
 export const STATUS_LABELS: Record<AppointmentStatus, string> = {
-  PENDING: "Pendente",
+  PENDING: "Agendado",
   CONFIRMED: "Confirmado",
   CANCELLED: "Cancelado",
   COMPLETED: "Concluído",
@@ -34,7 +34,9 @@ export const STATUS_BLOCK_CLASSES: Record<AppointmentStatus, string> = {
 
 export const NEXT_STATUS_ACTIONS: Record<AppointmentStatus, { status: AppointmentStatus; label: string }[]> = {
   PENDING: [
-    { status: AppointmentStatus.CONFIRMED, label: "Confirmar" },
+    { status: AppointmentStatus.CONFIRMED, label: "Confirmar presença" },
+    { status: AppointmentStatus.COMPLETED, label: "Concluir" },
+    { status: AppointmentStatus.NO_SHOW, label: "Não compareceu" },
     { status: AppointmentStatus.CANCELLED, label: "Cancelar" },
   ],
   CONFIRMED: [

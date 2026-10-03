@@ -1,12 +1,13 @@
+import { Award } from "lucide-react";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SelectableCard } from "@/components/selectable-card";
 import { getInitials } from "@/lib/text";
 
 /**
- * Extraído do `SelectableCard` inline de `src/app/[slug]/professional-step.tsx`.
- * O campo "especialidade" pedido no design system não existe hoje como coluna
- * própria em `Professional` — usamos `bio` (texto livre) como aproximação até
- * essa decisão de schema ser tomada.
+ * Cartão do profissional no fluxo público de reserva. A especialidade vem com
+ * rótulo ("Especialidade: …"): solta embaixo do nome parecia a lista do que
+ * ele atende, e quem atende o quê já é decidido pelo serviço escolhido.
  */
 export function ProfessionalCard({
   name,
@@ -30,9 +31,16 @@ export function ProfessionalCard({
           <AvatarImage src={photoUrl ?? undefined} alt="" />
           <AvatarFallback>{getInitials(name)}</AvatarFallback>
         </Avatar>
-        <div className="flex flex-col">
+        <div className="flex min-w-0 flex-col">
           <p className="font-medium">{name}</p>
-          {specialty ? <p className="text-caption text-muted-foreground line-clamp-1">{specialty}</p> : null}
+          {specialty ? (
+            <p className="flex items-center gap-1 text-caption text-muted-foreground">
+              <Award className="size-3.5 shrink-0" aria-hidden />
+              <span className="line-clamp-1">
+                <span className="font-medium">Especialidade:</span> {specialty}
+              </span>
+            </p>
+          ) : null}
         </div>
       </div>
       {thumbnails.length > 0 ? (

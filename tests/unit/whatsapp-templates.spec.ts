@@ -38,7 +38,8 @@ describe("renderTemplate", () => {
         "quarta-feira, 30/09 às 17:30",
         "Endereço: Rua das Tesouras, 123",
         "",
-        "Se precisar remarcar: https://exemplo.com/agendamento/abc/gerenciar",
+        "Toque no link para confirmar sua presença: https://exemplo.com/agendamento/abc/gerenciar",
+        "Se não puder vir, por ele mesmo você remarca ou cancela.",
       ].join("\n"),
     );
   });

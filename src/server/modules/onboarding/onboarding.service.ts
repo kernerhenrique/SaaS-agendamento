@@ -20,6 +20,34 @@ export async function createClientBusiness(
   return { businessId, publicUrl: `${getAppBaseUrl()}/${input.slug}`, ownerInvite };
 }
 
+/** O que seria apagado por `removeClientBusiness` (o comando mostra antes de apagar). */
+export async function summarizeClientBusiness(slug: string) {
+  const business = await prisma.business.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      name: true,
+      isDemo: true,
+      _count: { select: { appointments: true, clients: true, users: true, professionals: true, payments: true } },
+    },
+  });
+  if (!business) throw new ValidationError(`Nenhum negócio com o endereço "${slug}"`);
+  return business;
+}
+
+/**
+ * Apaga o negócio e tudo dele, numa transação. Agendamentos primeiro: eles
+ * prendem clientes, profissionais e serviços (FK Restrict); o resto vai em
+ * cascata com o negócio. Irreversível: o comando exige `--confirmar <slug>`.
+ */
+export async function removeClientBusiness(slug: string): Promise<void> {
+  const { id } = await summarizeClientBusiness(slug);
+  await prisma.$transaction([
+    prisma.appointment.deleteMany({ where: { businessId: id } }),
+    prisma.business.delete({ where: { id } }),
+  ]);
+}
+
 /**
  * Grava o negócio com tudo o que vem do arquivo (sem usuários). Usado pelo
  * cliente real (`createClientBusiness`) e pela demonstração (`createDemoBusiness`).

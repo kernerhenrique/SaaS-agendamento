@@ -52,6 +52,28 @@ function assertOutsideDeadline(appointment: ManagedAppointment): void {
   }
 }
 
+/**
+ * O cliente confirma presença pelo link (agendado → confirmado). Vale até o
+ * horário começar, mesmo dentro do prazo de cancelamento (confirmar não muda a
+ * agenda). Confirmar de novo não é erro: devolve o agendamento como está.
+ */
+export async function confirmPresenceByToken(token: string) {
+  const appointment = await getAppointmentForManagement(token);
+
+  if (appointment.status === AppointmentStatus.CONFIRMED) return appointment;
+  if (appointment.status !== AppointmentStatus.PENDING) {
+    throw new ValidationError("Este agendamento não pode mais ser confirmado");
+  }
+  if (appointment.startAt.getTime() <= Date.now()) {
+    throw new ValidationError("Não é possível confirmar um agendamento que já passou");
+  }
+
+  return prisma.appointment.update({
+    where: { id: appointment.id },
+    data: { status: AppointmentStatus.CONFIRMED },
+  });
+}
+
 export async function cancelAppointmentByToken(token: string) {
   const appointment = await getAppointmentForManagement(token);
 
@@ -97,10 +119,12 @@ export async function rescheduleAppointmentByToken(token: string, newStartAt: Da
   );
 
   try {
-    return await prisma.appointment.update({
+    const updated = await prisma.appointment.update({
       where: { id: appointment.id },
       data: { startAt: newStartAt, endAt: newEndAt, manageTokenExpiresAt: newManageTokenExpiresAt },
     });
+    // O horário antigo vai no aviso ao negócio ("antes era…").
+    return { appointment: updated, previousStartAt: appointment.startAt };
   } catch (error) {
     if (isOverlapConstraintViolation(error)) {
       throw new ValidationError("Esse horário acabou de deixar de estar disponível");

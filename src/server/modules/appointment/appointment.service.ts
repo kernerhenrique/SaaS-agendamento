@@ -11,7 +11,14 @@ import { NotFoundError, ValidationError } from "@/server/errors";
  * rejeitada — evita, por exemplo, "reabrir" um agendamento já concluído.
  */
 const ALLOWED_TRANSITIONS: Record<AppointmentStatus, AppointmentStatus[]> = {
-  [AppointmentStatus.PENDING]: [AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED],
+  // Agendado sem confirmação de presença também pode ser concluído ou virar falta:
+  // o cliente que não confirmou pelo link pode aparecer (ou não).
+  [AppointmentStatus.PENDING]: [
+    AppointmentStatus.CONFIRMED,
+    AppointmentStatus.COMPLETED,
+    AppointmentStatus.CANCELLED,
+    AppointmentStatus.NO_SHOW,
+  ],
   [AppointmentStatus.CONFIRMED]: [
     AppointmentStatus.COMPLETED,
     AppointmentStatus.CANCELLED,
@@ -136,7 +143,10 @@ async function insertAppointment(params: InsertAppointmentParams) {
         clientId: clientRecord.id,
         startAt,
         endAt,
-        status: AppointmentStatus.CONFIRMED,
+        // Reserva do cliente (página pública) nasce "agendado": vira "confirmado" quando
+        // ele confirma presença pelo link (ou o negócio marca). Encaixe do painel nasce
+        // confirmado: quem marcou combinou com o cliente.
+        status: createdByUserId ? AppointmentStatus.CONFIRMED : AppointmentStatus.PENDING,
         notes,
         manageTokenExpiresAt,
         // Valor do atendimento congelado na marcação (ajustável ao receber).

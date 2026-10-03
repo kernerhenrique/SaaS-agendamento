@@ -1,14 +1,14 @@
-import { after, NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import { checkRateLimit, getClientIp, MANAGE_TOKEN_RATE_LIMIT } from "@/lib/rate-limit";
 import { handleApiError, rateLimitedResponse } from "@/server/http";
-import { cancelAppointmentByToken } from "@/server/modules/appointment/manage.service";
-import { notifyBusinessOfClientAction } from "@/server/modules/notification/business-alerts";
+import { confirmPresenceByToken } from "@/server/modules/appointment/manage.service";
 
 interface RouteParams {
   params: Promise<{ token: string }>;
 }
 
+/** "Confirmar presença" no link do cliente: agendado → confirmado. */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   const ip = getClientIp(request.headers);
   const rateLimit = checkRateLimit(`manage-token:${ip}`, MANAGE_TOKEN_RATE_LIMIT);
@@ -18,15 +18,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
   try {
     const { token } = await params;
-    const appointment = await cancelAppointmentByToken(token);
-    after(async () => {
-      try {
-        await notifyBusinessOfClientAction(appointment.id, "CANCELLED");
-      } catch (alertError) {
-        console.error("[cancel] falha ao avisar o negócio", alertError);
-      }
-    });
-    return NextResponse.json({ appointment });
+    const appointment = await confirmPresenceByToken(token);
+    return NextResponse.json({ appointment: { status: appointment.status } });
   } catch (error) {
     return handleApiError(error);
   }

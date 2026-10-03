@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "novo-cliente": "tsx --tsconfig tsconfig.json scripts/novo-cliente.ts"
+    "novo-cliente": "tsx --tsconfig tsconfig.json scripts/novo-cliente.ts",
+    "link-senha": "tsx --tsconfig tsconfig.json scripts/link-senha.ts",
+    "remover-cliente": "tsx --tsconfig tsconfig.json scripts/remover-cliente.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

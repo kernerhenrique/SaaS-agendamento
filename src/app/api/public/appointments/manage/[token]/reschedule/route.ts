@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 
 import { checkRateLimit, getClientIp, MANAGE_TOKEN_RATE_LIMIT } from "@/lib/rate-limit";
 import { ValidationError } from "@/server/errors";
 import { handleApiError, rateLimitedResponse } from "@/server/http";
 import { rescheduleAppointmentByToken } from "@/server/modules/appointment/manage.service";
+import { notifyBusinessOfClientAction } from "@/server/modules/notification/business-alerts";
 
 interface RouteParams {
   params: Promise<{ token: string }>;
@@ -28,7 +29,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       throw new ValidationError("startAt inválido");
     }
 
-    const appointment = await rescheduleAppointmentByToken(token, startAt);
+    const { appointment, previousStartAt } = await rescheduleAppointmentByToken(token, startAt);
+    after(async () => {
+      try {
+        await notifyBusinessOfClientAction(appointment.id, "RESCHEDULED", previousStartAt);
+      } catch (alertError) {
+        console.error("[reschedule] falha ao avisar o negócio", alertError);
+      }
+    });
     return NextResponse.json({ appointment });
   } catch (error) {
     return handleApiError(error);

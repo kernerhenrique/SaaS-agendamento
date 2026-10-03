@@ -28,7 +28,7 @@ export function ProfessionalStep({
             key={professional.id}
             name={professional.name}
             photoUrl={professional.photoUrl}
-            specialty={professional.specialty ?? professional.bio}
+            specialty={professional.specialty}
             portfolioUrls={features.portfolio ? professional.photoUrls : undefined}
             onSelect={() => onSelect(professional.id)}
           />

@@ -21,3 +21,16 @@ export const BRAND = {
   /** Identificador técnico (uid/PRODID de .ics). Sem espaços. */
   slug: "aprazzo",
 } as const;
+
+/**
+ * Dados das páginas /termos e /privacidade. Razão social e CNPJ ficam null até
+ * a empresa existir: as páginas só mostram a linha quando preenchidos.
+ * Atualize `updatedAt` sempre que mudar o texto das páginas.
+ */
+export const LEGAL = {
+  companyName: null as string | null,
+  cnpj: null as string | null,
+  /** Canal oficial para dúvidas e pedidos sobre dados (LGPD). Só dígitos, com DDD. */
+  contactWhatsapp: "27996950409",
+  updatedAt: "3 de outubro de 2026",
+} as const;

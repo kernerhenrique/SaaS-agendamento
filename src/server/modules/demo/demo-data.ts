@@ -38,6 +38,8 @@ export interface DemoAppointment {
   status: AppointmentStatus;
   priceCents: number;
   payments: DemoPayment[];
+  /** Quando foi marcado: dias antes; umas poucas reservas nas últimas horas (o aviso "reservas novas" do Início). */
+  createdAt: Date;
 }
 
 export interface DemoClient {
@@ -104,11 +106,27 @@ function fillRate(dayOffset: number): number {
   return Math.max(0.15, 0.6 - dayOffset * 0.07);
 }
 
+/**
+ * Quem já confirmou presença: hoje e amanhã quase todos (o lembrete da véspera
+ * já saiu); mais adiante, a maioria ainda só "agendado".
+ */
+function confirmedRate(dayOffset: number): number {
+  return dayOffset <= 1 ? 0.85 : 0.25;
+}
+
 function pastStatus(random: () => number): AppointmentStatus {
   const roll = random();
   if (roll < 0.85) return "COMPLETED";
   if (roll < 0.91) return "NO_SHOW";
   return "CANCELLED";
+}
+
+const HOUR = 60 * 60 * 1000;
+
+function bookedAt(startAt: Date, now: Date, isPast: boolean, random: () => number): Date {
+  if (!isPast && random() < 0.05) return new Date(now.getTime() - (1 + random() * 18) * HOUR);
+  const daysBefore = 1 + Math.floor(random() * 6);
+  return new Date(Math.min(startAt.getTime() - daysBefore * 24 * HOUR, now.getTime() - 26 * HOUR));
 }
 
 /** Dias em que um atendimento concluído ainda pode estar sem pagamento (um negócio organizado acerta logo). */
@@ -178,7 +196,7 @@ export function buildDemoSchedule(input: {
           ? pastStatus(random)
           : random() < 0.05
             ? "CANCELLED"
-            : random() < 0.6
+            : random() < confirmedRate(offset)
               ? "CONFIRMED"
               : "PENDING";
         const appointment: DemoAppointment = {
@@ -190,6 +208,7 @@ export function buildDemoSchedule(input: {
           status,
           priceCents: service.priceCents,
           payments: [],
+          createdAt: bookedAt(startAt, now, isPast, random),
         };
         if (status === "COMPLETED") appointment.payments = paymentsFor(appointment, professional.commissionPercent, random, -offset);
         appointments.push(appointment);

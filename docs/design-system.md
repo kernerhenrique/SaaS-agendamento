@@ -258,3 +258,12 @@ Duas camadas independentes:
 - A grade (`TimeSlotGrid`) mostra também os **horários ocupados**, riscados e desabilitados (anunciados como "ocupado" no leitor de tela), em vez de escondê-los. O **primeiro horário livre** ganha o selo "Mais próximo".
 - Os ocupados vêm de `/api/availability?ocupados=1` (`occupied-slots.ts`): a grade do expediente sem ocupação, menos os livres. É só exibição: os horários livres e a revalidação da reserva continuam vindo de `getAvailableSlots`, sem mudança.
 - Se o dia está todo ocupado, aparece o estado vazio "Todos os horários deste dia estão ocupados".
+
+## Reserva, presença e acesso (Bloco C)
+
+- **Confirmação da reserva** (`[slug]/confirmation-step.tsx`): título "Horário reservado!" (não "confirmado": a presença é confirmada depois, pelo link). O texto muda se o cliente informou e-mail ("Enviamos os detalhes para…") ou não ("Guarde o link abaixo…"). O link do agendamento fica num quadro `primary/10` com "Salvar no meu WhatsApp" (`buildWhatsAppShareUrl`, o cliente escolhe a própria conversa) e "Copiar link" (toast).
+- **Link de gerenciar**: com status *agendado*, quadro "Confirme sua presença" (`primary/10`) com o botão principal; depois, aviso `success` "Presença confirmada". O status do agendamento aparece como **"Agendado"** (antes "Pendente") e o botão do painel é **"Confirmar presença"**.
+- **Cartão do profissional** (`ProfessionalCard`): "Especialidade: …" com ícone `Award`. A bio não entra no lugar da especialidade.
+- **Início**: o `Alert` ganhou o tom `info` (azul, ícone `CalendarPlus`) para "reservas novas pela página", com as três últimas em `text-caption`.
+- **Esqueci minha senha** e **Criar senha nova**: cartões no padrão do login (marca do produto); a resposta do pedido é sempre a mesma.
+- **`LegalPage`** (`src/components/legal-page.tsx`): moldura de `/termos` e `/privacidade` (logo, título, data, artigo com `h2` de seção e rodapé com o contato).

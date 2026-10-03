@@ -1,12 +1,13 @@
 "use client";
 
-import { CalendarPlus, CircleCheckBig, MessageCircle, SquareArrowOutUpRight } from "lucide-react";
+import { CalendarPlus, CircleCheckBig, Copy, MessageCircle, SquareArrowOutUpRight } from "lucide-react";
+import { toast } from "sonner";
 
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { BRAND } from "@/config/brand";
 import { useVertical } from "@/config/vertical-context";
 import { buildAppointmentIcs } from "@/lib/ics";
-import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { buildWhatsAppShareUrl, buildWhatsAppUrl } from "@/lib/whatsapp";
 
 export interface ConfirmedAppointmentInfo {
   id: string;
@@ -19,6 +20,8 @@ export interface ConfirmedAppointmentInfo {
   businessAddress: string | null;
   businessWhatsapp: string | null;
   timezone: string;
+  /** E-mail informado na reserva (opcional): muda o texto e indica se o link também foi por e-mail. */
+  clientEmail: string | null;
 }
 
 function formatFullDateTime(dateISO: string, timeZone: string): string {
@@ -40,16 +43,66 @@ export function ConfirmationStep({ appointment }: { appointment: ConfirmedAppoin
     location: appointment.businessAddress ?? undefined,
   });
   const icsHref = `data:text/calendar;charset=utf-8,${encodeURIComponent(icsContent)}`;
+  // Esta etapa só aparece depois do envio, no navegador: a origem já existe.
+  const manageUrl = `${window.location.origin}/agendamento/${appointment.manageToken}/gerenciar`;
+  const dateTime = formatFullDateTime(appointment.startAt, appointment.timezone);
+  const saveToWhatsAppUrl = buildWhatsAppShareUrl(
+    `Meu horário em ${appointment.businessName}: ${appointment.serviceName} com ${appointment.professionalName}, ${dateTime}.\n` +
+      `Confirmar presença, remarcar ou cancelar: ${manageUrl}`,
+  );
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(manageUrl);
+      toast.success("Link copiado");
+    } catch {
+      toast.error("Não foi possível copiar. Toque e segure o link para copiar.");
+    }
+  }
 
   return (
     <div className="flex flex-col items-center gap-4 text-center sm:items-start sm:text-left">
       <div className="flex flex-col items-center gap-2 sm:items-start">
         <CircleCheckBig className="size-12 text-primary" />
-        <h2 className="text-lg font-medium">Agendamento confirmado!</h2>
+        <h2 className="text-lg font-medium">Horário reservado!</h2>
         <p className="text-sm text-muted-foreground">
-          Enviamos um e-mail de confirmação com o link para cancelar ou reagendar.
+          {appointment.clientEmail ? (
+            <>
+              Enviamos os detalhes para <strong className="font-medium text-foreground">{appointment.clientEmail}</strong>.
+              O link abaixo também serve para confirmar presença, remarcar ou cancelar.
+            </>
+          ) : (
+            <>Guarde o link abaixo: é por ele que você confirma presença, remarca ou cancela.</>
+          )}
         </p>
       </div>
+
+      <section
+        aria-labelledby="manage-link-title"
+        className="flex w-full flex-col gap-3 rounded-lg border border-primary/30 bg-primary/10 p-4 text-left"
+      >
+        <div className="flex flex-col gap-1">
+          <h3 id="manage-link-title" className="text-sm font-medium">
+            Seu link do agendamento
+          </h3>
+          <p className="break-all text-caption text-muted-foreground">{manageUrl}</p>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <a
+            href={saveToWhatsAppUrl}
+            target="_blank"
+            rel="noreferrer"
+            className={buttonVariants({ className: "w-full sm:w-auto" })}
+          >
+            <MessageCircle />
+            Salvar no meu WhatsApp
+          </a>
+          <Button type="button" variant="outline" className="w-full bg-background sm:w-auto" onClick={copyLink}>
+            <Copy />
+            Copiar link
+          </Button>
+        </div>
+      </section>
 
       <dl className="flex w-full flex-col gap-1 rounded-lg bg-card p-4 text-sm shadow-sm ring-1 ring-foreground/10">
         <div className="flex justify-between gap-2">
@@ -62,9 +115,7 @@ export function ConfirmationStep({ appointment }: { appointment: ConfirmedAppoin
         </div>
         <div className="flex justify-between gap-2">
           <dt className="text-muted-foreground">Data/hora</dt>
-          <dd className="text-right font-medium first-letter:uppercase">
-            {formatFullDateTime(appointment.startAt, appointment.timezone)}
-          </dd>
+          <dd className="text-right font-medium first-letter:uppercase">{dateTime}</dd>
         </div>
         {appointment.businessAddress ? (
           <div className="flex justify-between gap-2">
@@ -84,12 +135,9 @@ export function ConfirmationStep({ appointment }: { appointment: ConfirmedAppoin
           <CalendarPlus />
           Adicionar ao calendário (.ics)
         </a>
-        <a
-          href={`/agendamento/${appointment.manageToken}/gerenciar`}
-          className={buttonVariants({ variant: "outline" })}
-        >
+        <a href={manageUrl} className={buttonVariants({ variant: "outline" })}>
           <SquareArrowOutUpRight />
-          Gerenciar meu agendamento
+          Abrir meu agendamento
         </a>
         {appointment.businessWhatsapp ? (
           <a

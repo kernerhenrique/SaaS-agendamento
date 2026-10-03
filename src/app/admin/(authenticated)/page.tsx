@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, CalendarCheck, CircleAlert, Percent, CalendarDays, Gauge, HandCoins, UserPlus, UserX, Wallet } from "lucide-react";
+import { AlertTriangle, CalendarCheck, CalendarPlus, CircleAlert, Percent, CalendarDays, Gauge, HandCoins, UserPlus, UserX, Wallet } from "lucide-react";
 
 import { NewAppointmentButton } from "@/components/admin/new-appointment-button";
 import { EmptyState } from "@/components/empty-state";
@@ -38,7 +38,13 @@ export default async function InicioPage() {
     new Intl.DateTimeFormat("pt-BR", { timeZone: business.timezone, hour: "2-digit", minute: "2-digit" }).format(
       new Date(iso),
     );
+  const formatDayTime = (iso: string) =>
+    new Intl.DateTimeFormat("pt-BR", { timeZone: business.timezone, weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+      .format(new Date(iso))
+      .replace(".", "");
+  const online = data.alerts.recentOnlineBookings;
   const hasAlerts =
+    online.count > 0 ||
     data.alerts.professionalsWithoutHours.length > 0 ||
     data.alerts.inactiveClients > 0 ||
     data.alerts.completedWithoutPayment.count > 0 ||
@@ -122,6 +128,20 @@ export default async function InicioPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             {!hasAlerts ? <p className="text-sm text-muted-foreground">Tudo certo por aqui.</p> : null}
+            {online.count > 0 ? (
+              <Alert href="/admin/agenda" tone="info">
+                <strong>{online.count}</strong>{" "}
+                {online.count === 1 ? "reserva nova pela página" : "reservas novas pela página"} nas últimas 24 horas.
+                <ul className="mt-1 flex flex-col gap-0.5 text-caption text-muted-foreground">
+                  {online.latest.map((booking) => (
+                    <li key={booking.id}>
+                      <span className="first-letter:uppercase">{formatDayTime(booking.startAt)}</span> · {booking.clientName} ·{" "}
+                      {booking.serviceName}
+                    </li>
+                  ))}
+                </ul>
+              </Alert>
+            ) : null}
             {data.alerts.completedWithoutPayment.count > 0 ? (
               <Alert href={canFinance ? "/admin/financeiro?aba=a-receber" : undefined} tone="destructive">
                 <strong>{data.alerts.completedWithoutPayment.count}</strong>{" "}
@@ -175,11 +195,12 @@ function KpiLink({ href, children }: { href?: string; children: React.ReactNode 
 }
 
 const ALERT_TONES = {
+  info: { box: "border-info/30 bg-info/10 hover:bg-info/15", icon: "text-info", Icon: CalendarPlus },
   warning: { box: "border-warning/30 bg-warning/10 hover:bg-warning/15", icon: "text-warning", Icon: AlertTriangle },
   destructive: { box: "border-destructive/30 bg-destructive/10 hover:bg-destructive/15", icon: "text-destructive", Icon: CircleAlert },
 } as const;
 
-/** Alerta clicável do quadro "Atenção": amarelo (atenção) ou vermelho (dinheiro sem nenhum registro). */
+/** Alerta clicável do quadro "Atenção": azul (novidade), amarelo (atenção) ou vermelho (dinheiro sem nenhum registro). */
 function Alert({
   href,
   tone = "warning",

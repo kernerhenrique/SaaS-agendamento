@@ -111,6 +111,7 @@ export function BookingFlow({
         businessAddress: business.address,
         businessWhatsapp: business.whatsapp,
         timezone: data.appointment.business.timezone,
+        clientEmail: contact.email?.trim() || null,
       });
       setStep(5);
     } finally {
@@ -250,8 +251,19 @@ export function BookingFlow({
         </div>
 
         {/* pb-28 no mobile: deixa espaço para o resumo fixo no rodapé. */}
-        <footer className="px-4 pt-2 pb-28 text-center text-caption text-muted-foreground sm:pb-6">
-          {BRAND.poweredByLabel} {BRAND.name}
+        <footer className="flex flex-col gap-1 px-4 pt-2 pb-28 text-center text-caption text-muted-foreground sm:pb-6">
+          <span>
+            {BRAND.poweredByLabel} {BRAND.name}
+          </span>
+          <span>
+            <a href="/privacidade" target="_blank" className="underline-offset-4 hover:underline">
+              Privacidade
+            </a>{" "}
+            ·{" "}
+            <a href="/termos" target="_blank" className="underline-offset-4 hover:underline">
+              Termos
+            </a>
+          </span>
         </footer>
       </main>
     </AccentColorScope>
