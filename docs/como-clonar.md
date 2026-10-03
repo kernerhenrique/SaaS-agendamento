@@ -56,6 +56,16 @@ O Blob precisa estar conectado também ao ambiente **Development** (Storage → 
 npm run novo-cliente -- clientes/barbearia-do-ze.json --producao
 ```
 
+## 4b. Clientes antigos (opcional)
+
+Se o negócio já tem clientes (outro sistema, planilha, caderno), peça a planilha. Colunas: **nome** e **telefone** (com DDD) obrigatórias; **email**, **observacoes** e **tags** (separadas por vírgula) opcionais. Salve como CSV (Excel: *Salvar como › CSV*; Google Planilhas: *Fazer download › .csv*) em `clientes/<slug>-clientes.csv`.
+
+```
+npm run importar-clientes -- <slug> clientes/<slug>-clientes.csv --producao               # prévia (erros por linha)
+npm run importar-clientes -- <slug> clientes/<slug>-clientes.csv --confirmar --producao   # grava
+```
+O dono também pode fazer sozinho depois, em **Clientes › Importar planilha** (com o modelo para baixar e o passo a passo).
+
 ## 5. Entregar
 
 1. Seguir o checklist impresso pelo comando: abrir a página no celular, fazer e cancelar uma reserva de teste, conferir preços e expedientes.

@@ -1,14 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CalendarPlus, Contact, RotateCcw, SearchX } from "lucide-react";
+import Link from "next/link";
+import { CalendarPlus, Contact, RotateCcw, SearchX, Upload } from "lucide-react";
 
+import { useAdminAccess } from "@/components/admin/admin-access-context";
 import { useAdminShell } from "@/components/admin/admin-shell-context";
 import { EmptyState } from "@/components/empty-state";
 import { TableRowsSkeleton } from "@/components/skeletons";
 import { TableToolbar } from "@/components/table-toolbar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { emptyLabel, lowerTerm } from "@/config/vertical";
@@ -38,6 +40,7 @@ export function ClientsView({
   initialClientId?: string;
 }) {
   const { terms } = useVertical();
+  const canImport = useAdminAccess().can("appointment.manageAny");
   const { timezone, openNewAppointment, appointmentsVersion } = useAdminShell();
   const [query, setQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
@@ -81,12 +84,20 @@ export function ClientsView({
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 sm:p-6">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-page-title font-bold">{terms.client.plural}</h1>
-        {clients ? (
-          <p className="text-sm text-muted-foreground">
-            {clients.length} {clients.length === 1 ? lowerTerm(terms.client.singular) : lowerTerm(terms.client.plural)}
-          </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-page-title font-bold">{terms.client.plural}</h1>
+          {clients ? (
+            <p className="text-sm text-muted-foreground">
+              {clients.length} {clients.length === 1 ? lowerTerm(terms.client.singular) : lowerTerm(terms.client.plural)}
+            </p>
+          ) : null}
+        </div>
+        {canImport ? (
+          <Link href="/admin/clientes/importar" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <Upload />
+            Importar planilha
+          </Link>
         ) : null}
       </div>
 

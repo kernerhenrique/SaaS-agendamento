@@ -72,6 +72,7 @@ scripts/
 ├── novo-cliente.ts          # npm run novo-cliente -- clientes/<slug>.json [--simular] [--producao]
 ├── link-senha.ts            # suporte: link de senha nova para mandar pelo WhatsApp
 ├── remover-cliente.ts       # apaga um negócio inteiro (exige --confirmar <slug>)
+├── importar-clientes.ts     # entrega: importa a planilha de clientes (prévia; grava com --confirmar)
 └── lib/script-env.ts        # ambiente local × produção e trava de banco errado
 tests/
 ├── unit/
@@ -148,6 +149,7 @@ npm run test:e2e            # Playwright
 npm run novo-cliente -- clientes/<slug>.json [--simular] [--producao]   # cliente novo (docs/como-clonar.md)
 npm run link-senha -- <email> [--producao]                              # suporte: link de senha nova (24 h)
 npm run remover-cliente -- <slug> [--confirmar <slug>] [--producao]     # sem --confirmar só mostra o que apagaria
+npm run importar-clientes -- <slug> <arquivo.csv> [--confirmar] [--atualizar] [--producao]
 ```
 Arquivos de ambiente (todos fora do git): `.env` (banco local), `.env.local` (token da Vercel criado pelo `vercel link`), `.env.vercel.local` (`vercel env pull`: credenciais do Blob) e `.env.producao.local` (`DATABASE_URL` do Neon, à mão). **Nunca `.env.production.local`**: o Next carrega esse nome sozinho no build/start local.
 Pré-requisitos: Node ≥20.19, Docker.
@@ -185,6 +187,7 @@ Pré-requisitos: Node ≥20.19, Docker.
 - **Aviso ao negócio** (`notification/business-alerts.ts`): e-mail aos donos e ao profissional do atendimento (se tem acesso) quando o CLIENTE reserva, cancela ou remarca pela página/link, sempre com `after()`. Nunca de demonstração nem para e-mail `.invalid`. No Início, alerta azul "N reservas novas pela página nas últimas 24 horas" (reservas sem `createdByUserId`).
 - **Dias fechados** (`BusinessClosure`, datas de calendário "YYYY-MM-DD" no fuso do negócio, fim inclusivo): feriados e férias do negócio inteiro. `getAvailableSlots` devolve vazio no dia (a função pura do cálculo não muda; a reserva pública e o reagendamento pelo link revalidam por ela), os ocupados também, e `/api/availability` manda `closedReason`. Encaixe pelo painel em dia fechado vira "mesmo assim" (`OUTSIDE_WORKING_HOURS`, com o motivo). Fechar não cancela nada: a API devolve os agendamentos do período para o dono remarcar. Leitura liberada para qualquer pessoa do painel; criar/reabrir só dono (bloqueado na demo). Feriados nacionais calculados em `closure-rules.ts` (Páscoa → Carnaval, Sexta-feira Santa, Corpus Christi; facultativos vêm desmarcados).
 - **Painel instalável (PWA)**: `public/admin.webmanifest` ligado só pelo layout `src/app/admin/layout.tsx` (a página de reservas do cliente não oferece instalar o painel); `start_url`/`scope` `/admin`, ícones em `public/brand/app-icon-*` e `src/app/apple-icon.png`. Sem service worker (não funciona offline). Guia em `/admin/instalar` (menu da conta e "Mais" no celular), com "Instalar agora" quando o navegador oferece `beforeinstallprompt`.
+- **Importar clientes** (`client/client-import.ts`, puro + `client-import.service.ts`): CSV do Excel pt-BR (";", BOM) ou do Google (","); colunas nome e telefone obrigatórias, email, observacoes, tags (sinônimos e acentos aceitos); até 2000 linhas. Prévia antes de gravar, erros por linha, repetidos no arquivo ficam de fora. Telefone é a chave: já cadastrado é pulado ou atualizado (nome/e-mail substituem, notas e tags somam), nunca duplicado. Só o dono (`appointment.manageAny`), bloqueado na demo. Tela `/admin/clientes/importar` e comando `npm run importar-clientes` (entrega).
 - **Sem avaliações** (decisão do dono do produto): o foco é reserva e gestão. O link do cliente não pede nota (depois de concluído mostra "Obrigado pela visita" + "Reservar de novo") e o pós-atendimento agradece com `{link_reserva}`. A tabela `Review` fica no schema com os dados antigos, sem tela nem rota.
 - **Termos e privacidade**: `/termos` e `/privacidade` (texto-base para revisão de advogado), dados em `LEGAL` (`config/brand.ts`: razão social e CNPJ ficam null até existirem), link no rodapé da página de reservas e da página inicial.
 - **Equipe (dono + profissionais):**

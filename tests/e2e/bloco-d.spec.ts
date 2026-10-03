@@ -120,3 +120,57 @@ test("D3: painel instalável — manifesto só no painel, ícones e guia de inst
   await expect(page.getByText("Adicionar à Tela de Início")).toBeVisible();
   await expect(page.getByText("Instalar app")).toBeVisible();
 });
+
+test("D4: importar clientes — prévia, importar, repetido pula ou atualiza, e a tela com upload", async ({ page, browser }) => {
+  await loginAsOwner(page);
+  const api = page.request;
+  const tag = Date.now().toString().slice(-6);
+  const phone = (n: number) => `(11) 9${tag.slice(0, 4)}-${tag.slice(4)}${n}${n}`;
+  const csv = ["nome;telefone;email;observacoes;tags", `Import A ${tag};${phone(1)};a${tag}@ex.com;Primeira visita;Fiel`, `Import B ${tag};${phone(2)};;;`, "Sem DDD;99999-0000;;;"].join("\n");
+
+  // Prévia: nada gravado, erro apontando a linha.
+  const preview = await (await api.post("/api/admin/clients/import", { data: { csv } })).json();
+  expect(preview).toMatchObject({ validCount: 2, newCount: 2, existingCount: 0, created: 0 });
+  expect(preview.errors).toEqual([{ line: 4, message: expect.stringContaining("sem DDD") }]);
+
+  // Importar.
+  const applied = await (await api.post("/api/admin/clients/import", { data: { csv, apply: true } })).json();
+  expect(applied).toMatchObject({ created: 2, updated: 0 });
+
+  // De novo: os dois já existem. Pular não muda; atualizar troca o nome e soma tags.
+  const again = `nome;telefone;tags\nNovo Nome ${tag};${phone(1)};VIP`;
+  expect(await (await api.post("/api/admin/clients/import", { data: { csv: again, apply: true } })).json()).toMatchObject({ existingCount: 1, created: 0, updated: 0 });
+  expect(await (await api.post("/api/admin/clients/import", { data: { csv: again, apply: true, mode: "update" } })).json()).toMatchObject({ updated: 1 });
+  // A busca também casa os dígitos com telefones: filtra pelo nome exato.
+  const found = ((await (await api.get(`/api/admin/clients?q=${encodeURIComponent(`Novo Nome ${tag}`)}`)).json()).clients as { name: string; tags: string[] }[]).filter(
+    (client) => client.name === `Novo Nome ${tag}`,
+  );
+  expect(found).toHaveLength(1);
+  expect(found[0].tags.sort()).toEqual(["Fiel", "VIP"]);
+
+  // Tela: modelo para baixar e upload do arquivo com prévia.
+  await page.goto("/admin/clientes");
+  await page.getByRole("link", { name: "Importar planilha" }).click();
+  await expect(page.getByRole("heading", { name: "Importar planilha" })).toBeVisible();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Baixar modelo" }).click();
+  expect((await download).suggestedFilename()).toBe("modelo-clientes.csv");
+  await page.getByLabel(/escolher a planilha/).setInputFiles({
+    name: "clientes.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(`nome;telefone\nTela ${tag};${phone(3)}\n`),
+  });
+  await expect(page.getByText(/1 linha pronta: 1 novo/)).toBeVisible();
+  await page.getByRole("button", { name: "Importar 1 linha" }).click();
+  await expect(page.getByText(/Importação concluída: 1 novo/)).toBeVisible();
+
+  // Profissional não importa.
+  const professionals = (await (await api.get("/api/admin/professionals")).json()).professionals as { id: string; name: string }[];
+  const joao = professionals.find((p) => p.name === "João Barbeiro")!;
+  const context = await loginAsProfessional(browser, api, joao.id, { name: "João Barbeiro", email: "joao@navalhadeouro.com", password: "senha123" });
+  try {
+    expect((await context.request.post("/api/admin/clients/import", { data: { csv } })).status()).toBe(403);
+  } finally {
+    await context.close();
+  }
+});

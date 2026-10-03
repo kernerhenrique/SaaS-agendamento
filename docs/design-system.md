@@ -281,3 +281,7 @@ Duas camadas independentes:
 - **`/admin/instalar`** (`install-guide.tsx`): três cartões numerados (Android, iPhone, Computador); o do aparelho de quem vê vem primeiro, com `ring-primary` e "seu aparelho". Quando o navegador permite, quadro `primary/10` com "Instalar agora". Já aberto como app: aviso `success`.
 - Atalhos: "Instalar no celular" no menu da conta (computador) e na gaveta "Mais" (celular). A mensagem de entrega ao dono também cita.
 - Ícones: o da marca (cantos arredondados) para "any"; quadrado cheio com o símbolo em 60% para "maskable" e 70% para o iPhone (o sistema recorta/arredonda).
+
+## Importar clientes (Bloco D)
+
+- **`/admin/clientes/importar`** (botão "Importar planilha" na tela de Clientes, só do dono), em 3 cartões numerados: 1) como a planilha deve estar (tabela de colunas com `*` obrigatória, "Baixar modelo" e o passo a passo do Excel e do Google Planilhas); 2) área de arquivo tracejada (`label` com `input` escondido, foco visível); 3) prévia com as 5 primeiras linhas, aviso `warning` com as linhas de fora (número da linha + motivo), escolha pular/atualizar para os já cadastrados e o botão "Importar N linhas". Concluído: aviso `success` com o resumo.
