@@ -2,6 +2,7 @@ import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
 
 import type { BookingPoliciesInput, BrandingInput, BusinessHoursInput, BusinessProfileInput } from "./business-rules";
+import { deleteOwnBlobs } from "./business-images";
 import { describeHoursConflict, findHoursConflicts } from "./hours-rules";
 
 /**
@@ -50,7 +51,16 @@ async function updateSettings(
 }
 
 export const updateBusinessProfile = (businessId: string, input: BusinessProfileInput) => updateSettings(businessId, input);
-export const updateBranding = (businessId: string, input: BrandingInput) => updateSettings(businessId, input);
+/** Logo/capa trocadas ou removidas: a imagem antiga sai do Blob (se era nossa). */
+export async function updateBranding(businessId: string, input: BrandingInput): Promise<BusinessSettings> {
+  const before = await getBusinessSettings(businessId);
+  const saved = await updateSettings(businessId, input);
+  await deleteOwnBlobs([
+    before.logoUrl !== saved.logoUrl ? before.logoUrl : null,
+    before.coverUrl !== saved.coverUrl ? before.coverUrl : null,
+  ]);
+  return saved;
+}
 export const updateBookingPolicies = (businessId: string, input: BookingPoliciesInput) => updateSettings(businessId, input);
 
 /** Substitui a semana inteira: dias fora da lista ficam como fechados. */

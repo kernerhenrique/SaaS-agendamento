@@ -7,6 +7,8 @@ import { NewAppointmentDialog, type NewAppointmentInitial } from "./new-appointm
 
 interface AdminShellContextValue {
   timezone: string;
+  /** Página de reservas do negócio ("/{slug}"): atalho "Ver minha página". */
+  publicPath: string;
   /** Abre o "novo agendamento" de qualquer tela, opcionalmente já preenchido. */
   openNewAppointment: (initial?: NewAppointmentInitial) => void;
   /** Muda a cada agendamento criado — telas que listam agendamentos recarregam ao ver a mudança. */
@@ -21,7 +23,7 @@ interface AdminShellContextValue {
 
 const AdminShellContext = createContext<AdminShellContextValue | null>(null);
 
-export function AdminShellProvider({ timezone, children }: { timezone: string; children: ReactNode }) {
+export function AdminShellProvider({ timezone, publicPath, children }: { timezone: string; publicPath: string; children: ReactNode }) {
   const [newAppointment, setNewAppointment] = useState<{ open: boolean; initial?: NewAppointmentInitial }>({
     open: false,
   });
@@ -49,8 +51,8 @@ export function AdminShellProvider({ timezone, children }: { timezone: string; c
   }, []);
 
   const value = useMemo(
-    () => ({ timezone, openNewAppointment, appointmentsVersion, openSearch, setContextDate }),
-    [timezone, openNewAppointment, appointmentsVersion, openSearch],
+    () => ({ timezone, publicPath, openNewAppointment, appointmentsVersion, openSearch, setContextDate }),
+    [timezone, publicPath, openNewAppointment, appointmentsVersion, openSearch],
   );
 
   return (

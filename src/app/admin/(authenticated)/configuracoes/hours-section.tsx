@@ -36,7 +36,7 @@ export function HoursSection({ business }: { business: BusinessSettings }) {
     <SettingsCard
       id="horario"
       title="Horário de funcionamento"
-      description="Só informativo: aparece na página pública. Os horários livres para reserva vêm do expediente de cada profissional."
+      description="Aparece na página pública. O expediente de cada profissional precisa caber neste horário (os horários livres para reserva vêm do expediente)."
       isSaving={isSaving}
       error={error}
       onSubmit={() => save("/api/admin/business/hours", "PUT", { hours: toBusinessHours(entries) })}

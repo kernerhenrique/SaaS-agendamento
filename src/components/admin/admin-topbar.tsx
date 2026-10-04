@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LogOut, Plus, Search, Smartphone } from "lucide-react";
+import { ExternalLink, LogOut, Plus, Search, Smartphone } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ export function AdminTopbar({
   /** "Dono" ou o termo do profissional ("Barbeiro"). */
   roleLabel: string;
 }) {
-  const { openNewAppointment, openSearch } = useAdminShell();
+  const { openNewAppointment, openSearch, publicPath } = useAdminShell();
   const { logout, isLoggingOut } = useLogout();
 
   return (
@@ -79,6 +79,10 @@ export function AdminTopbar({
             </DropdownMenuLabel>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
+          <DropdownMenuItem render={<a href={publicPath} target="_blank" rel="noreferrer" />}>
+            <ExternalLink />
+            Ver minha página de reservas
+          </DropdownMenuItem>
           <DropdownMenuItem render={<Link href="/admin/instalar" />}>
             <Smartphone />
             Instalar no celular

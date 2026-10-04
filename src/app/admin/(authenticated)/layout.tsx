@@ -34,7 +34,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <VerticalProvider verticalKey={business.businessType}>
       <AdminAccessProvider role={session.role} professionalId={session.professionalId}>
         <AccentColorScope accentColor={business.accentColor} className="flex flex-1">
-          <AdminShellProvider timezone={business.timezone}>
+          <AdminShellProvider timezone={business.timezone} publicPath={`/${business.slug}`}>
             <AdminSidebar business={businessBadge} defaultCollapsed={sidebarCollapsed} />
             {/* pb-20 no celular: espaço para a navegação inferior fixa. */}
             <div className="flex min-w-0 flex-1 flex-col pb-20 sm:pb-0">

@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { CircleAlert, CircleCheck, ImageOff } from "lucide-react";
+import { CircleAlert, CircleCheck, ImageOff, Trash2, Upload } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AA_CONTRAST, accentContrast, getAccentCssVars, resolveAccentColor } from "@/lib/accent-color";
@@ -50,46 +50,29 @@ export function BrandingSection({ business }: { business: BusinessSettings }) {
       error={error}
       onSubmit={() => save("/api/admin/business", "PATCH", { secao: "identidade", logoUrl, coverUrl, accentColor: color })}
     >
-      <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
-        Cole o link de uma imagem já publicada (ex.: foto do perfil do Instagram ou do Google Drive público). O link
-        precisa começar com https://.
-      </p>
-
       <div className="flex flex-col gap-2">
-        <Label htmlFor="branding-logo">Logo (opcional)</Label>
-        <div className="flex items-center gap-3">
+        <span className="text-sm font-medium" id="branding-logo-label">
+          Logo (opcional)
+        </span>
+        <div className="flex flex-wrap items-center gap-3">
           <Avatar className="size-14 shrink-0">
-            {logo.src && !logo.failed ? <AvatarImage src={logo.src} alt="" onError={logo.onError} /> : null}
+            {logo.src && !logo.failed ? <AvatarImage src={logo.src} alt="Prévia do logo" onError={logo.onError} /> : null}
             <AvatarFallback>{getInitials(business.name)}</AvatarFallback>
           </Avatar>
-          <Input
-            id="branding-logo"
-            type="url"
-            inputMode="url"
-            placeholder="https://..."
-            value={logoUrl}
-            onChange={(event) => setLogoUrl(event.target.value)}
-            aria-describedby="branding-logo-help"
-          />
+          <ImageUploadButtons kind="logo" label="logo" value={logoUrl} initial={business.logoUrl ?? ""} onChange={setLogoUrl} />
         </div>
         <p id="branding-logo-help" className={cn("text-caption", logo.failed ? "text-destructive" : "text-muted-foreground")}>
           {logo.failed
-            ? "Não foi possível abrir essa imagem. Confira se o link é público."
-            : "Quadrada, de preferência. Aparece no topo da página e na prévia do link no WhatsApp."}
+            ? "Não foi possível abrir essa imagem."
+            : "Quadrada, de preferência (PNG, JPG ou WebP até 4 MB). Aparece no topo da página e na prévia do link no WhatsApp."}
         </p>
+        <ImageLinkField id="branding-logo" label="Logo (link)" value={logoUrl} onChange={setLogoUrl} />
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="branding-cover">Capa (opcional)</Label>
-        <Input
-          id="branding-cover"
-          type="url"
-          inputMode="url"
-          placeholder="https://..."
-          value={coverUrl}
-          onChange={(event) => setCoverUrl(event.target.value)}
-          aria-describedby="branding-cover-help"
-        />
+        <span className="text-sm font-medium" id="branding-cover-label">
+          Capa (opcional)
+        </span>
         <div className="flex h-28 items-center justify-center overflow-hidden rounded-lg border bg-muted sm:h-36">
           {cover.src && !cover.failed ? (
             // eslint-disable-next-line @next/next/no-img-element -- prévia de URL externa arbitrária
@@ -101,9 +84,12 @@ export function BrandingSection({ business }: { business: BusinessSettings }) {
             </span>
           )}
         </div>
+        <ImageUploadButtons kind="capa" label="capa" value={coverUrl} initial={business.coverUrl ?? ""} onChange={setCoverUrl} />
         <p id="branding-cover-help" className="text-caption text-muted-foreground">
-          Foto larga (ex.: 1600 × 600) do ambiente ou de um trabalho. Aparece acima do nome na página pública.
+          Foto larga (ex.: 1600 × 600) do ambiente ou de um trabalho, PNG, JPG ou WebP até 4 MB. Aparece acima do nome na
+          página pública.
         </p>
+        <ImageLinkField id="branding-cover" label="Capa (link)" value={coverUrl} onChange={setCoverUrl} />
       </div>
 
       <fieldset className="flex flex-col gap-2">
@@ -148,5 +134,106 @@ export function BrandingSection({ business }: { business: BusinessSettings }) {
         </ul>
       </fieldset>
     </SettingsCard>
+  );
+}
+
+/**
+ * "Enviar imagem" (arquivo vai para o Blob e aparece na prévia) e "Remover".
+ * Como o resto do cartão, só passa a valer no "Salvar".
+ */
+function ImageUploadButtons({
+  kind,
+  label,
+  value,
+  initial,
+  onChange,
+}: {
+  kind: "logo" | "capa";
+  label: string;
+  value: string;
+  /** O que está salvo hoje: diferente disso, avisa que falta salvar. */
+  initial: string;
+  onChange: (url: string) => void;
+}) {
+  const [isUploading, setIsUploading] = useState(false);
+  /** Erro de um envio: só aparece enquanto o valor é o daquela tentativa. */
+  const [failure, setFailure] = useState<{ message: string; value: string } | null>(null);
+  const error = failure && failure.value === value ? failure.message : null;
+  const inputId = `branding-${kind}-file`;
+
+  async function handleFile(file: File | undefined) {
+    if (!file) return;
+    setFailure(null);
+    setIsUploading(true);
+    try {
+      const form = new FormData();
+      form.set("tipo", kind);
+      form.set("arquivo", file);
+      const response = await fetch("/api/admin/business/images", { method: "POST", body: form });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        setFailure({ message: data?.error ?? "Não foi possível enviar a imagem", value });
+        return;
+      }
+      onChange(data.url as string);
+    } catch {
+      setFailure({ message: "Sem conexão. Tente de novo.", value });
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex flex-wrap items-center gap-2">
+        {/* label + input escondido: o botão abre o seletor de arquivos e continua acessível pelo teclado. */}
+        <label
+          htmlFor={inputId}
+          className={cn(
+            buttonVariants({ variant: "outline", size: "sm" }),
+            "cursor-pointer has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50",
+            isUploading && "pointer-events-none opacity-60",
+          )}
+        >
+          <Upload />
+          {isUploading ? "Enviando…" : value ? `Trocar ${label}` : `Enviar ${label}`}
+          <input
+            id={inputId}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            className="sr-only"
+            disabled={isUploading}
+            onChange={(event) => {
+              void handleFile(event.target.files?.[0]);
+              event.target.value = "";
+            }}
+          />
+        </label>
+        {value ? (
+          <Button type="button" variant="ghost" size="sm" onClick={() => onChange("")}>
+            <Trash2 />
+            Remover {label}
+          </Button>
+        ) : null}
+      </div>
+      {error ? <p className="text-caption text-destructive">{error}</p> : null}
+      {value !== initial && !error ? (
+        <p className="text-caption text-warning">Ainda não aplicado: clique em “Salvar” no fim do cartão.</p>
+      ) : null}
+    </div>
+  );
+}
+
+/** Link de imagem já publicada (opção avançada, para quem já tem a imagem em outro lugar). */
+function ImageLinkField({ id, label, value, onChange }: { id: string; label: string; value: string; onChange: (url: string) => void }) {
+  return (
+    <details className="text-sm">
+      <summary className="w-fit cursor-pointer text-caption text-muted-foreground hover:text-foreground">Usar um link em vez de arquivo</summary>
+      <div className="mt-2 flex flex-col gap-1.5">
+        <Label htmlFor={id}>{label}</Label>
+        <Input id={id} type="url" inputMode="url" placeholder="https://..." value={value} onChange={(event) => onChange(event.target.value)} />
+        <p className="text-caption text-muted-foreground">O link precisa começar com https:// e a imagem precisa ser pública.</p>
+      </div>
+    </details>
   );
 }

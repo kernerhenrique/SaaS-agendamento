@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { LogOut, Menu, Plus, Smartphone } from "lucide-react";
+import { ExternalLink, LogOut, Menu, Plus, Smartphone } from "lucide-react";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -22,7 +22,7 @@ const PRIMARY_HREFS = ["/admin", "/admin/agenda", "/admin/clientes"];
 export function AdminBottomNav() {
   const pathname = usePathname();
   const items = useAdminNav();
-  const { openNewAppointment } = useAdminShell();
+  const { openNewAppointment, publicPath } = useAdminShell();
   const { logout, isLoggingOut } = useLogout();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
@@ -89,6 +89,16 @@ export function AdminBottomNav() {
                 </Link>
               );
             })}
+            <a
+              href={publicPath}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setIsMoreOpen(false)}
+              className="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium hover:bg-muted"
+            >
+              <ExternalLink className="size-5" />
+              Ver minha página de reservas
+            </a>
             <Link
               href="/admin/instalar"
               onClick={() => setIsMoreOpen(false)}

@@ -157,7 +157,7 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
   - índice lateral fixo no desktop; no celular, faixa de atalhos rolável (links `#secao`).
 - **`useSaveSettings`**: toast em sucesso, erro de validação inline ao lado do botão, e `router.refresh()` para o shell (nome, logo, cor, termos do nicho) mudar na hora.
 - **Identidade**:
-  - logo e capa por link `https://`, com prévia e aviso se a imagem não abrir;
+  - logo e capa por **arquivo** (Bloco E6): botão "Enviar/Trocar logo" (`label` com `input type=file` escondido, foco visível), "Remover", prévia e o aviso `text-warning` "Ainda não aplicado: clique em Salvar" enquanto difere do salvo. PNG, JPG ou WebP até 4 MB, vai para o Vercel Blob (`POST /api/admin/business/images`, só dono, bloqueado na demo); ao salvar, a imagem antiga nossa sai do Blob. O link `https://` virou opção avançada ("Usar um link em vez de arquivo", `<details>`);
   - cor com seletor + hex e prévia (botão e link) usando `getAccentCssVars` num contêiner — nunca muda o `:root` antes de salvar;
   - contraste mostrado com `accentContrast` (`src/lib/accent-color.ts`): texto do botão e cor como texto sobre fundo branco.
 - **Reservas**: opções prontas em `Select` (sem número solto), exemplo concreto da antecedência e prévia "O cliente vê assim".
@@ -197,7 +197,7 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
   - linha em `text-caption` no drawer do agendamento ("Marcado por Carlos (dono) · Cancelado por João (barbeiro)");
   - "Registrado por" em cada recebimento;
   - sem autor registrado, a linha não aparece.
-- **Barra superior:** o menu da conta mostra nome e papel ("Dono" ou o termo do nicho).
+- **Barra superior:** o menu da conta mostra nome e papel ("Dono" ou o termo do nicho) e o atalho "Ver minha página de reservas" (nova aba; também no "Mais" do celular, via `publicPath` do `AdminShellProvider`).
 
 ## Demonstração
 

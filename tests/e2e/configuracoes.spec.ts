@@ -13,10 +13,16 @@ test("configurações salvam capa, horário e janela e aparecem na página públ
     await expect(page.getByRole("heading", { name: "Configurações", level: 1 })).toBeVisible();
     await expect(page.getByLabel("Link da página de reservas")).toHaveValue(/\/navalha-de-ouro$/);
 
-    // Identidade: capa por link, com prévia.
+    // Identidade: arquivo que não é imagem é recusado com mensagem clara.
     const identidade = page.locator("#identidade");
-    await identidade.getByLabel("Capa (opcional)").fill("https://example.com/capa-e2e.jpg");
+    await identidade.locator("#branding-capa-file").setInputFiles({ name: "contrato.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
+    await expect(identidade.getByText("Use uma imagem PNG, JPG ou WebP")).toBeVisible();
+
+    // Capa por link (opção avançada), com prévia; só vale depois do Salvar.
+    await identidade.getByText("Usar um link em vez de arquivo").nth(1).click();
+    await identidade.getByLabel("Capa (link)").fill("https://example.com/capa-e2e.jpg");
     await expect(identidade.getByAltText("Prévia da capa")).toHaveAttribute("src", "https://example.com/capa-e2e.jpg");
+    await expect(identidade.getByText("Ainda não aplicado").first()).toBeVisible();
     await identidade.getByRole("button", { name: "Salvar" }).click();
     await expect(page.getByText("Alterações salvas").first()).toBeVisible();
 

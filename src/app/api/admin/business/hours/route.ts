@@ -6,7 +6,7 @@ import { parseBusinessHours } from "@/server/modules/business/business-rules";
 import { replaceBusinessHours } from "@/server/modules/business/business.service";
 import { assertNotDemo } from "@/server/modules/demo/demo.service";
 
-/** Horário de funcionamento (informativo): `{ hours: [{ weekday, startMinute, endMinute }] }`. */
+/** Horário de funcionamento (página pública; o expediente da equipe precisa caber nele): `{ hours: [{ weekday, startMinute, endMinute }] }`. */
 export async function PUT(request: NextRequest) {
   try {
     const session = await requirePermission("settings.manage");
