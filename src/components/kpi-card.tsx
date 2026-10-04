@@ -27,12 +27,15 @@ export function KpiCard({
   label,
   value,
   delta,
+  hint,
   className,
 }: {
   icon: LucideIcon;
   label: string;
   value: string;
   delta?: KpiDelta;
+  /** Como o número é calculado, em poucas palavras (ex.: "por atendimento concluído"). */
+  hint?: string;
   className?: string;
 }) {
   return (
@@ -43,6 +46,7 @@ export function KpiCard({
           <span className="text-caption">{label}</span>
         </div>
         <span className="text-page-title font-bold">{value}</span>
+        {hint ? <span className="text-caption text-muted-foreground">{hint}</span> : null}
         {delta ? <DeltaLine delta={delta} /> : null}
       </CardContent>
     </Card>

@@ -8,6 +8,8 @@ import {
   summarizeClients,
   summarizeProfessionals,
   summarizeRevenue,
+  averageTicket,
+  rateDelta,
   summarizeServices,
   toCsv,
 } from "@/server/modules/report/report-rules";
@@ -75,25 +77,42 @@ describe("sumByLocalDay", () => {
   });
 });
 
+describe("rateDelta", () => {
+  it("diferença em pontos, ou null se algum período não teve atendimento", () => {
+    expect(rateDelta({ rate: 0.2, total: 10 }, { rate: 0.1, total: 20 })).toBeCloseTo(0.1);
+    expect(rateDelta({ rate: 0.167, total: 6 }, { rate: 0, total: 0 })).toBeNull();
+    expect(rateDelta({ rate: 0, total: 0 }, { rate: 0.1, total: 10 })).toBeNull();
+  });
+});
+
 describe("summarizeRevenue", () => {
-  it("recebido, descontos, ticket médio por atendimento e ranking por forma", () => {
-    const result = summarizeRevenue([
-      { appointmentId: "a1", amountCents: 3000, discountCents: 0, method: "PIX" },
-      { appointmentId: "a1", amountCents: 4500, discountCents: 0, method: "CASH" }, // sinal + saldo = 1 atendimento
-      { appointmentId: "a2", amountCents: 4500, discountCents: 500, method: "PIX" },
-      { appointmentId: "a3", amountCents: 0, discountCents: 1000, method: "PIX" }, // só desconto
-    ]);
-    expect(result.receivedCents).toBe(12000);
+  it("recebido, descontos e ranking por forma; ticket médio pelos concluídos", () => {
+    const result = summarizeRevenue(
+      [
+        { appointmentId: "a1", amountCents: 3000, discountCents: 0, method: "PIX" },
+        { appointmentId: "a1", amountCents: 4500, discountCents: 0, method: "CASH" },
+        { appointmentId: "a2", amountCents: 4500, discountCents: 500, method: "PIX" },
+        { appointmentId: "a3", amountCents: 0, discountCents: 1000, method: "PIX" }, // só desconto
+        { appointmentId: "futuro", amountCents: 3000, discountCents: 0, method: "PIX" }, // sinal de um atendimento futuro
+      ],
+      [
+        { priceCents: 7500, discountCents: 0 },
+        { priceCents: 5000, discountCents: 500 },
+      ],
+    );
+    expect(result.receivedCents).toBe(15000);
     expect(result.discountCents).toBe(1500);
-    expect(result.averageTicketCents).toBe(6000); // 12000 ÷ 2 atendimentos pagos
+    // (7500 + 4500) ÷ 2 concluídos: o sinal do futuro não puxa a média para baixo.
+    expect(result.averageTicketCents).toBe(6000);
     expect(result.byMethod).toEqual([
-      { method: "PIX", amountCents: 7500, count: 2 },
+      { method: "PIX", amountCents: 10500, count: 3 },
       { method: "CASH", amountCents: 4500, count: 1 },
     ]);
   });
 
-  it("sem recebimento, ticket médio é null", () => {
-    expect(summarizeRevenue([]).averageTicketCents).toBeNull();
+  it("sem atendimento concluído, ticket médio é null", () => {
+    expect(summarizeRevenue([], []).averageTicketCents).toBeNull();
+    expect(averageTicket([{ priceCents: 1000, discountCents: 2000 }])).toBe(0); // desconto maior que o valor não fica negativo
   });
 });
 

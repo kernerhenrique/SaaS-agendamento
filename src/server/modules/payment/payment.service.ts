@@ -5,6 +5,7 @@ import { NotFoundError, ValidationError } from "@/server/errors";
 import { canTransition } from "@/server/modules/appointment/appointment.service";
 import { isStatusChangeAvailable, NOT_STARTED_MESSAGE } from "@/server/modules/appointment/status-rules";
 import { summarizeRevenue } from "@/server/modules/report/report-rules";
+import { loadCompletedValues } from "@/server/modules/report/report.service";
 
 import {
   commissionFor,
@@ -258,7 +259,7 @@ export interface FinanceSummary {
   receivedCents: number;
   discountCents: number;
   paymentsCount: number;
-  /** Recebido ÷ atendimentos com recebimento no período. */
+  /** Valor médio por atendimento concluído no período (ver summarizeRevenue). */
   averageTicketCents: number | null;
   receivableCents: number;
   receivableCount: number;
@@ -267,17 +268,18 @@ export interface FinanceSummary {
 
 export async function getFinanceSummary(businessId: string, range: FinanceRange): Promise<FinanceSummary> {
   const { start, end } = rangeToUtc(range, await businessTimezone(businessId));
-  const [payments, receivables] = await Promise.all([
+  const [payments, receivables, completed] = await Promise.all([
     prisma.payment.findMany({
       where: { businessId, ...activePayments, receivedAt: { gte: start, lt: end } },
       select: { appointmentId: true, amountCents: true, discountCents: true, method: true },
     }),
     listReceivables(businessId),
+    loadCompletedValues(businessId, start, end),
   ]);
 
   // Mesma regra dos Relatórios (ticket médio, formas de pagamento).
   return {
-    ...summarizeRevenue(payments),
+    ...summarizeRevenue(payments, completed),
     receivableCents: receivables.reduce((sum, r) => sum + r.summary.balanceCents, 0),
     receivableCount: receivables.length,
   };

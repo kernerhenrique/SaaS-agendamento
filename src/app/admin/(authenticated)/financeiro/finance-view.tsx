@@ -128,6 +128,7 @@ export function FinanceView({
             <KpiCard
               icon={Receipt}
               label="Ticket médio"
+              hint="por atendimento concluído no período"
               value={
                 summary.data.summary.averageTicketCents == null
                   ? "—"

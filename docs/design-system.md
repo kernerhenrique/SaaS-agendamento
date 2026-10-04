@@ -145,7 +145,8 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
 - **`KpiCard` com `delta`**: "▲ 12% vs. período anterior" (período imediatamente anterior, de mesmo tamanho).
   - Verde quando é bom, vermelho quando é ruim; `higherIsBetter: false` inverte (faltas, cancelamento, descontos).
   - Taxas comparam em **pontos percentuais** (`kind: "points"`).
-  - Sem base (anterior = 0): "Sem base no período anterior".
+  - Sem base (anterior = 0): "Sem base no período anterior". Nas taxas (cancelamento, faltas), vale o mesmo quando um dos períodos não teve nenhum atendimento (`rateDelta`).
+- **Ticket médio** (Financeiro e Relatórios, mesma regra `summarizeRevenue`): valor médio por atendimento **concluído** no período (valor do atendimento menos desconto), com a legenda "por atendimento concluído no período" (`KpiCard` com `hint`). Sinal de atendimento futuro não puxa a média para baixo.
 - **Gráficos** (`relatorios/report-charts.tsx`) aceitam formatadores (`describe`, `formatTick`, `formatValue`) para valores em R$. A alternância gráfico/tabela continua em todos.
 - **"Exportar CSV"**: recebimentos do período e fechamento de comissões, no formato do Excel pt-BR (BOM, `;`, vírgula decimal). Download por link com `download`.
 

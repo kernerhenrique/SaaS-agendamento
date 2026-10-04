@@ -14,6 +14,7 @@ import {
   sumByLocalDay,
   type AppointmentFact,
   type AppointmentsSummary,
+  type CompletedValue,
   type ClientsSummary,
   type PaymentFact,
   type ProfessionalRow,
@@ -65,6 +66,18 @@ function toUtc(range: ReportRange) {
     start: localDayRangeUtc(range.startDate, range.timeZone).start,
     end: localDayRangeUtc(range.endDate, range.timeZone).end,
   };
+}
+
+/**
+ * Concluídos no período (pela data do atendimento) com o valor combinado e o
+ * desconto dado: base do ticket médio, igual no Financeiro e nos Relatórios.
+ */
+export async function loadCompletedValues(businessId: string, start: Date, end: Date): Promise<CompletedValue[]> {
+  const completed = await prisma.appointment.findMany({
+    where: { businessId, status: AppointmentStatus.COMPLETED, startAt: { gte: start, lt: end } },
+    select: { priceCents: true, payments: { where: { deletedAt: null }, select: { discountCents: true } } },
+  });
+  return completed.map((a) => ({ priceCents: a.priceCents, discountCents: a.payments.reduce((sum, p) => sum + p.discountCents, 0) }));
 }
 
 /** Atendimentos (pela data do atendimento) e recebimentos (pela data de recebimento) do período. */
@@ -163,10 +176,14 @@ export async function getReport<S extends ReportSection>(
 
     case "faturamento": {
       const [facts, prevFacts] = await Promise.all([loadFacts(businessId, range), loadFacts(businessId, previous)]);
-      const before = summarizeRevenue(prevFacts.payments);
+      const [completed, prevCompleted] = await Promise.all([
+        loadCompletedValues(businessId, facts.start, facts.end),
+        loadCompletedValues(businessId, prevFacts.start, prevFacts.end),
+      ]);
+      const before = summarizeRevenue(prevFacts.payments, prevCompleted);
       const report: RevenueReport = {
         current: {
-          ...summarizeRevenue(facts.payments),
+          ...summarizeRevenue(facts.payments, completed),
           byDay: sumByLocalDay(
             facts.payments.map((p) => ({ at: p.receivedAt, value: p.amountCents })),
             range.startDate,

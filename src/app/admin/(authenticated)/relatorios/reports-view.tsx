@@ -36,7 +36,7 @@ import { formatPriceFromCents } from "@/lib/currency";
 import { todayInTimeZone } from "@/lib/date";
 import { resolvePeriod, type PeriodPreset } from "@/lib/period";
 import { useFetchJson } from "@/lib/use-fetch-json";
-import { delta } from "@/server/modules/report/report-rules";
+import { delta, rateDelta } from "@/server/modules/report/report-rules";
 import type {
   AppointmentsReport,
   ClientsReport,
@@ -219,13 +219,21 @@ function AppointmentsSection({ report }: { report: AppointmentsReport }) {
           icon={XCircle}
           label="Taxa de cancelamento"
           value={percent(current.cancellationRate)}
-          delta={{ value: current.cancellationRate - previous.cancellationRate, kind: "points", higherIsBetter: false }}
+          delta={{
+            value: rateDelta({ rate: current.cancellationRate, total: current.total }, { rate: previous.cancellationRate, total: previous.total }),
+            kind: "points",
+            higherIsBetter: false,
+          }}
         />
         <KpiCard
           icon={UserX}
           label="Taxa de faltas"
           value={percent(current.noShowRate)}
-          delta={{ value: current.noShowRate - previous.noShowRate, kind: "points", higherIsBetter: false }}
+          delta={{
+            value: rateDelta({ rate: current.noShowRate, total: current.total }, { rate: previous.noShowRate, total: previous.total }),
+            kind: "points",
+            higherIsBetter: false,
+          }}
         />
         <KpiCard
           icon={Trophy}
@@ -300,6 +308,7 @@ function RevenueSection({ report }: { report: RevenueReport }) {
           icon={Receipt}
           label="Ticket médio"
           value={current.averageTicketCents == null ? "—" : formatPriceFromCents(current.averageTicketCents)}
+          hint="por atendimento concluído no período"
           delta={{ value: ticketDelta }}
         />
         <KpiCard

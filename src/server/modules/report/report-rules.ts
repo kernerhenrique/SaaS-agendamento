@@ -41,6 +41,16 @@ export function delta(current: number, previous: number): number | null {
   return (current - previous) / previous;
 }
 
+/**
+ * Diferença em pontos percentuais entre duas taxas. null quando um dos
+ * períodos não teve nenhum atendimento: "17 p.p. a mais" que um período
+ * vazio não quer dizer nada (a tela mostra "Sem base no período anterior").
+ */
+export function rateDelta(current: { rate: number; total: number }, previous: { rate: number; total: number }): number | null {
+  if (previous.total === 0 || current.total === 0) return null;
+  return current.rate - previous.rate;
+}
+
 // ---------------------------------------------------------------------------
 // Atendimentos
 
@@ -101,16 +111,32 @@ export interface RevenueSummary {
   receivedCents: number;
   discountCents: number;
   paymentsCount: number;
-  /** Recebido ÷ atendimentos com recebimento no período (mesma regra do Financeiro). */
+  /**
+   * Valor médio por atendimento CONCLUÍDO no período (valor do atendimento
+   * menos desconto). Não depende de quando o dinheiro entrou: um sinal de
+   * R$ 30 de um combo de R$ 75 não vira "um atendimento de R$ 30".
+   */
   averageTicketCents: number | null;
   byMethod: { method: PaymentMethod; amountCents: number; count: number }[];
 }
 
+/** Concluído no período: valor combinado e o desconto dado (em todos os recebimentos dele). */
+export interface CompletedValue {
+  priceCents: number;
+  discountCents: number;
+}
+
+export function averageTicket(completed: CompletedValue[]): number | null {
+  if (completed.length === 0) return null;
+  const total = completed.reduce((sum, a) => sum + Math.max(0, a.priceCents - a.discountCents), 0);
+  return Math.round(total / completed.length);
+}
+
 export function summarizeRevenue(
   payments: Pick<PaymentFact, "appointmentId" | "amountCents" | "discountCents" | "method">[],
+  completed: CompletedValue[],
 ): RevenueSummary {
   const receivedCents = payments.reduce((sum, p) => sum + p.amountCents, 0);
-  const paidAppointments = new Set(payments.filter((p) => p.amountCents > 0).map((p) => p.appointmentId)).size;
   const byMethod = new Map<PaymentMethod, { amountCents: number; count: number }>();
   for (const p of payments) {
     if (p.amountCents === 0) continue; // registro só de desconto não é "forma de pagamento"
@@ -123,7 +149,7 @@ export function summarizeRevenue(
     receivedCents,
     discountCents: payments.reduce((sum, p) => sum + p.discountCents, 0),
     paymentsCount: payments.length,
-    averageTicketCents: paidAppointments > 0 ? Math.round(receivedCents / paidAppointments) : null,
+    averageTicketCents: averageTicket(completed),
     byMethod: [...byMethod.entries()]
       .map(([method, entry]) => ({ method, ...entry }))
       .sort((a, b) => b.amountCents - a.amountCents),
