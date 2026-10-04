@@ -35,6 +35,7 @@ export async function searchAdmin(
     prisma.client.findMany({
       where: {
         businessId,
+        deletedAt: null,
         ...clientMatch,
         ...(scope.professionalId ? { appointments: { some: { professionalId: scope.professionalId } } } : {}),
       },

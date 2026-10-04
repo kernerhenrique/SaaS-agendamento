@@ -4,7 +4,12 @@ import { NotFoundError, ValidationError } from "@/server/errors";
 
 import {
   applyClientFilter,
+  collectTags,
+  deletedClientPhone,
+  DELETED_CLIENT_NAME,
+  hasTag,
   matchesClientSearch,
+  parseClientContact,
   normalizeTags,
   summarizeClient,
   type ClientFilter,
@@ -40,12 +45,12 @@ const scopedClientWhere = (scope: ClientScope) =>
 
 export async function listClients(
   businessId: string,
-  options: { query?: string; filter: ClientFilter },
+  options: { query?: string; filter: ClientFilter; tag?: string | null },
   now = new Date(),
   scope: ClientScope = {},
 ): Promise<ClientListRow[]> {
   const clients = await prisma.client.findMany({
-    where: { businessId, ...scopedClientWhere(scope) },
+    where: { businessId, deletedAt: null, ...scopedClientWhere(scope) },
     select: {
       id: true,
       name: true,
@@ -57,7 +62,7 @@ export async function listClients(
   });
 
   const rows = clients
-    .filter((client) => matchesClientSearch(client, options.query ?? ""))
+    .filter((client) => matchesClientSearch(client, options.query ?? "") && hasTag(client, options.tag))
     .map((client) => ({ client, summary: summarizeClient(client.appointments, now) }));
 
   return applyClientFilter(rows, options.filter, now).map(({ client, summary }) => ({
@@ -79,7 +84,7 @@ export async function listClients(
  */
 export async function getClientDetail(businessId: string, clientId: string, now = new Date(), scope: ClientScope = {}) {
   const client = await prisma.client.findFirst({
-    where: { id: clientId, businessId, ...scopedClientWhere(scope) },
+    where: { id: clientId, businessId, deletedAt: null, ...scopedClientWhere(scope) },
     include: {
       appointments: {
         where: scope,
@@ -113,6 +118,8 @@ export async function getClientDetail(businessId: string, clientId: string, now 
   return {
     client: { ...data, notesUpdatedBy: notesEditor?.name ?? null },
     summary: summarizeClient(appointments, now),
+    /** Marcados daqui para frente (excluir o cadastro cancela todos). */
+    upcomingCount: appointments.filter((a) => a.startAt > now && (a.status === "PENDING" || a.status === "CONFIRMED")).length,
     totalSpentCents: spent ? (spent._sum.amountCents ?? 0) : null,
     // Futuros e passados em listas separadas na tela: cada lado com a sua cota,
     // senão um horário fixo longo esconderia todo o passado.
@@ -134,7 +141,7 @@ export async function updateClientNotes(
     throw new ValidationError(`As notas podem ter no máximo ${MAX_NOTES_LENGTH} caracteres`);
   }
   const existing = await prisma.client.findFirst({
-    where: { id: clientId, businessId, ...scopedClientWhere(actor.scope ?? {}) },
+    where: { id: clientId, businessId, deletedAt: null, ...scopedClientWhere(actor.scope ?? {}) },
     select: { id: true },
   });
   if (!existing) throw new NotFoundError("Cadastro não encontrado");
@@ -162,7 +169,74 @@ export async function findClientByPhone(businessId: string, rawPhone: string, sc
   // Profissional: cliente de colega não aparece (não revela a base do colega);
   // ao salvar, o agendamento se liga ao mesmo cadastro, sem duplicar.
   return prisma.client.findFirst({
-    where: { businessId, phone, ...scopedClientWhere(scope) },
+    where: { businessId, phone, deletedAt: null, ...scopedClientWhere(scope) },
     select: { id: true, name: true, phone: true, email: true },
+  });
+}
+
+/** Tags em uso (para o filtro da lista), só dos clientes que a pessoa enxerga. */
+export async function listClientTags(businessId: string, scope: ClientScope = {}): Promise<string[]> {
+  const clients = await prisma.client.findMany({
+    where: { businessId, deletedAt: null, NOT: { tags: { isEmpty: true } }, ...scopedClientWhere(scope) },
+    select: { tags: true },
+  });
+  return collectTags(clients);
+}
+
+/**
+ * Corrige nome, WhatsApp e e-mail (só o dono: o profissional não renomeia
+ * cadastro existente). O telefone continua sendo a chave: se já for de outro
+ * cadastro, recusa dizendo de quem (juntar dois cadastros fica para o suporte).
+ */
+export async function updateClientContact(businessId: string, clientId: string, input: { name: unknown; phone: unknown; email: unknown }) {
+  let contact: ReturnType<typeof parseClientContact>;
+  try {
+    contact = parseClientContact(input, normalizePhoneBR);
+  } catch (error) {
+    throw new ValidationError((error as Error).message);
+  }
+  const existing = await prisma.client.findFirst({ where: { id: clientId, businessId, deletedAt: null }, select: { id: true } });
+  if (!existing) throw new NotFoundError("Cadastro não encontrado");
+  const samePhone = await prisma.client.findFirst({
+    where: { businessId, phone: contact.phone, NOT: { id: clientId } },
+    select: { name: true },
+  });
+  if (samePhone) throw new ValidationError(`Esse WhatsApp já é do cadastro "${samePhone.name}"`);
+  return prisma.client.update({
+    where: { id: clientId },
+    data: contact,
+    select: { id: true, name: true, phone: true, email: true },
+  });
+}
+
+/**
+ * Exclui o cliente a pedido (LGPD): apaga os dados pessoais (nome, telefone,
+ * e-mail, notas, tags e as observações dos agendamentos) e cancela o que
+ * estava marcado para frente. Atendimentos e pagamentos antigos continuam,
+ * sem nome, para os relatórios e o financeiro não mudarem.
+ */
+export async function deleteClient(businessId: string, clientId: string, actorUserId: string, now = new Date()) {
+  const existing = await prisma.client.findFirst({ where: { id: clientId, businessId, deletedAt: null }, select: { id: true } });
+  if (!existing) throw new NotFoundError("Cadastro não encontrado");
+  return prisma.$transaction(async (tx) => {
+    const cancelled = await tx.appointment.updateMany({
+      where: { businessId, clientId, status: { in: ["PENDING", "CONFIRMED"] }, startAt: { gt: now } },
+      data: { status: "CANCELLED", cancelledByUserId: actorUserId },
+    });
+    await tx.appointment.updateMany({ where: { businessId, clientId }, data: { notes: null } });
+    await tx.client.update({
+      where: { id: clientId },
+      data: {
+        name: DELETED_CLIENT_NAME,
+        phone: deletedClientPhone(clientId),
+        email: null,
+        internalNotes: null,
+        tags: [],
+        notesUpdatedByUserId: null,
+        notesUpdatedAt: null,
+        deletedAt: now,
+      },
+    });
+    return { cancelledAppointments: cancelled.count };
   });
 }

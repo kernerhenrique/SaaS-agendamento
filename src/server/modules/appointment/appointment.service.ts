@@ -382,7 +382,7 @@ export async function getAppointmentDetail(
     include: {
       professional: { select: { id: true, name: true } },
       service: { select: { id: true, name: true, durationMin: true, priceCents: true } },
-      client: { select: { id: true, name: true, phone: true, email: true } },
+      client: { select: { id: true, name: true, phone: true, email: true, deletedAt: true } },
     },
   });
   if (!appointment) throw new NotFoundError("Agendamento não encontrado");

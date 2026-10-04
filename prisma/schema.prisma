@@ -357,6 +357,10 @@ model Client {
   // Notas e tags são compartilhadas entre quem atende: quem editou por último.
   notesUpdatedByUserId String?
   notesUpdatedAt       DateTime? @db.Timestamptz(6)
+  // Excluído a pedido (LGPD): os dados pessoais são apagados (nome vira
+  // "Cliente excluído", telefone vira um marcador único sem dígitos) e os
+  // atendimentos/pagamentos ficam para os relatórios. Some das listas.
+  deletedAt     DateTime? @db.Timestamptz(6)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

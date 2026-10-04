@@ -72,13 +72,57 @@ export function applyClientFilter<T extends { summary: ClientSummary }>(rows: T[
   }
 }
 
-/** Busca por nome (sem acento, sem caixa) ou por parte do telefone (só dígitos). */
-export function matchesClientSearch(client: { name: string; phone: string }, query: string): boolean {
+/** Busca por nome ou tag (sem acento, sem caixa) ou por parte do telefone (só dígitos). */
+export function matchesClientSearch(client: { name: string; phone: string; tags?: string[] }, query: string): boolean {
   const q = query.trim();
   if (!q) return true;
   const digits = q.replace(/\D/g, "");
   if (digits.length >= 3 && client.phone.includes(digits)) return true;
-  return foldText(client.name).includes(foldText(q));
+  const folded = foldText(q);
+  return foldText(client.name).includes(folded) || (client.tags ?? []).some((tag) => foldText(tag).includes(folded));
+}
+
+/** Filtro por uma tag exata (sem caixa e sem acento). Sem tag escolhida, passa todo mundo. */
+export function hasTag(client: { tags: string[] }, tag: string | null | undefined): boolean {
+  if (!tag) return true;
+  const wanted = foldText(tag.trim());
+  return client.tags.some((own) => foldText(own) === wanted);
+}
+
+/** Todas as tags em uso, sem repetir (ignorando caixa), em ordem alfabética. */
+export function collectTags(clients: { tags: string[] }[]): string[] {
+  const byKey = new Map<string, string>();
+  for (const client of clients) for (const tag of client.tags) if (!byKey.has(foldText(tag))) byKey.set(foldText(tag), tag);
+  return [...byKey.values()].sort((a, b) => a.localeCompare(b, "pt-BR"));
+}
+
+// --- Exclusão (LGPD) ---------------------------------------------------------
+
+export const DELETED_CLIENT_NAME = "Cliente excluído";
+
+/**
+ * Telefone de um cadastro excluído: marcador único, sem dígitos de verdade —
+ * libera o número (a pessoa pode voltar como cliente novo) e nunca casa com a
+ * busca por telefone nem com a deduplicação da reserva.
+ */
+export function deletedClientPhone(clientId: string): string {
+  return `excluido-${clientId}`;
+}
+
+const MAX_NAME_LENGTH = 80;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Nome, WhatsApp e e-mail ao corrigir o cadastro (telefone só com dígitos, com DDD). */
+export function parseClientContact(input: { name: unknown; phone: unknown; email: unknown }, normalizePhone: (raw: string) => string) {
+  const name = typeof input.name === "string" ? input.name.trim().replace(/\s+/g, " ") : "";
+  if (!name) throw new Error("Informe o nome");
+  if (name.length > MAX_NAME_LENGTH) throw new Error(`O nome pode ter no máximo ${MAX_NAME_LENGTH} caracteres`);
+  let phone = typeof input.phone === "string" ? normalizePhone(input.phone) : "";
+  if (phone.length >= 12 && phone.startsWith("55")) phone = phone.slice(2); // "+55" colado do WhatsApp
+  if (phone.length < 10 || phone.length > 11) throw new Error("WhatsApp inválido: informe DDD e número");
+  const emailRaw = typeof input.email === "string" ? input.email.trim() : "";
+  if (emailRaw && !EMAIL_PATTERN.test(emailRaw)) throw new Error("E-mail inválido");
+  return { name, phone, email: emailRaw || null };
 }
 
 function foldText(text: string): string {

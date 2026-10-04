@@ -52,7 +52,7 @@ interface AppointmentDetail {
     manageToken: string;
     professional: { id: string; name: string };
     service: { id: string; name: string; durationMin: number; priceCents: number };
-    client: { id: string; name: string; phone: string; email: string | null };
+    client: { id: string; name: string; phone: string; email: string | null; deletedAt: string | null };
   };
   history: { id: string; startAt: string; status: AppointmentStatus; service: { name: string } }[];
   clientStats: { completed: number; noShows: number };
@@ -379,6 +379,10 @@ function DrawerBody({
         <section className="flex flex-col gap-1">
           <h3 className="text-caption font-medium text-muted-foreground uppercase">{terms.client.singular}</h3>
           <p className="font-medium">{appointment.client.name}</p>
+          {appointment.client.deletedAt ? (
+            <p className="text-caption text-muted-foreground">Os dados pessoais foram apagados a pedido do cliente.</p>
+          ) : (
+          <>
           <p className="text-muted-foreground">{formatPhoneBR(appointment.client.phone)}</p>
           {appointment.client.email ? <p className="text-muted-foreground">{appointment.client.email}</p> : null}
           <p className="text-caption text-muted-foreground">
@@ -388,6 +392,8 @@ function DrawerBody({
           <div className="mt-1">
             <WhatsAppMessageMenu appointmentId={appointment.id} phone={appointment.client.phone} timezone={timezone} reloadKey={reloadKey} />
           </div>
+          </>
+          )}
         </section>
 
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">

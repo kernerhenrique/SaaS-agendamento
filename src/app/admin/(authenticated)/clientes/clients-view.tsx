@@ -33,10 +33,12 @@ const FILTER_LABELS: Record<ClientFilter, string> = {
 export function ClientsView({
   initialQuery,
   initialFilter,
+  initialTag = null,
   initialClientId,
 }: {
   initialQuery: string;
   initialFilter: ClientFilter;
+  initialTag?: string | null;
   initialClientId?: string;
 }) {
   const { terms } = useVertical();
@@ -45,6 +47,8 @@ export function ClientsView({
   const [query, setQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [filter, setFilter] = useState<ClientFilter>(initialFilter);
+  const [tag, setTag] = useState<string | null>(initialTag);
+  const [allTags, setAllTags] = useState<string[]>([]);
   const [clients, setClients] = useState<ClientListRow[] | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(initialClientId ?? null);
@@ -60,17 +64,20 @@ export function ClientsView({
       const params = new URLSearchParams();
       if (debouncedQuery.trim()) params.set("q", debouncedQuery.trim());
       if (filter !== "todos") params.set("filtro", filter);
+      if (tag) params.set("tag", tag);
       // A URL acompanha busca e filtro (dá para voltar ou compartilhar o link).
       window.history.replaceState(null, "", `/admin/clientes${params.size ? `?${params}` : ""}`);
       const response = await fetch(`/api/admin/clients?${params}`);
       if (!response.ok) throw new Error("load failed");
-      setClients((await response.json()).clients);
+      const data = (await response.json()) as { clients: ClientListRow[]; tags: string[] };
+      setClients(data.clients);
+      setAllTags(data.tags);
     } catch {
       setLoadError(true);
     }
     // appointmentsVersion: um agendamento novo muda contagens e "próximo".
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQuery, filter, appointmentsVersion]);
+  }, [debouncedQuery, filter, tag, appointmentsVersion]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -80,7 +87,7 @@ export function ClientsView({
   const formatDate = (iso: string | null) =>
     iso ? new Intl.DateTimeFormat("pt-BR", { timeZone: timezone, dateStyle: "short" }).format(new Date(iso)) : "—";
 
-  const isFiltered = debouncedQuery.trim() !== "" || filter !== "todos";
+  const isFiltered = debouncedQuery.trim() !== "" || filter !== "todos" || tag != null;
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 sm:p-6">
@@ -102,10 +109,26 @@ export function ClientsView({
       </div>
 
       <TableToolbar
-        searchPlaceholder="Buscar por nome ou telefone"
+        searchPlaceholder="Buscar por nome, telefone ou tag"
         searchValue={query}
         onSearchChange={setQuery}
         filters={
+          <>
+          {allTags.length > 0 || tag ? (
+            <Select value={tag ?? "__todas__"} onValueChange={(value) => setTag(!value || value === "__todas__" ? null : (value as string))}>
+              <SelectTrigger aria-label="Filtrar por tag" className="w-full sm:w-44">
+                <SelectValue>{(value: string) => (value === "__todas__" ? "Todas as tags" : `Tag: ${value}`)}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__todas__">Todas as tags</SelectItem>
+                {allTags.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
           <Select value={filter} onValueChange={(value) => setFilter((value as ClientFilter) ?? "todos")}>
             <SelectTrigger aria-label="Filtrar" className="w-full sm:w-52">
               <SelectValue>{(value: ClientFilter) => FILTER_LABELS[value]}</SelectValue>
@@ -118,6 +141,7 @@ export function ClientsView({
               ))}
             </SelectContent>
           </Select>
+          </>
         }
       />
 
@@ -138,7 +162,7 @@ export function ClientsView({
           <EmptyState
             icon={SearchX}
             title="Ninguém encontrado"
-            description="Tente outro nome, telefone ou filtro."
+            description="Tente outro nome, telefone, tag ou filtro."
             action={
               <Button
                 variant="outline"
@@ -146,6 +170,7 @@ export function ClientsView({
                 onClick={() => {
                   setQuery("");
                   setFilter("todos");
+                  setTag(null);
                 }}
               >
                 Limpar busca e filtro
