@@ -15,6 +15,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: DEFAULT_ACCENT_COLOR,
+  // Sem isto o env(safe-area-inset-*) vale 0 e a navegação inferior encosta na barra de gestos do celular.
+  viewportFit: "cover",
 };
 
 export default function AdminRootLayout({ children }: { children: React.ReactNode }) {

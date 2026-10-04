@@ -10,7 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { emptyLabel, newLabel } from "@/config/vertical";
 import { useVertical } from "@/config/vertical-context";
-import { WEEKDAY_LABELS, WEEKDAY_ORDER, minutesToTimeInput } from "@/lib/weekday";
+import { WEEKDAY_LABELS, WEEKDAY_ORDER, WEEKDAY_SHORT, minutesToTimeInput } from "@/lib/weekday";
 import { cn } from "cn";
 
 import type { ProfessionalListItem } from "./types";
@@ -101,14 +101,15 @@ function WeeklyMiniGrid({ workingHours }: { workingHours: ProfessionalListItem["
                 title={
                   wh
                     ? `${label}: ${minutesToTimeInput(wh.startMinute)}–${minutesToTimeInput(wh.endMinute)}`
-                    : `${label}: fechado`
+                    : `${label}: folga`
                 }
                 className={cn(
-                  "flex flex-col items-center gap-0.5 rounded-md py-1.5 text-xs font-semibold",
+                  "flex flex-col items-center gap-0.5 rounded-md py-1.5 text-caption font-semibold",
                   wh ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground/70",
                 )}
               >
-                <span>{label.slice(0, 1)}</span>
+                <span aria-hidden>{WEEKDAY_SHORT[weekday]}</span>
+                <span className="sr-only">{wh ? `${label}, das ${minutesToTimeInput(wh.startMinute)} às ${minutesToTimeInput(wh.endMinute)}` : `${label}, folga`}</span>
               </div>
             );
           })}

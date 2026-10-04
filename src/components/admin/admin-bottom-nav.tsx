@@ -34,8 +34,8 @@ export function AdminBottomNav() {
     <>
       <nav
         aria-label="Menu principal"
-        // env(): área segura do iPhone (barra de gesto), não é um valor de design.
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t bg-card pb-[env(safe-area-inset-bottom)] shadow-fixed-bar sm:hidden"
+        // env(): área segura do celular (barra de gestos); max(): respiro mínimo mesmo sem ela. Não são valores de design.
+        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t bg-card pt-1 pb-[max(env(safe-area-inset-bottom),0.5rem)] shadow-fixed-bar sm:hidden"
       >
         <BottomLink item={primary[0]} active={isNavItemActive(pathname, primary[0].href)} />
         <BottomLink item={primary[1]} active={isNavItemActive(pathname, primary[1].href)} />
@@ -44,7 +44,7 @@ export function AdminBottomNav() {
             type="button"
             onClick={() => openNewAppointment()}
             aria-label="Novo agendamento"
-            className="flex size-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+            className="flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
           >
             <Plus className="size-5" />
           </button>
@@ -54,7 +54,7 @@ export function AdminBottomNav() {
           type="button"
           onClick={() => setIsMoreOpen(true)}
           className={cn(
-            "flex flex-col items-center justify-center gap-0.5 py-2 text-caption",
+            "flex min-h-14 flex-col items-center justify-center gap-1 py-2 text-caption",
             isMoreActive ? "text-primary" : "text-muted-foreground",
           )}
         >
@@ -64,7 +64,7 @@ export function AdminBottomNav() {
       </nav>
 
       <Sheet open={isMoreOpen} onOpenChange={setIsMoreOpen}>
-        <SheetContent side="bottom" className="rounded-t-2xl pb-[env(safe-area-inset-bottom)]">
+        <SheetContent side="bottom" className="rounded-t-2xl pb-[max(env(safe-area-inset-bottom),0.75rem)]">
           <SheetHeader>
             <SheetTitle>Menu</SheetTitle>
           </SheetHeader>
@@ -133,7 +133,7 @@ function BottomLink({ item, active }: { item: AdminNavItem; active: boolean }) {
       href={item.href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex flex-col items-center justify-center gap-0.5 py-2 text-caption",
+        "flex min-h-14 flex-col items-center justify-center gap-1 py-2 text-caption",
         active ? "font-medium text-primary" : "text-muted-foreground",
       )}
     >

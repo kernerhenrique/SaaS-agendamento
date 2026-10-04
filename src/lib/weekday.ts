@@ -20,6 +20,17 @@ export const WEEKDAY_LABELS: Record<Weekday, string> = {
   SATURDAY: "Sábado",
 };
 
+/** Abreviação de 3 letras ("Seg", "Sáb"): cabe em grades estreitas sem ficar ambíguo como "S" ou "Q". */
+export const WEEKDAY_SHORT: Record<Weekday, string> = {
+  SUNDAY: "Dom",
+  MONDAY: "Seg",
+  TUESDAY: "Ter",
+  WEDNESDAY: "Qua",
+  THURSDAY: "Qui",
+  FRIDAY: "Sex",
+  SATURDAY: "Sáb",
+};
+
 export function minutesToTimeInput(minutes: number): string {
   const hours = Math.floor(minutes / 60)
     .toString()
