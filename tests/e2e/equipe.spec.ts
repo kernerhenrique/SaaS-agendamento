@@ -56,7 +56,7 @@ test("convite pela tela, painel reduzido do profissional e revogar", async ({ pa
     await expect(pro.getByRole("region", { name: "Conta" })).toBeVisible();
     await expect(pro.getByRole("region", { name: "Negócio" })).toHaveCount(0);
     await pro.goto("/admin/mensagens");
-    await expect(pro.getByRole("tab", { name: "Lembretes de amanhã" })).toBeVisible();
+    await expect(pro.getByRole("tab", { name: "Lembretes" })).toBeVisible();
     await expect(pro.getByRole("tab", { name: "Modelos" })).toHaveCount(0);
 
     // Dono: o cartão mostra o acesso ativo e revoga com confirmação.

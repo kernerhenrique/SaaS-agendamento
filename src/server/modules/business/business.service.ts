@@ -1,7 +1,8 @@
 import { prisma } from "@/server/db/prisma";
-import { NotFoundError } from "@/server/errors";
+import { NotFoundError, ValidationError } from "@/server/errors";
 
 import type { BookingPoliciesInput, BrandingInput, BusinessHoursInput, BusinessProfileInput } from "./business-rules";
+import { describeHoursConflict, findHoursConflicts } from "./hours-rules";
 
 /**
  * Configurações do negócio. O `businessId` vem sempre da sessão. Slug e fuso
@@ -55,6 +56,22 @@ export const updateBookingPolicies = (businessId: string, input: BookingPolicies
 /** Substitui a semana inteira: dias fora da lista ficam como fechados. */
 export async function replaceBusinessHours(businessId: string, hours: BusinessHoursInput[]): Promise<BusinessSettings> {
   await getBusinessSettings(businessId);
+  // Ninguém da equipe pode ficar com expediente fora do novo horário.
+  const team = await prisma.professional.findMany({
+    where: { businessId, active: true, deletedAt: null },
+    select: { name: true, workingHours: { select: { weekday: true, startMinute: true, endMinute: true } } },
+    orderBy: { name: "asc" },
+  });
+  const outside = team
+    .map((professional) => ({ name: professional.name, conflicts: findHoursConflicts(hours, professional.workingHours) }))
+    .filter((entry) => entry.conflicts.length > 0);
+  if (outside.length > 0) {
+    throw new ValidationError(
+      `O expediente da equipe ficaria fora do horário: ${outside
+        .map((entry) => `${entry.name} (${entry.conflicts.map(describeHoursConflict).join("; ")})`)
+        .join(" · ")}. Ajuste o expediente no cadastro de cada um antes, ou amplie o horário.`,
+    );
+  }
   await prisma.$transaction([
     prisma.businessWorkingHours.deleteMany({ where: { businessId } }),
     prisma.businessWorkingHours.createMany({ data: hours.map((entry) => ({ ...entry, businessId })) }),

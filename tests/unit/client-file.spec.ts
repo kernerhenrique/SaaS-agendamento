@@ -79,7 +79,14 @@ describe("parseClientFile", () => {
         { nome: "Pigmentação", categoria: "Cabelo", duracao: 40, preco: "45,00", aPartirDe: true },
       ],
       profissionais: [
-        { nome: "Zé", cor: "orange", expediente: [{ dias: "ter-sab", horario: "09:00-19:00", intervalo: "12:00-13:00" }] },
+        {
+          nome: "Zé",
+          cor: "orange",
+          expediente: [
+            { dias: "ter-sex", horario: "09:00-19:00", intervalo: "12:00-13:00" },
+            { dias: "sab", horario: "09:00-18:00" },
+          ],
+        },
         { nome: "Rafa", servicos: ["corte"] },
       ],
     });
@@ -112,6 +119,13 @@ describe("parseClientFile", () => {
     expect(() => parseClientFile({ ...base, profissionais: [] })).toThrow(/pelo menos um profissional/);
     expect(() => parseClientFile({ ...base, profissionais: [{ nome: "Zé", servicos: ["Massagem"] }] })).toThrow(/não está na lista/);
     expect(() => parseClientFile({ ...base, profissionais: [{ nome: "Zé", cor: "#ff0000" }] })).toThrow(/cor/);
+    // Expediente fora do horário de funcionamento (sábado o negócio fecha às 18:00; domingo, fechado).
+    expect(() =>
+      parseClientFile({ ...base, profissionais: [{ nome: "Zé", expediente: [{ dias: "sab", horario: "09:00-19:00" }] }] }),
+    ).toThrow(/passa do horário de funcionamento/);
+    expect(() =>
+      parseClientFile({ ...base, profissionais: [{ nome: "Zé", expediente: [{ dias: "dom", horario: "09:00-12:00" }] }] }),
+    ).toThrow(/fechado/);
     expect(() =>
       parseClientFile({ ...base, profissionais: [{ nome: "Zé", expediente: [{ dias: "seg", horario: "09:00-18:00", intervalo: "08:00-09:00" }] }] }),
     ).toThrow(/dentro do expediente/);

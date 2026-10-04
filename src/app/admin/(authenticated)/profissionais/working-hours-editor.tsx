@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "cn";
 import { WEEKDAY_LABELS, WEEKDAY_ORDER, minutesToTimeInput, timeInputToMinutes } from "@/lib/weekday";
 
+import { findHoursConflicts, type DayHours } from "@/server/modules/business/hours-rules";
 import type { WorkingHoursInput } from "@/server/modules/professional/professional.service";
 
 export interface WorkingHoursFormEntry {
@@ -68,11 +69,17 @@ export function WorkingHoursEditor({
   value,
   onChange,
   allowBreak = true,
+  referenceHours,
+  offLabel = "Fechado",
 }: {
   value: WorkingHoursFormEntry[];
   onChange: (next: WorkingHoursFormEntry[]) => void;
   /** Horário de funcionamento do negócio não tem intervalo de almoço. */
   allowBreak?: boolean;
+  /** Horário do negócio (expediente do profissional precisa caber nele): aparece ao lado de cada dia. */
+  referenceHours?: DayHours[];
+  /** Texto do dia desligado ("Folga" para o profissional). */
+  offLabel?: string;
 }) {
   function updateEntry(index: number, patch: Partial<WorkingHoursFormEntry>) {
     onChange(value.map((entry, i) => (i === index ? { ...entry, ...patch } : entry)));
@@ -80,12 +87,21 @@ export function WorkingHoursEditor({
 
   return (
     <div className="flex flex-col gap-2">
-      {value.map((entry, index) => (
+      {value.map((entry, index) => {
+        const reference = referenceHours?.find((day) => day.weekday === entry.weekday) ?? null;
+        const start = timeInputToMinutes(entry.startTime);
+        const end = timeInputToMinutes(entry.endTime);
+        // Fora do horário do negócio: destaca o dia (o servidor também recusa ao salvar).
+        const conflict =
+          referenceHours && referenceHours.length > 0 && entry.enabled && start !== null && end !== null
+            ? findHoursConflicts(referenceHours, [{ weekday: entry.weekday, startMinute: start, endMinute: end }]).length > 0
+            : false;
+        return (
         <div
           key={entry.weekday}
           className={cn(
             "flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm transition-colors",
-            entry.enabled ? "border-primary/30 bg-primary/5" : "border-border",
+            conflict ? "border-warning/50 bg-warning/10" : entry.enabled ? "border-primary/30 bg-primary/5" : "border-border",
           )}
         >
           <Label className="flex w-24 items-center gap-2 font-normal">
@@ -126,6 +142,7 @@ export function WorkingHoursEditor({
                   <Input
                     type="time"
                     className="w-28"
+                    aria-label={`Almoço de ${WEEKDAY_LABELS[entry.weekday]}: início`}
                     value={entry.breakStartTime}
                     onChange={(event) => updateEntry(index, { breakStartTime: event.target.value })}
                   />
@@ -133,6 +150,7 @@ export function WorkingHoursEditor({
                   <Input
                     type="time"
                     className="w-28"
+                    aria-label={`Almoço de ${WEEKDAY_LABELS[entry.weekday]}: fim`}
                     value={entry.breakEndTime}
                     onChange={(event) => updateEntry(index, { breakEndTime: event.target.value })}
                   />
@@ -140,10 +158,17 @@ export function WorkingHoursEditor({
               ) : null}
             </>
           ) : (
-            <span className="text-muted-foreground">Fechado</span>
+            <span className="text-muted-foreground">{offLabel}</span>
           )}
+          {referenceHours && referenceHours.length > 0 ? (
+            <span className={cn("basis-full text-caption sm:ml-auto sm:basis-auto", conflict ? "font-medium text-warning" : "text-muted-foreground")}>
+              {reference ? `Negócio: ${minutesToTimeInput(reference.startMinute)} às ${minutesToTimeInput(reference.endMinute)}` : "Negócio fechado"}
+              {conflict ? " · fora do horário" : ""}
+            </span>
+          ) : null}
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

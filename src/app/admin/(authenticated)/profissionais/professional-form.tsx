@@ -14,7 +14,7 @@ import { useVertical } from "@/config/vertical-context";
 import { PROFESSIONAL_COLORS } from "@/lib/professional-colors";
 import { cn } from "cn";
 
-import { TimeBlocksManager } from "./time-blocks-manager";
+import type { DayHours } from "@/server/modules/business/hours-rules";
 import type { ProfessionalListItem, ServiceOption } from "./types";
 import {
   WorkingHoursEditor,
@@ -30,12 +30,13 @@ import {
 export function ProfessionalForm({
   professional,
   services,
-  timezone,
+  businessHours,
   onSaved,
 }: {
   professional?: ProfessionalListItem;
   services: ServiceOption[];
-  timezone: string;
+  /** Horário de funcionamento: o expediente precisa caber nele (e é o padrão de quem é novo). */
+  businessHours: DayHours[];
   onSaved: (saved: { id: string }) => void | Promise<void>;
 }) {
   const { terms, features } = useVertical();
@@ -52,7 +53,8 @@ export function ProfessionalForm({
     new Set(professional?.professionalServices.map((ps) => ps.service.id) ?? []),
   );
   const [workingHours, setWorkingHours] = useState<WorkingHoursFormEntry[]>(
-    buildWorkingHoursFormEntries(professional?.workingHours ?? []),
+    // Cadastro novo já vem com o horário do negócio (o caso mais comum).
+    buildWorkingHoursFormEntries(professional?.workingHours ?? businessHours),
   );
   const [photoUrls, setPhotoUrls] = useState<string[]>(professional?.photos.map((photo) => photo.url) ?? []);
   const [error, setError] = useState<string | null>(null);
@@ -280,15 +282,11 @@ export function ProfessionalForm({
 
       <section className="flex flex-col gap-3">
         <h2 className="text-section-title font-semibold">Expediente semanal</h2>
-        <WorkingHoursEditor value={workingHours} onChange={setWorkingHours} />
+        <p className="text-caption text-muted-foreground">
+          Precisa caber no horário de funcionamento do negócio (Configurações › Horário), que aparece ao lado de cada dia.
+        </p>
+        <WorkingHoursEditor value={workingHours} onChange={setWorkingHours} referenceHours={businessHours} offLabel="Folga" />
       </section>
-
-      {isEditing ? (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-section-title font-semibold">Bloqueios manuais (folga, feriado)</h2>
-          <TimeBlocksManager professionalId={professional!.id} timezone={timezone} />
-        </section>
-      ) : null}
 
       {error ? (
         <p role="alert" className="text-sm text-destructive">

@@ -41,6 +41,8 @@ import { formatDateLabel } from "@/lib/date";
 import { StaffAccessCard } from "@/components/admin/staff-access-card";
 
 import { ProfessionalForm } from "../professional-form";
+import { TimeBlocksManager } from "../time-blocks-manager";
+import type { DayHours } from "@/server/modules/business/hours-rules";
 import type { ProfessionalListItem, ServiceOption } from "../types";
 
 interface UpcomingItem {
@@ -72,12 +74,14 @@ export function ProfessionalProfile({
   month,
   services,
   timezone,
+  businessHours,
 }: {
   professional: ProfessionalListItem;
   upcoming: UpcomingItem[];
   month: MonthStats;
   services: ServiceOption[];
   timezone: string;
+  businessHours: DayHours[];
 }) {
   const { terms, features } = useVertical();
   const router = useRouter();
@@ -235,12 +239,14 @@ export function ProfessionalProfile({
           <ProfessionalForm
             professional={professional}
             services={services}
-            timezone={timezone}
+            businessHours={businessHours}
             onSaved={() => {
               toast.success("Cadastro salvo.");
               router.refresh();
             }}
           />
+
+          <TimeBlocksManager professionalId={professional.id} professionalName={professional.name} timezone={timezone} />
 
           <StaffAccessCard professionalId={professional.id} professionalName={professional.name} />
 

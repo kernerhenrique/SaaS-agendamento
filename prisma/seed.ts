@@ -170,7 +170,8 @@ async function main() {
           (weekday) => ({
             weekday,
             startMinute: 10 * 60,
-            endMinute: 19 * 60,
+            // Sábado o negócio fecha às 17:00: o expediente cabe no horário de funcionamento.
+            endMinute: weekday === Weekday.SATURDAY ? 17 * 60 : 19 * 60,
             breakStartMinute: 13 * 60,
             breakEndMinute: 14 * 60,
           }),

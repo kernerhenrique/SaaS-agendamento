@@ -25,7 +25,7 @@ export default async function ProfissionalPage({ params }: { params: Promise<{ i
     select: { timezone: true },
   });
 
-  const [profile, services] = await Promise.all([
+  const [profile, services, businessHours] = await Promise.all([
     getProfessionalProfile(session.businessId, id, business.timezone).catch((error) => {
       if (error instanceof NotFoundError) notFound();
       throw error;
@@ -35,6 +35,7 @@ export default async function ProfissionalPage({ params }: { params: Promise<{ i
       orderBy: [{ position: "asc" }, { name: "asc" }],
       select: { id: true, name: true },
     }),
+    prisma.businessWorkingHours.findMany({ where: { businessId: session.businessId }, select: { weekday: true, startMinute: true, endMinute: true } }),
   ]);
 
   return (
@@ -51,6 +52,7 @@ export default async function ProfissionalPage({ params }: { params: Promise<{ i
       month={profile.month}
       services={services}
       timezone={business.timezone}
+      businessHours={businessHours}
     />
   );
 }

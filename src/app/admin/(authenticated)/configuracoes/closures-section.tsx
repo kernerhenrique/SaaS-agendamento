@@ -137,8 +137,9 @@ export function ClosuresSection({ timezone }: { timezone: string }) {
       <CardHeader>
         <CardTitle className="text-section-title">Dias fechados</CardTitle>
         <CardDescription>
-          Feriados e férias: nesses dias a página não oferece horários e a agenda mostra o dia fechado. Agendamentos já marcados
-          não são cancelados: você vê a lista para remarcar.
+          Dias em que o negócio inteiro fecha (feriados, recesso, reforma): a página não oferece horários e a agenda mostra o dia
+          fechado. Agendamentos já marcados não são cancelados: você vê a lista para remarcar. Folga ou férias de uma pessoa só
+          ficam no cadastro dela, em “Folgas e ausências”.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-6">

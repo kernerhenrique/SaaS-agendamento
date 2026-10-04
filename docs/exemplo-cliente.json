@@ -40,7 +40,7 @@
       "nome": "Rafa",
       "comissao": 45,
       "servicos": ["Corte", "Barba", "Corte e barba"],
-      "expediente": [{ "dias": "qua-sab", "horario": "10:00-19:00", "intervalo": "14:00-15:00" }]
+      "expediente": [{ "dias": "qua-sex", "horario": "10:00-19:00", "intervalo": "14:00-15:00" }, { "dias": "sab", "horario": "10:00-18:00" }]
     }
   ]
 }

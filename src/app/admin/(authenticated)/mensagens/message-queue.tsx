@@ -1,17 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Check, MessageCircle, RotateCcw, Undo2, type LucideIcon } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, MessageCircle, RotateCcw, Undo2, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { markMessageSent } from "@/components/admin/whatsapp-message-menu";
 import { EmptyState } from "@/components/empty-state";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatDateLabel } from "@/lib/date";
+import { addDaysToIsoDate, formatDateLabel } from "@/lib/date";
 import { useFetchJson } from "@/lib/use-fetch-json";
 import { cn } from "cn";
 import type { MessageQueue, QueueItem } from "@/server/modules/notification/whatsapp/message.service";
+
+/** Mesmo limite do servidor (message.service.ts): a fila de lembretes vai até 14 dias à frente. */
+const REMINDER_LOOKAHEAD_DAYS = 14;
 
 /**
  * Fila de envio um a um: "Enviar" é um link wa.me (abre o WhatsApp com o texto
@@ -33,7 +36,12 @@ export function MessageQueueList({
   emptyDescription: string;
 }) {
   const [reloadKey, setReloadKey] = useState(0);
-  const { data, loading, error } = useFetchJson<{ date: string; items: QueueItem[] }>(`/api/admin/messages/queue?tipo=${queue}`, reloadKey);
+  /** Lembretes: dia escolhido nas setas (null = o servidor abre no próximo dia com atendimento). */
+  const [date, setDate] = useState<string | null>(null);
+  const { data, loading, error } = useFetchJson<{ date: string; today: string; items: QueueItem[] }>(
+    `/api/admin/messages/queue?tipo=${queue}${queue === "lembretes" && date ? `&data=${date}` : ""}`,
+    reloadKey,
+  );
   /** Envio/desmarcação feitos nesta tela, por cima do que veio do servidor. */
   const [overrides, setOverrides] = useState<Record<string, string | null>>({});
 
@@ -77,16 +85,37 @@ export function MessageQueueList({
     setOverrides((current) => ({ ...current, [item.appointmentId]: null }));
   }
 
+  const isReminder = queue === "lembretes";
+  const lastDay = addDaysToIsoDate(data.today, REMINDER_LOOKAHEAD_DAYS);
+  const relative = data.date === data.today ? "Hoje" : data.date === addDaysToIsoDate(data.today, 1) ? "Amanhã" : null;
+  // Lembretes: setas para escolher o dia (no sábado dá para lembrar os de segunda).
+  const dayPicker = isReminder ? (
+    <div className="flex items-center gap-2">
+      <Button variant="outline" size="icon" aria-label="Dia anterior" disabled={data.date <= data.today} onClick={() => setDate(addDaysToIsoDate(data.date, -1))}>
+        <ChevronLeft />
+      </Button>
+      <p className="min-w-52 text-center text-sm font-medium first-letter:uppercase" aria-live="polite">
+        {relative ? `${relative}, ${dateLabel}` : dateLabel}
+      </p>
+      <Button variant="outline" size="icon" aria-label="Próximo dia" disabled={data.date >= lastDay} onClick={() => setDate(addDaysToIsoDate(data.date, 1))}>
+        <ChevronRight />
+      </Button>
+    </div>
+  ) : null;
+
   if (data.items.length === 0) {
-    return <EmptyState icon={emptyIcon} title={emptyTitle} description={emptyDescription} />;
+    return (
+      <div className="flex flex-col gap-3">
+        {dayPicker}
+        <EmptyState icon={emptyIcon} title={emptyTitle} description={emptyDescription} />
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-muted-foreground first-letter:uppercase">
-          {queue === "lembretes" ? `Amanhã, ${dateLabel}` : "Concluídos de ontem e de hoje"}
-        </p>
+        {dayPicker ?? <p className="text-sm text-muted-foreground">Concluídos de ontem e de hoje</p>}
         <p className="text-sm font-medium" aria-live="polite">
           {sentCount} de {data.items.length} {data.items.length === 1 ? "enviado" : "enviados"}
         </p>

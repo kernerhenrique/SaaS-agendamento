@@ -10,8 +10,15 @@ import { useVertical } from "@/config/vertical-context";
 
 import { ProfessionalForm } from "../professional-form";
 import type { ServiceOption } from "../types";
+import type { DayHours } from "@/server/modules/business/hours-rules";
 
-export function NewProfessionalView({ services, timezone }: { services: ServiceOption[]; timezone: string }) {
+export function NewProfessionalView({
+  services,
+  businessHours,
+}: {
+  services: ServiceOption[];
+  businessHours: DayHours[];
+}) {
   const { terms } = useVertical();
   const router = useRouter();
 
@@ -29,7 +36,7 @@ export function NewProfessionalView({ services, timezone }: { services: ServiceO
       </div>
       <ProfessionalForm
         services={services}
-        timezone={timezone}
+        businessHours={businessHours}
         onSaved={({ id }) => {
           toast.success("Cadastro criado.");
           router.push(`/admin/profissionais/${id}`);

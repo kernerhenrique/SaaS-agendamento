@@ -1,6 +1,7 @@
 import type { Weekday } from "@/generated/prisma/enums";
 import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
+import { describeHoursConflict, findHoursConflicts } from "@/server/modules/business/hours-rules";
 
 export interface WorkingHoursInput {
   weekday: Weekday;
@@ -64,6 +65,20 @@ function validateWorkingHours(workingHours: WorkingHoursInput[]): void {
   }
 }
 
+/** O expediente precisa caber no horário de funcionamento do negócio (Configurações › Horário). */
+async function assertWithinBusinessHours(businessId: string, workingHours: WorkingHoursInput[]): Promise<void> {
+  const businessHours = await prisma.businessWorkingHours.findMany({
+    where: { businessId },
+    select: { weekday: true, startMinute: true, endMinute: true },
+  });
+  const conflicts = findHoursConflicts(businessHours, workingHours);
+  if (conflicts.length > 0) {
+    throw new ValidationError(
+      `O expediente passa do horário de funcionamento. ${conflicts.map(describeHoursConflict).join("; ")}. Ajuste aqui ou em Configurações › Horário.`,
+    );
+  }
+}
+
 export function listProfessionals(businessId: string) {
   return prisma.professional.findMany({
     where: { businessId, deletedAt: null },
@@ -93,6 +108,7 @@ export async function getProfessional(businessId: string, id: string) {
 export async function createProfessional(businessId: string, input: ProfessionalInput) {
   if (!input.name.trim()) throw new ValidationError("Nome é obrigatório");
   validateWorkingHours(input.workingHours);
+  await assertWithinBusinessHours(businessId, input.workingHours);
 
   return prisma.professional.create({
     data: {
@@ -121,6 +137,7 @@ export async function updateProfessional(
 ) {
   if (!input.name.trim()) throw new ValidationError("Nome é obrigatório");
   validateWorkingHours(input.workingHours);
+  await assertWithinBusinessHours(businessId, input.workingHours);
 
   const existing = await prisma.professional.findFirst({ where: { id, businessId, deletedAt: null } });
   if (!existing) throw new NotFoundError("Cadastro não encontrado");

@@ -14,7 +14,7 @@ import { TemplateEditor } from "./template-editor";
 export type MessagesTab = "lembretes" | "pos-atendimento" | "modelos";
 
 /**
- * Mensagens pelo WhatsApp: listas para enviar um a um (lembretes de amanhã e
+ * Mensagens pelo WhatsApp: listas para enviar um a um (lembretes de um dia e
  * pós-atendimento) e os modelos de texto. A aba fica na URL (?aba=).
  */
 export function MessagesView({
@@ -49,7 +49,7 @@ export function MessagesView({
 
       <Tabs value={tab} onValueChange={(value) => changeTab(value as MessagesTab)}>
         <TabsList>
-          <TabsTrigger value="lembretes">Lembretes de amanhã</TabsTrigger>
+          <TabsTrigger value="lembretes">Lembretes</TabsTrigger>
           <TabsTrigger value="pos-atendimento">Pós-atendimento</TabsTrigger>
           {templates ? <TabsTrigger value="modelos">Modelos</TabsTrigger> : null}
         </TabsList>
@@ -60,8 +60,8 @@ export function MessagesView({
             timezone={timezone}
             sendLabel="Enviar lembrete"
             emptyIcon={BellRing}
-            emptyTitle="Nenhum agendamento para amanhã"
-            emptyDescription="Quando houver horários marcados para amanhã, eles aparecem aqui para você lembrar cada cliente."
+            emptyTitle="Nenhum agendamento neste dia"
+            emptyDescription="Use as setas para ver outro dia. A lista abre sozinha no próximo dia com horário marcado."
           />
         </TabsContent>
 

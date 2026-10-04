@@ -4,6 +4,7 @@ import { AA_CONTRAST, accentContrast, DEFAULT_ACCENT_COLOR } from "@/lib/accent-
 import { PROFESSIONAL_COLORS, isProfessionalColorKey, type ProfessionalColorKey } from "@/lib/professional-colors";
 import { isReservedSlug, SLUG_LENGTH, SLUG_PATTERN } from "@/lib/reserved-slugs";
 import { ValidationError } from "@/server/errors";
+import { describeHoursConflict, findHoursConflicts } from "@/server/modules/business/hours-rules";
 import {
   parseAccentColor,
   parseBookingPolicies,
@@ -283,6 +284,11 @@ function parseProfessionals(
 
     const workingHours = parseWorkingHours(entry.expediente, businessHours, name);
     if (workingHours.length === 0) throw new ValidationError(`${name}: o expediente precisa de pelo menos um dia`);
+    // Mesma regra do painel: o expediente cabe no horário de funcionamento.
+    const conflicts = findHoursConflicts(businessHours, workingHours);
+    if (conflicts.length > 0) {
+      throw new ValidationError(`${name}: o expediente passa do horário de funcionamento (${conflicts.map(describeHoursConflict).join("; ")})`);
+    }
 
     return { name, specialty: text(entry.especialidade), color, commissionPercent, workingHours, serviceNames: names };
   });

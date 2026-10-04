@@ -1,6 +1,6 @@
 import { AppointmentStatus, type MessageKind } from "@/generated/prisma/enums";
 import type { AppointmentGetPayload } from "@/generated/prisma/models";
-import { addDaysToIsoDate, localDayRangeUtc, todayInTimeZone } from "@/lib/date";
+import { addDaysToIsoDate, localDayRangeUtc, todayInTimeZone, utcToLocalDate } from "@/lib/date";
 import { buildBookingUrl, buildManageUrl } from "@/server/app-url";
 import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
@@ -155,8 +155,35 @@ export interface QueueItem {
   message: PreparedMessage;
 }
 
+/** Até quantos dias à frente a fila de lembretes procura/aceita. */
+export const REMINDER_LOOKAHEAD_DAYS = 14;
+const ACTIVE_STATUSES = [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED];
+
 /**
- * Lembretes: pendentes/confirmados de amanhã (no fuso do negócio).
+ * Próximo dia (a partir de amanhã) com atendimento marcado: no sábado, se
+ * domingo está vazio, a fila já abre na segunda. Sem nada à frente, amanhã.
+ */
+async function nextReminderDay(businessId: string, scope: { professionalId?: string }, today: string, timeZone: string): Promise<string> {
+  const tomorrow = addDaysToIsoDate(today, 1);
+  const next = await prisma.appointment.findFirst({
+    where: {
+      businessId,
+      ...scope,
+      status: { in: ACTIVE_STATUSES },
+      startAt: {
+        gte: localDayRangeUtc(tomorrow, timeZone).start,
+        lt: localDayRangeUtc(addDaysToIsoDate(today, REMINDER_LOOKAHEAD_DAYS), timeZone).end,
+      },
+    },
+    orderBy: { startAt: "asc" },
+    select: { startAt: true },
+  });
+  return next ? utcToLocalDate(next.startAt, timeZone) : tomorrow;
+}
+
+/**
+ * Lembretes: pendentes/confirmados de um dia (padrão: o próximo dia com
+ * atendimento; `date` escolhe outro, de hoje até 14 dias à frente).
  * Pós-atendimento: concluídos de ontem e hoje. Mostra também os já enviados,
  * marcados, para o dono ver o progresso ("3 de 8 enviados").
  */
@@ -165,12 +192,22 @@ export async function getMessageQueue(
   queue: MessageQueue,
   /** Profissional: só os atendimentos dele. */
   scope: { professionalId?: string } = {},
-): Promise<{ date: string; items: QueueItem[] }> {
+  /** Lembretes: dia escolhido (YYYY-MM-DD). */
+  date?: string | null,
+): Promise<{ date: string; today: string; items: QueueItem[] }> {
   const business = await prisma.business.findFirst({ where: { id: businessId, deletedAt: null }, select: { timezone: true } });
   if (!business) throw new NotFoundError("Negócio não encontrado");
   const today = todayInTimeZone(business.timezone);
   const isReminder = queue === "lembretes";
-  const firstDay = isReminder ? addDaysToIsoDate(today, 1) : addDaysToIsoDate(today, -1);
+  if (isReminder && date != null) {
+    const lastDay = addDaysToIsoDate(today, REMINDER_LOOKAHEAD_DAYS);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < today || date > lastDay) {
+      throw new ValidationError(`Escolha um dia entre hoje e os próximos ${REMINDER_LOOKAHEAD_DAYS} dias`);
+    }
+  }
+  const firstDay = isReminder
+    ? (date ?? (await nextReminderDay(businessId, scope, today, business.timezone)))
+    : addDaysToIsoDate(today, -1);
   const lastDay = isReminder ? firstDay : today;
   const start = localDayRangeUtc(firstDay, business.timezone).start;
   const end = localDayRangeUtc(lastDay, business.timezone).end;
@@ -182,7 +219,7 @@ export async function getMessageQueue(
         businessId,
         ...scope,
         startAt: { gte: start, lt: end },
-        status: isReminder ? { in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED] } : AppointmentStatus.COMPLETED,
+        status: isReminder ? { in: ACTIVE_STATUSES } : AppointmentStatus.COMPLETED,
       },
       include: APPOINTMENT_MESSAGE_INCLUDE,
       orderBy: { startAt: "asc" },
@@ -192,6 +229,7 @@ export async function getMessageQueue(
 
   return {
     date: firstDay,
+    today,
     items: appointments.map((appointment) => ({
       appointmentId: appointment.id,
       startAt: appointment.startAt.toISOString(),

@@ -63,6 +63,15 @@ test("lembrete de amanhã sai com o texto pronto, marca enviado e o modelo é ed
     await row.getByRole("button", { name: "Desmarcar" }).click();
     await expect(row.getByRole("link", { name: "Enviar lembrete" })).toBeVisible();
 
+    // A lista abre no próximo dia com horário (amanhã, aqui) e as setas trocam o dia.
+    await expect(page.getByText(/^Amanhã, /)).toBeVisible();
+    await page.getByRole("button", { name: "Próximo dia" }).click();
+    await expect(page.getByText(/^Amanhã, /)).toHaveCount(0);
+    await page.getByRole("button", { name: "Dia anterior" }).click();
+    await expect(row).toBeVisible();
+    // Fora do alcance (antes de hoje): recusado.
+    expect((await api.get("/api/admin/messages/queue?tipo=lembretes&data=2020-01-01")).status()).toBe(400);
+
     // Modelo: variável errada avisa; salvar muda o texto do lembrete; restaurar volta ao padrão.
     await page.getByRole("tab", { name: "Modelos" }).click();
     await expect(page).toHaveURL(/aba=modelos/);

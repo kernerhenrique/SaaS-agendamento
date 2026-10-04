@@ -39,12 +39,22 @@ test("configurações validam e salvam por seção, e o horário de funcionament
     expect(business.whatsapp).toBe("11977770000");
     expect(business.instagramUrl).toBe("https://instagram.com/navalha.teste");
 
-    // Horário de funcionamento: a semana inteira é substituída.
-    const hours = await api.put("/api/admin/business/hours", {
+    // Horário que deixaria a equipe de fora (só sábado de manhã): recusado, dizendo quem.
+    const narrow = await api.put("/api/admin/business/hours", {
       data: { hours: [{ weekday: "SATURDAY", startMinute: 8 * 60, endMinute: 14 * 60 }] },
     });
+    expect(narrow.status()).toBe(400);
+    expect((await narrow.json()).error).toMatch(/João Barbeiro.*Marcos Estilista/);
+
+    // Horário de funcionamento que cabe a equipe: a semana inteira é substituída.
+    const week = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"].map((weekday) => ({
+      weekday,
+      startMinute: 8 * 60,
+      endMinute: 20 * 60,
+    }));
+    const hours = await api.put("/api/admin/business/hours", { data: { hours: week } });
     expect(hours.status()).toBe(200);
-    expect((await hours.json()).business.workingHours).toEqual([{ weekday: "SATURDAY", startMinute: 480, endMinute: 840 }]);
+    expect((await hours.json()).business.workingHours).toHaveLength(6);
   } finally {
     await api.patch("/api/admin/business", {
       data: {

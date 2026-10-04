@@ -28,7 +28,7 @@ Em `clientes/<slug>.json` (a pasta fica **fora do git**: são dados do cliente),
 | `horarioFuncionamento` | `[{ "dias": "ter-sex", "horario": "09:00-20:00" }]` | dias: `dom seg ter qua qui sex sab`, intervalos (`seg-sex`) e listas (`seg,qua`) |
 | `politicas` | `antecedenciaMinutos`, `janelaDias`, `cancelamentoHoras`, `texto` | opcional; padrão 0 min, 60 dias, 0 h |
 | `servicos` | `{ nome, categoria, duracao, preco, aPartirDe, descricao }` | opcional: sem a lista, entra o catálogo do nicho (`onboarding/niche-catalogs.ts`); preço `40` ou `"45,90"` |
-| `profissionais` | `{ nome, especialidade, comissao, cor, servicos, expediente }` | pelo menos um; sem `expediente` segue o horário do negócio; sem `servicos` faz todos; `expediente` aceita `intervalo` (`"12:00-13:00"`) |
+| `profissionais` | `{ nome, especialidade, comissao, cor, servicos, expediente }` | pelo menos um; sem `expediente` segue o horário do negócio; o `expediente` precisa **caber** no `horarioFuncionamento` (o comando recusa e diz o dia); sem `servicos` faz todos; `expediente` aceita `intervalo` (`"12:00-13:00"`) |
 
 ## 3. Conferir no banco local
 
