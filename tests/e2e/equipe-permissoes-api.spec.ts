@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 
+import { moveToPast } from "./db";
 import { createEveningAppointment, localDateInDays, loginAsOwner, loginAsProfessional } from "./helpers";
 
 /**
@@ -108,6 +109,7 @@ test("profissional: só a própria agenda e clientes, sem áreas do dono nem des
     });
     expect((await asJoao.post(`/api/admin/appointments/${withJoao.id}/payments`, { data: payment({ discountCents: 500 }) })).status()).toBe(403);
     expect((await asJoao.post(`/api/admin/appointments/${withJoao.id}/payments`, { data: payment({ priceCents: 1 }) })).status()).toBe(403);
+    await moveToPast(withJoao.id); // concluir só depois do início
     const completed = await asJoao.post(`/api/admin/appointments/${withJoao.id}/complete`, {
       data: { payment: payment({ priceCents: barba.priceCents }) },
     });

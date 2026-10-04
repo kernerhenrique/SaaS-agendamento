@@ -17,7 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { PaymentMethod } from "@/generated/prisma/enums";
+import type { AppointmentStatus, PaymentMethod } from "@/generated/prisma/enums";
 import { formatPriceFromCents } from "@/lib/currency";
 import { PAYMENT_STATUS_TONE } from "@/lib/payment-status";
 import {
@@ -44,6 +44,7 @@ interface PaymentItem {
  */
 export function AppointmentPayments({
   appointmentId,
+  status,
   timezone,
   reloadKey,
   completing,
@@ -51,6 +52,7 @@ export function AppointmentPayments({
   onChanged,
 }: {
   appointmentId: string;
+  status: AppointmentStatus;
   timezone: string;
   /** Muda quando o drawer recarrega (ex.: status alterado). */
   reloadKey: number;
@@ -120,6 +122,10 @@ export function AppointmentPayments({
 
   const { summary, payments } = data;
   const showForm = completing || registering;
+  // Cancelado não deve nada: sem "falta receber" nem "Registrar pagamento".
+  // Se já tinha entrado um sinal, mostra só o que foi recebido.
+  const isCancelled = status === "CANCELLED";
+  if (isCancelled && payments.length === 0) return null;
 
   return (
     <section className="flex flex-col gap-2" aria-labelledby="payments-title">
@@ -127,14 +133,23 @@ export function AppointmentPayments({
         <h3 id="payments-title" className="text-caption font-medium text-muted-foreground uppercase">
           Pagamento
         </h3>
-        <StatusBadge tone={PAYMENT_STATUS_TONE[summary.status]}>{PAYMENT_STATUS_LABELS[summary.status]}</StatusBadge>
+        {isCancelled ? null : (
+          <StatusBadge tone={PAYMENT_STATUS_TONE[summary.status]}>{PAYMENT_STATUS_LABELS[summary.status]}</StatusBadge>
+        )}
       </div>
 
-      <dl className="grid grid-cols-3 gap-2 text-center">
-        <Amount label="Valor" cents={summary.priceCents} />
-        <Amount label="Recebido" cents={summary.paidCents} />
-        <Amount label="Falta" cents={summary.balanceCents} highlight={summary.balanceCents > 0} />
-      </dl>
+      {isCancelled ? (
+        <p className="text-sm text-muted-foreground">
+          Recebido antes do cancelamento: <span className="font-medium text-foreground">{formatPriceFromCents(summary.paidCents)}</span>.
+          Se devolver ao cliente, remova o recebimento.
+        </p>
+      ) : (
+        <dl className="grid grid-cols-3 gap-2 text-center">
+          <Amount label="Valor" cents={summary.priceCents} />
+          <Amount label="Recebido" cents={summary.paidCents} />
+          <Amount label="Falta" cents={summary.balanceCents} highlight={summary.balanceCents > 0} />
+        </dl>
+      )}
 
       {payments.length > 0 ? (
         <ul className="flex flex-col gap-1.5" aria-label="Recebimentos">
@@ -203,7 +218,7 @@ export function AppointmentPayments({
             onCompletingChange(false);
           }}
         />
-      ) : summary.status !== "PAID" ? (
+      ) : summary.status !== "PAID" && !isCancelled ? (
         <Button variant="outline" size="sm" className="w-fit" onClick={() => setRegistering(true)}>
           <Plus />
           Registrar pagamento

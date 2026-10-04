@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 
+import { moveToPast } from "./db";
 import { findFreeSlot, loginAsOwner, loginAsProfessional } from "./helpers";
 
 /**
@@ -21,7 +22,8 @@ test("D1: atendimento concluído agradece e convida a reservar de novo, sem pedi
   expect(booked.status()).toBe(201);
   const { id, manageToken } = (await booked.json()).appointment as { id: string; manageToken: string };
 
-  // Concluir direto pelo painel.
+  // Concluir direto pelo painel (só depois do início: o atendimento passa para ontem).
+  await moveToPast(id);
   expect((await api.patch(`/api/admin/appointments/${id}/status`, { data: { status: "COMPLETED" } })).status()).toBe(200);
 
   await page.goto(`/agendamento/${manageToken}/gerenciar`);

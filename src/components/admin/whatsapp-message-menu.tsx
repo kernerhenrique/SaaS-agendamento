@@ -41,6 +41,74 @@ export async function markMessageSent(appointmentId: string, kind: MessageKind):
   }
 }
 
+/** Um texto pronto do agendamento (ou null se não couber agora / falhar). */
+export async function fetchPreparedMessage(appointmentId: string, kind: MessageKind): Promise<PreparedMessageDto | null> {
+  try {
+    const response = await fetch(`/api/admin/appointments/${appointmentId}/messages`);
+    if (!response.ok) return null;
+    const data = (await response.json()) as { messages: PreparedMessageDto[] };
+    return data.messages.find((message) => message.kind === kind) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Depois de cancelar ou remarcar pelo painel: quadro "Avise o cliente" com o
+ * link wa.me já montado (o texto do modelo Cancelamento ou Remarcação).
+ */
+export function NotifyClientPrompt({
+  appointmentId,
+  kind,
+  clientName,
+  onDone,
+}: {
+  appointmentId: string;
+  kind: "CANCELLATION" | "RESCHEDULE";
+  clientName: string;
+  onDone: () => void;
+}) {
+  const [message, setMessage] = useState<PreparedMessageDto | null | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchPreparedMessage(appointmentId, kind).then((found) => {
+      if (!cancelled) setMessage(found);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [appointmentId, kind]);
+
+  if (!message) return null;
+  const firstName = clientName.trim().split(/\s+/)[0];
+  return (
+    <div role="status" className="flex flex-col gap-2 rounded-lg border border-info/30 bg-info/10 p-3">
+      <p className="text-sm">
+        {kind === "CANCELLATION" ? `Avise ${firstName} que o horário foi cancelado.` : `Avise ${firstName} do novo horário.`}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <a
+          href={message.url}
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => {
+            void markMessageSent(appointmentId, kind);
+            onDone();
+          }}
+          className={buttonVariants({ size: "sm" })}
+        >
+          <MessageCircle />
+          Avisar pelo WhatsApp
+        </a>
+        <Button variant="ghost" size="sm" onClick={onDone}>
+          Agora não
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 /**
  * "WhatsApp ▾" com os textos prontos do agendamento. Cada opção é um link
  * wa.me de verdade (abrir depois de um fetch seria bloqueado como pop-up); o
@@ -50,10 +118,13 @@ export function WhatsAppMessageMenu({
   appointmentId,
   phone,
   timezone,
+  reloadKey = 0,
 }: {
   appointmentId: string;
   phone: string;
   timezone: string;
+  /** Muda quando o agendamento muda (status, horário): as opções acompanham. */
+  reloadKey?: number;
 }) {
   const [messages, setMessages] = useState<PreparedMessageDto[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -71,7 +142,7 @@ export function WhatsAppMessageMenu({
     return () => {
       cancelled = true;
     };
-  }, [appointmentId]);
+  }, [appointmentId, reloadKey]);
 
   const plainLink = buildWhatsAppUrl(phone);
   const sentTime = (iso: string) =>
@@ -102,7 +173,7 @@ export function WhatsAppMessageMenu({
         <ChevronDown />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-64">
-        <DropdownMenuGroup>
+        <DropdownMenuGroup hidden={messages?.length === 0}>
           <DropdownMenuLabel>Enviar mensagem pronta</DropdownMenuLabel>
           {messages?.map((message) => (
             <DropdownMenuItem
@@ -121,7 +192,7 @@ export function WhatsAppMessageMenu({
             </DropdownMenuItem>
           ))}
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
+        {messages?.length ? <DropdownMenuSeparator /> : null}
         <DropdownMenuItem render={<a href={plainLink} target="_blank" rel="noreferrer" />}>
           <MessageCircle />
           Conversa sem mensagem pronta

@@ -4,8 +4,9 @@ import { useEffect, useState, type KeyboardEvent } from "react";
 import { CalendarPlus, MessageCircle, RotateCcw, X } from "lucide-react";
 import { toast } from "sonner";
 
+import { AppointmentHistoryLists } from "@/components/admin/appointment-history-lists";
+import { useNow } from "@/components/admin/booking-time-notice";
 import { DetailDrawerContent } from "@/components/detail-drawer";
-import { StatusBadge } from "@/components/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,6 @@ import { Sheet } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import type { AppointmentStatus } from "@/generated/prisma/enums";
-import { STATUS_LABELS, STATUS_TONE } from "@/lib/appointment-status";
 import { formatPriceFromCents } from "@/lib/currency";
 import { formatPhoneBR } from "@/lib/phone";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
@@ -93,6 +93,7 @@ function ClientDrawerBody({
   const [tags, setTags] = useState<string[]>([]);
   const [tagDraft, setTagDraft] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const now = useNow();
 
   useEffect(() => {
     let cancelled = false;
@@ -285,26 +286,7 @@ function ClientDrawerBody({
           />
         </section>
 
-        <section className="flex flex-col gap-2">
-          <h3 className="text-caption font-medium text-muted-foreground uppercase">Histórico</h3>
-          {history.length === 0 ? (
-            <p className="text-muted-foreground">Nenhum atendimento ainda.</p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {history.map((item) => (
-                <li key={item.id} className="flex items-center justify-between gap-2">
-                  <span className="min-w-0">
-                    <span className="block truncate">
-                      {formatDate(item.startAt)} · {item.service.name}
-                    </span>
-                    <span className="block truncate text-caption text-muted-foreground">{item.professional.name}</span>
-                  </span>
-                  <StatusBadge tone={STATUS_TONE[item.status]}>{STATUS_LABELS[item.status]}</StatusBadge>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <AppointmentHistoryLists items={history} now={now} formatDateTime={formatDate} />
       </div>
     </DetailDrawerContent>
   );

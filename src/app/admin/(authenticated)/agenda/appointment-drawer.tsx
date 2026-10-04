@@ -30,11 +30,13 @@ import { minutesToTimeInput, timeInputToMinutes } from "@/lib/weekday";
 import { BookingTimeNotice, useNow } from "@/components/admin/booking-time-notice";
 import { SeriesDialog } from "@/components/admin/series-dialog";
 import { useBusinessClosures } from "@/components/admin/use-business-closures";
-import { WhatsAppMessageMenu } from "@/components/admin/whatsapp-message-menu";
+import { NotifyClientPrompt, WhatsAppMessageMenu } from "@/components/admin/whatsapp-message-menu";
+import { AppointmentHistoryLists } from "@/components/admin/appointment-history-lists";
 import { evaluateLocalSlot } from "@/server/modules/appointment/admin-booking-rules";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { RESCHEDULABLE_STATUSES } from "@/server/modules/appointment/reschedule-rules";
 import { describeFrequency } from "@/server/modules/appointment/series-rules";
+import { isStatusChangeAvailable, NOT_STARTED_MESSAGE } from "@/server/modules/appointment/status-rules";
 
 import { AppointmentPayments } from "./appointment-payments";
 
@@ -127,6 +129,8 @@ function DrawerBody({
   const now = useNow();
   /** "Concluir" abre o recebimento já preenchido (com "Só concluir"). */
   const [isCompleting, setIsCompleting] = useState(false);
+  /** Depois de cancelar ou remarcar: quadro para avisar o cliente pelo WhatsApp. */
+  const [notifyKind, setNotifyKind] = useState<"CANCELLATION" | "RESCHEDULE" | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -160,6 +164,7 @@ function DrawerBody({
         return;
       }
       toast.success(`Status: ${STATUS_LABELS[status]}`);
+      if (status === "CANCELLED") setNotifyKind("CANCELLATION");
       setReloadKey((k) => k + 1);
       onChanged();
     } finally {
@@ -181,6 +186,7 @@ function DrawerBody({
         return;
       }
       toast.success(data.cancelled === 1 ? "1 data cancelada" : `${data.cancelled} datas canceladas`);
+      setNotifyKind("CANCELLATION");
       setIsConfirmingCancel(false);
       setReloadKey((k) => k + 1);
       onChanged();
@@ -217,7 +223,10 @@ function DrawerBody({
   const isFutureActive = RESCHEDULABLE_STATUSES.includes(appointment.status) && new Date(appointment.endAt).getTime() > now.getTime();
   const actorLabel = (actor: Actor) =>
     `${actor.name} (${actor.role === "OWNER" ? "dono" : lowerTerm(terms.professional.singular)})`;
-  const actions = NEXT_STATUS_ACTIONS[appointment.status];
+  // Concluir e falta só a partir do horário: antes disso, cancelar ou remarcar.
+  const allActions = NEXT_STATUS_ACTIONS[appointment.status];
+  const actions = allActions.filter((action) => isStatusChangeAvailable(action.status, new Date(appointment.startAt), now));
+  const hidesFinishActions = actions.length < allActions.length;
   const canReschedule = RESCHEDULABLE_STATUSES.includes(appointment.status);
   const whenLabel = `${formatDateTime(appointment.startAt, { weekday: "long", day: "2-digit", month: "long" })}, ${formatDateTime(appointment.startAt, { hour: "2-digit", minute: "2-digit" })}–${formatDateTime(appointment.endAt, { hour: "2-digit", minute: "2-digit" })}`;
 
@@ -227,6 +236,8 @@ function DrawerBody({
       description={whenLabel.charAt(0).toUpperCase() + whenLabel.slice(1)}
       footer={
         actions.length > 0 || canReschedule ? (
+          <div className="flex flex-col gap-2">
+          {hidesFinishActions ? <p className="text-caption text-muted-foreground">{NOT_STARTED_MESSAGE}</p> : null}
           <div className="flex flex-wrap gap-2">
             {actions.map((action) => (
               <Button
@@ -254,10 +265,20 @@ function DrawerBody({
               </Button>
             ) : null}
           </div>
+          </div>
         ) : undefined
       }
     >
       <div className="flex flex-col gap-5 py-2 text-sm">
+        {notifyKind ? (
+          <NotifyClientPrompt
+            key={`${notifyKind}:${reloadKey}`}
+            appointmentId={appointment.id}
+            kind={notifyKind}
+            clientName={appointment.client.name}
+            onDone={() => setNotifyKind(null)}
+          />
+        ) : null}
         <div className="flex flex-col items-start gap-1.5">
           <StatusBadge tone={STATUS_TONE[appointment.status]}>{STATUS_LABELS[appointment.status]}</StatusBadge>
           {audit.createdBy || audit.cancelledBy ? (
@@ -335,6 +356,7 @@ function DrawerBody({
             professionals={professionals}
             onDone={() => {
               setIsRescheduling(false);
+              setNotifyKind("RESCHEDULE");
               setReloadKey((k) => k + 1);
               onChanged();
             }}
@@ -343,6 +365,7 @@ function DrawerBody({
 
         <AppointmentPayments
           appointmentId={appointment.id}
+          status={appointment.status}
           timezone={timezone}
           reloadKey={reloadKey}
           completing={isCompleting}
@@ -363,7 +386,7 @@ function DrawerBody({
             {clientStats.noShows} {clientStats.noShows === 1 ? "falta" : "faltas"}
           </p>
           <div className="mt-1">
-            <WhatsAppMessageMenu appointmentId={appointment.id} phone={appointment.client.phone} timezone={timezone} />
+            <WhatsAppMessageMenu appointmentId={appointment.id} phone={appointment.client.phone} timezone={timezone} reloadKey={reloadKey} />
           </div>
         </section>
 
@@ -380,23 +403,14 @@ function DrawerBody({
           ) : null}
         </dl>
 
-        <section className="flex flex-col gap-2">
-          <h3 className="text-caption font-medium text-muted-foreground uppercase">Histórico</h3>
-          {history.length === 0 ? (
+        {history.length === 0 ? (
+          <section className="flex flex-col gap-2">
+            <h3 className="text-caption font-medium text-muted-foreground uppercase">Outros agendamentos</h3>
             <p className="text-muted-foreground">Primeira visita.</p>
-          ) : (
-            <ul className="flex flex-col gap-1.5">
-              {history.map((item) => (
-                <li key={item.id} className="flex items-center justify-between gap-2">
-                  <span className="truncate">
-                    {formatDateTime(item.startAt, { day: "2-digit", month: "2-digit", year: "2-digit" })} · {item.service.name}
-                  </span>
-                  <StatusBadge tone={STATUS_TONE[item.status]}>{STATUS_LABELS[item.status]}</StatusBadge>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+          </section>
+        ) : (
+          <AppointmentHistoryLists items={history} now={now} formatDateTime={formatDateTime} />
+        )}
       </div>
 
       <Dialog open={isConfirmingCancel} onOpenChange={setIsConfirmingCancel}>

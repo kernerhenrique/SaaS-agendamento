@@ -3,6 +3,7 @@ import { localDayRangeUtc, todayInTimeZone } from "@/lib/date";
 import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
 import { canTransition } from "@/server/modules/appointment/appointment.service";
+import { isStatusChangeAvailable, NOT_STARTED_MESSAGE } from "@/server/modules/appointment/status-rules";
 import { summarizeRevenue } from "@/server/modules/report/report-rules";
 
 import {
@@ -134,11 +135,14 @@ export async function completeAppointment(
 ) {
   const appointment = await prisma.appointment.findFirst({
     where: { id: appointmentId, businessId },
-    select: { id: true, status: true, professional: { select: { commissionPercent: true } } },
+    select: { id: true, status: true, startAt: true, professional: { select: { commissionPercent: true } } },
   });
   if (!appointment) throw new NotFoundError("Agendamento não encontrado");
   if (!canTransition(appointment.status, AppointmentStatus.COMPLETED)) {
     throw new ValidationError("Só agendamentos confirmados podem ser concluídos");
+  }
+  if (!isStatusChangeAvailable(AppointmentStatus.COMPLETED, appointment.startAt, new Date())) {
+    throw new ValidationError(NOT_STARTED_MESSAGE);
   }
   const timeZone = await businessTimezone(businessId);
   return prisma.$transaction(async (tx) => {

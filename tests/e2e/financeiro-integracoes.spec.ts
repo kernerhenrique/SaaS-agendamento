@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 
+import { moveToPast } from "./db";
 import { findFreeSlot, loginAsOwner } from "./helpers";
 
 /**
@@ -40,6 +41,7 @@ test("início, ficha do cliente e perfil do profissional mostram o financeiro", 
   });
   expect(created.status()).toBe(201);
   const appointmentId = (await created.json()).appointment.id as string;
+  await moveToPast(appointmentId); // concluir só depois do início
   expect((await api.post(`/api/admin/appointments/${appointmentId}/complete`, { data: {} })).status()).toBe(200);
 
   // Início: KPIs financeiros e o alerta que leva ao A receber.

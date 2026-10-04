@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 
+import { moveToPast } from "./db";
 import { findFreeSlot, loginAsOwner } from "./helpers";
 
 /**
@@ -101,6 +102,10 @@ test("recebimentos: sinal, concluir e receber, comissão congelada e financeiro"
     // Mudar a % depois não mexe no pagamento já registrado.
     expect((await saveJoao(10)).status()).toBe(200);
     expect((await payments()).payments[0].commissionPercent).toBe(40);
+
+    // Concluir antes do início: recusado. Depois que passou, vale.
+    expect((await api.post(`/api/admin/appointments/${appointmentId}/complete`, { data: {} })).status()).toBe(400);
+    await moveToPast(appointmentId);
 
     // Concluir e receber: valor ajustado para R$ 60 e saldo de R$ 40 em dinheiro → pago.
     const complete = await api.post(`/api/admin/appointments/${appointmentId}/complete`, {

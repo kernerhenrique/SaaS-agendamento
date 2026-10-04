@@ -67,7 +67,7 @@ const APPOINTMENT_TONES: { tone: StatusTone; label: string }[] = [
 ];
 
 const PAYMENT_TONES: { tone: StatusTone; label: string }[] = [
-  { tone: "pending", label: "Pendente" },
+  { tone: "pending", label: "A receber" },
   { tone: "partial", label: "Parcial" },
   { tone: "paid", label: "Pago" },
 ];

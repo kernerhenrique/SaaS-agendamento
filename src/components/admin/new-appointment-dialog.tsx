@@ -29,6 +29,7 @@ import { evaluateLocalSlot, type WorkingHoursWindow } from "@/server/modules/app
 import { BookingTimeNotice, useNow } from "./booking-time-notice";
 import { SeriesDialog } from "./series-dialog";
 import { useBusinessClosures } from "./use-business-closures";
+import { fetchPreparedMessage, markMessageSent } from "./whatsapp-message-menu";
 
 export interface NewAppointmentInitial {
   date?: string;
@@ -262,8 +263,27 @@ function NewAppointmentForm({
         setError(data?.error ?? "Não foi possível criar o agendamento");
         return;
       }
-      toast.success(repeat ? "Agendamento criado. Agora escolha as repetições." : "Agendamento criado.");
-      onDone(data.appointment.id as string, repeat);
+      const createdId = data.appointment.id as string;
+      if (repeat) {
+        toast.success("Agendamento criado. Agora escolha as repetições.");
+      } else {
+        // O texto de confirmação já vem pronto antes do clique: abrir o
+        // WhatsApp no próprio clique não é bloqueado como pop-up.
+        const confirmation = await fetchPreparedMessage(createdId, "CONFIRMATION");
+        toast.success("Agendamento criado.", {
+          duration: 10_000,
+          action: confirmation
+            ? {
+                label: "Avisar pelo WhatsApp",
+                onClick: () => {
+                  window.open(confirmation.url, "_blank", "noopener");
+                  void markMessageSent(createdId, "CONFIRMATION");
+                },
+              }
+            : undefined,
+        });
+      }
+      onDone(createdId, repeat);
     } finally {
       setIsSubmitting(false);
     }
@@ -412,7 +432,11 @@ function NewAppointmentForm({
       </div>
 
       <Label className="flex items-center gap-2 text-sm font-normal">
-        <Checkbox checked={repeat} onCheckedChange={(checked) => setRepeat(checked === true)} />
+        <Checkbox
+          checked={repeat}
+          onCheckedChange={(checked) => setRepeat(checked === true)}
+          aria-label="Repetir este horário (horário fixo)"
+        />
         Repetir este horário (horário fixo)
       </Label>
 

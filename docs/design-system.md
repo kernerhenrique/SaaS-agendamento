@@ -66,6 +66,10 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
   - no arrastar, o modal curto "Fora do expediente";
   - a API recusa com `code: "OUTSIDE_WORKING_HOURS"` se não vier `allowOutsideHours: true`.
 - **Cancelar** passa por modal de confirmação (estado final). O agendamento cancelado continua visível na agenda, riscado.
+- **Antes do horário** o rodapé do drawer só tem Cancelar e Remarcar (e Confirmar nos antigos "Agendado"), com a frase "Concluir e “Não compareceu” ficam disponíveis a partir do horário do atendimento" (`status-rules.ts`).
+- **Avisar o cliente**: depois de cancelar ou remarcar pelo drawer, quadro `info` "Avise {nome}…" com o link wa.me do modelo Cancelamento/Remarcação (`NotifyClientPrompt`) e "Agora não"; depois de um encaixe, o toast "Agendamento criado." traz a ação "Avisar pelo WhatsApp" (texto de Confirmação).
+- **Outros agendamentos do cliente** em duas listas, "Agendamentos futuros" (o próximo primeiro) e "Agendamentos passados" (`AppointmentHistoryLists`, também na ficha do cliente).
+- **Pagamento**: o selo diz "A receber" (não "Pendente"). Cancelado não tem "falta receber" nem "Registrar pagamento"; se havia sinal, mostra só o recebido.
 
 ## Cadastros (Fase 3D)
 
@@ -161,7 +165,7 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
 
 ## Mensagens (Fase 6C)
 
-- **`WhatsAppMessageMenu`** (`src/components/admin/whatsapp-message-menu.tsx`), no drawer do agendamento: "WhatsApp ▾" com os três textos prontos, cada um com check e hora quando já enviado, e "Conversa sem mensagem pronta". Se os textos não carregarem, vira o botão simples de antes.
+- **`WhatsAppMessageMenu`** (`src/components/admin/whatsapp-message-menu.tsx`), no drawer do agendamento: "WhatsApp ▾" com os textos prontos que fazem sentido agora (futuro: Confirmação, Lembrete, Remarcação; concluído: Pós-atendimento; cancelado: Cancelamento), cada um com check e hora quando já enviado, e "Conversa sem mensagem pronta". Se os textos não carregarem, vira o botão simples de antes.
 - Cada opção é um **link wa.me de verdade** (`DropdownMenuItem render={<a>}`): abrir o WhatsApp depois de um `fetch` seria bloqueado como pop-up. O clique só marca como enviado.
 - **`/admin/mensagens`** (aba na URL, `?aba=`):
   - **Lembretes de amanhã** e **Pós-atendimento** (`MessageQueueList` + `MessageQueueRow`): contador "3 de 8 enviados" com barra `success`, "Ver mensagem" (`<details>`), enviar / reenviar / desmarcar;

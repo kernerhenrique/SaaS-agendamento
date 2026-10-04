@@ -114,7 +114,12 @@ export async function getClientDetail(businessId: string, clientId: string, now 
     client: { ...data, notesUpdatedBy: notesEditor?.name ?? null },
     summary: summarizeClient(appointments, now),
     totalSpentCents: spent ? (spent._sum.amountCents ?? 0) : null,
-    history: appointments.slice(0, CLIENT_HISTORY_LIMIT),
+    // Futuros e passados em listas separadas na tela: cada lado com a sua cota,
+    // senão um horário fixo longo esconderia todo o passado.
+    history: [
+      ...appointments.filter((a) => a.startAt > now).slice(-CLIENT_HISTORY_LIMIT / 2),
+      ...appointments.filter((a) => a.startAt <= now).slice(0, CLIENT_HISTORY_LIMIT / 2),
+    ],
   };
 }
 

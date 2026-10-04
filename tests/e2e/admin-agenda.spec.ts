@@ -61,12 +61,22 @@ test("dono abre o agendamento no drawer, remarca e cancela", async ({ page }) =>
   await expect(drawer.getByText(clientName)).toBeVisible();
   // Encaixe feito pelo painel já nasce confirmado.
   await expect(drawer.getByText("Confirmado")).toBeVisible();
+  // Antes do horário: sem Concluir / Não compareceu, com a explicação.
+  await expect(drawer.getByRole("button", { name: "Concluir", exact: true })).toHaveCount(0);
+  await expect(drawer.getByRole("button", { name: "Não compareceu" })).toHaveCount(0);
+  await expect(drawer.getByText(/ficam disponíveis a partir do horário/)).toBeVisible();
+  // Cliente novo: sem outros agendamentos ainda.
+  await expect(drawer.getByText("Primeira visita.")).toBeVisible();
 
   await drawer.getByRole("button", { name: "Remarcar" }).click();
   await drawer.getByLabel("Horário").fill(newTime);
   await drawer.getByRole("button", { name: "Confirmar novo horário" }).click();
   await expect(page.getByText("Agendamento remarcado.")).toBeVisible();
   await expect(drawer.getByText(new RegExp(newTime))).toBeVisible();
+  // Remarcou pelo painel: oferece avisar o cliente com o texto de remarcação.
+  const notifyReschedule = drawer.getByRole("link", { name: "Avisar pelo WhatsApp" });
+  await expect(notifyReschedule).toHaveAttribute("href", /wa\.me\/.*mudou/);
+  await drawer.getByRole("button", { name: "Agora não" }).click();
 
   // Cancelar pede confirmação; "Voltar" não muda nada.
   const confirmCancel = page.getByRole("dialog", { name: "Cancelar agendamento?" });
@@ -78,6 +88,10 @@ test("dono abre o agendamento no drawer, remarca e cancela", async ({ page }) =>
   await drawer.getByRole("button", { name: "Cancelar", exact: true }).click();
   await confirmCancel.getByRole("button", { name: "Cancelar agendamento" }).click();
   await expect(page.getByText("Status: Cancelado")).toBeVisible();
+  // Cancelado: avisa o cliente e não fica "a receber".
+  await expect(drawer.getByRole("link", { name: "Avisar pelo WhatsApp" })).toHaveAttribute("href", /wa\.me\/.*cancelar/);
+  await expect(drawer.getByRole("button", { name: "Registrar pagamento" })).toHaveCount(0);
+  await expect(drawer.getByText("A receber")).toHaveCount(0);
 });
 
 test("encaixe pelo painel recusa passado e só aceita fora do expediente com confirmação", async ({ page }) => {

@@ -14,7 +14,7 @@ import type { PaymentMethod } from "@/generated/prisma/enums";
 export type PaymentStatus = "PENDING" | "PARTIAL" | "PAID";
 
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
-  PENDING: "Pendente",
+  PENDING: "A receber",
   PARTIAL: "Parcial",
   PAID: "Pago",
 };

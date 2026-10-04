@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 
+import { moveToPast } from "./db";
 import { findFreeSlot, loginAsOwner } from "./helpers";
 
 /** Bloco 4C: tela Financeiro (recebimentos, filtros, a receber → drawer, comissões). */
@@ -36,7 +37,9 @@ test("financeiro mostra recebimentos do dia, filtra, recebe o que falta e lista 
       },
     });
     expect(response.status()).toBe(201);
-    return (await response.json()).appointment.id as string;
+    const id = (await response.json()).appointment.id as string;
+    await moveToPast(id); // concluir só depois do início
+    return id;
   };
   const paidName = `Fin Pago ${stamp}`;
   const openName = `Fin Aberto ${stamp}`;

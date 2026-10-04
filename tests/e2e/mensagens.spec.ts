@@ -40,9 +40,10 @@ test("lembrete de amanhã sai com o texto pronto, marca enviado e o modelo é ed
   expect(appointmentId, "horário livre amanhã à noite").not.toBe("");
 
   try {
-    // Textos prontos do agendamento: três tipos, com nome, horário e link de gerenciar.
+    // Textos prontos de um agendamento futuro: confirmação, lembrete e remarcação
+    // (pós-atendimento só depois de concluído), com nome, horário e link de gerenciar.
     const { messages } = await (await api.get(`/api/admin/appointments/${appointmentId}/messages`)).json();
-    expect(messages.map((m: { kind: string }) => m.kind)).toEqual(["CONFIRMATION", "REMINDER", "FOLLOW_UP"]);
+    expect(messages.map((m: { kind: string }) => m.kind)).toEqual(["CONFIRMATION", "REMINDER", "RESCHEDULE"]);
     const reminder = messages.find((m: { kind: string }) => m.kind === "REMINDER");
     expect(reminder.text).toContain("Oi, Lembrete!");
     expect(reminder.text).toContain(`às ${hhmm}`);

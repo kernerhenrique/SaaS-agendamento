@@ -11,6 +11,7 @@ import {
   MAX_TEMPLATE_LENGTH,
   MESSAGE_KINDS,
   buildTemplateValues,
+  messageKindsFor,
   renderTemplate,
 } from "./templates";
 
@@ -104,14 +105,17 @@ function prepareMessages(
   });
 }
 
-/** Os três textos prontos (com link wa.me) de um agendamento, e o que já foi enviado. */
+/**
+ * Os textos prontos (com link wa.me) que fazem sentido para o agendamento
+ * agora (ver `messageKindsFor`), e o que já foi enviado.
+ */
 export async function getAppointmentMessages(businessId: string, appointmentId: string): Promise<PreparedMessage[]> {
   const [appointment, templates] = await Promise.all([
     prisma.appointment.findFirst({ where: { id: appointmentId, businessId }, include: APPOINTMENT_MESSAGE_INCLUDE }),
     getMessageTemplates(businessId),
   ]);
   if (!appointment) throw new NotFoundError("Agendamento não encontrado");
-  return prepareMessages(appointment, templates);
+  return prepareMessages(appointment, templates, messageKindsFor(appointment.status, appointment.startAt, new Date()));
 }
 
 async function assertAppointmentOfBusiness(businessId: string, appointmentId: string): Promise<void> {

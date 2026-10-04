@@ -135,6 +135,9 @@ enum MessageKind {
   CONFIRMATION
   REMINDER
   FOLLOW_UP
+  // Avisos quando o negócio cancela ou remarca pelo painel.
+  CANCELLATION
+  RESCHEDULE
 }
 
 // Modelo de mensagem editado pelo dono. Sem registro, vale o padrão do código

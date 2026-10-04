@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 
+import { moveToPast } from "./db";
 import { findFreeSlot, loginAsOwner } from "./helpers";
 
 /** Bloco 4B: recebimento no drawer do agendamento (concluir e receber, saldo, remover). */
@@ -24,7 +25,6 @@ test("dono conclui e recebe no drawer, completa o saldo e remove um recebimento"
     professionalId: joao.id,
     weekday: 5,
   });
-  const isoDate = slot.date;
   const clientName = `Pagamento E2E ${Date.now()}`;
   const created = await page.request.post("/api/admin/appointments", {
     data: {
@@ -35,11 +35,13 @@ test("dono conclui e recebe no drawer, completa o saldo e remove um recebimento"
     },
   });
   expect(created.status()).toBe(201);
+  // "Concluir" só vale depois do início: o atendimento passa para ontem.
+  const { date: isoDate } = await moveToPast((await created.json()).appointment.id as string);
 
   await page.goto(`/admin/agenda?date=${isoDate}`);
   await page.getByRole("button", { name: new RegExp(clientName) }).first().click();
   const drawer = page.getByRole("dialog", { name: corte.name });
-  await expect(drawer.getByText("Pendente")).toBeVisible();
+  await expect(drawer.getByText("A receber")).toBeVisible();
 
   // Concluir abre o recebimento; recebe só R$ 30 em dinheiro.
   await drawer.getByRole("button", { name: "Concluir", exact: true }).click();

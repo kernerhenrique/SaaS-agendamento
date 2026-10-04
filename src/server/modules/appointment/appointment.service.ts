@@ -4,6 +4,7 @@ import { prisma } from "@/server/db/prisma";
 import { checkAdminBookingTime } from "./admin-booking-rules";
 import { assertSlotAvailable } from "./availability";
 import { checkAdminReschedule } from "./reschedule-rules";
+import { isStatusChangeAvailable, NOT_STARTED_MESSAGE } from "./status-rules";
 import { NotFoundError, ValidationError } from "@/server/errors";
 
 /**
@@ -263,6 +264,9 @@ export async function updateAppointmentStatus(
       `Não é possível mudar de "${appointment.status}" para "${nextStatus}"`,
     );
   }
+  if (!isStatusChangeAvailable(nextStatus, appointment.startAt, new Date())) {
+    throw new ValidationError(NOT_STARTED_MESSAGE);
+  }
 
   return prisma.appointment.update({
     where: { id: appointmentId },
@@ -384,10 +388,20 @@ export async function getAppointmentDetail(
   if (!appointment) throw new NotFoundError("Agendamento não encontrado");
 
   const clientWhere = { businessId, clientId: appointment.clientId, ...scope };
-  const [history, completedCount, noShowCount, actors] = await Promise.all([
+  const historySelect = { id: true, startAt: true, status: true, service: { select: { name: true } } } as const;
+  const now = new Date();
+  // Os próximos e os últimos, separados: com um horário fixo, só "os mais
+  // recentes" seriam todos futuros e o passado sumiria da tela.
+  const [upcoming, past, completedCount, noShowCount, actors] = await Promise.all([
     prisma.appointment.findMany({
-      where: { ...clientWhere, id: { not: appointment.id } },
-      select: { id: true, startAt: true, status: true, service: { select: { name: true } } },
+      where: { ...clientWhere, id: { not: appointment.id }, startAt: { gt: now } },
+      select: historySelect,
+      orderBy: { startAt: "asc" },
+      take: CLIENT_HISTORY_LIMIT,
+    }),
+    prisma.appointment.findMany({
+      where: { ...clientWhere, id: { not: appointment.id }, startAt: { lte: now } },
+      select: historySelect,
       orderBy: { startAt: "desc" },
       take: CLIENT_HISTORY_LIMIT,
     }),
@@ -398,7 +412,7 @@ export async function getAppointmentDetail(
 
   return {
     appointment,
-    history,
+    history: [...upcoming, ...past],
     clientStats: { completed: completedCount, noShows: noShowCount },
     audit: {
       createdBy: appointment.createdByUserId ? (actors.get(appointment.createdByUserId) ?? null) : null,
