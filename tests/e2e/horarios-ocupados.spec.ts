@@ -66,9 +66,12 @@ test("grade pública mostra ocupados desabilitados e o selo Mais próximo", asyn
 
   const free = page.locator('[data-testid="time-slot"]:not([data-unavailable])');
   const dateChips = page.getByTestId("date-strip-day");
+  // Espera cada dia carregar (grade ou estado vazio) antes de passar ao próximo.
+  const dayLoaded = free.first().or(page.getByText(/Nenhum horário disponível|Todos os horários deste dia|Fechado neste dia/));
   for (let dayIndex = 0; dayIndex < 21; dayIndex++) {
+    await dayLoaded.first().waitFor();
     if (await free.first().isVisible().catch(() => false)) break;
-    await dateChips.nth(dayIndex).click();
+    await dateChips.nth(dayIndex + 1).click();
   }
   await expect(free.first()).toHaveAccessibleName(/mais próximo/);
   // Ocupado (se houver no dia): visível, desabilitado e anunciado como ocupado.

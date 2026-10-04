@@ -32,7 +32,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { lowerTerm } from "@/config/vertical";
 import { useVertical } from "@/config/vertical-context";
 import type { AppointmentStatus } from "@/generated/prisma/enums";
 import { STATUS_LABELS, STATUS_TONE } from "@/lib/appointment-status";
@@ -248,7 +247,7 @@ export function ProfessionalProfile({
           <section className="flex max-w-2xl flex-col gap-2 rounded-lg border border-destructive/30 p-4">
             <h2 className="text-sm font-semibold">Remover cadastro</h2>
             <p className="text-sm text-muted-foreground">
-              Para só pausar, desligue “Ativo” acima. Remover tira {lowerTerm(terms.professional.singular)} das listas de vez;
+              Para só pausar, desligue “Ativo” acima. Remover tira {professional.name} das listas de vez;
               o histórico de agendamentos continua nos relatórios.
             </p>
             <Button variant="outline" size="sm" className="w-fit" onClick={() => setIsConfirmingRemove(true)}>

@@ -26,6 +26,15 @@ import type { MoveDirection } from "@/server/modules/service/service-order";
 import { ServiceFormDialog } from "./service-form-dialog";
 import type { ProfessionalOption, ServiceCategoryOption, ServiceListItem } from "./types";
 
+/** Sem ninguém ativo que faça, o serviço sai da página pública (ver `[slug]/page.tsx`). */
+const NOBODY_LABEL = "Ninguém realiza · fora da página até alguém fazer";
+
+function activeProfessionalNames(service: ServiceListItem): string[] {
+  return service.professionalServices
+    .filter((ps) => ps.professional.active && !ps.professional.deletedAt)
+    .map((ps) => ps.professional.name);
+}
+
 /**
  * Serviços em tabela agrupada por categoria (a mesma ordem da página
  * pública), com subir/descer e "Visível na página pública". No celular vira
@@ -129,7 +138,7 @@ export function ServicesView({
   }
 
   const priceLabel = (service: ServiceListItem) =>
-    `${formatPriceFromCents(service.priceCents)}${features.priceFrom && service.priceType === "FROM" ? "+" : ""}`;
+    `${features.priceFrom && service.priceType === "FROM" ? "a partir de " : ""}${formatPriceFromCents(service.priceCents)}`;
 
   const actionsMenu = (service: ServiceListItem) => (
     <DropdownMenu>
@@ -212,7 +221,7 @@ export function ServicesView({
                       <TableHead className="w-20">Ordem</TableHead>
                       <TableHead>Nome</TableHead>
                       <TableHead className="w-24">Duração</TableHead>
-                      <TableHead className="w-28">Preço</TableHead>
+                      <TableHead className="w-36">Preço</TableHead>
                       <TableHead className="w-1/4">{terms.professional.plural}</TableHead>
                       <TableHead className="w-28">Na página</TableHead>
                       <TableHead className="w-12">
@@ -232,10 +241,8 @@ export function ServicesView({
                         </TableCell>
                         <TableCell className="tabular-nums">{service.durationMin} min</TableCell>
                         <TableCell className="tabular-nums">{priceLabel(service)}</TableCell>
-                        <TableCell className="max-w-56 truncate">
-                          {service.professionalServices.map((ps) => ps.professional.name).join(", ") || (
-                            <span className="text-warning">Ninguém realiza</span>
-                          )}
+                        <TableCell className={activeProfessionalNames(service).length ? "max-w-56 truncate" : "whitespace-normal"}>
+                          {activeProfessionalNames(service).join(", ") || <span className="text-warning">{NOBODY_LABEL}</span>}
                         </TableCell>
                         <TableCell>{visibilitySwitch(service)}</TableCell>
                         <TableCell>{actionsMenu(service)}</TableCell>
@@ -264,6 +271,9 @@ export function ServicesView({
                         {visibilitySwitch(service)}
                       </label>
                     </div>
+                    {activeProfessionalNames(service).length === 0 ? (
+                      <p className="text-caption text-warning">{NOBODY_LABEL}</p>
+                    ) : null}
                     {!service.visibleOnline ? (
                       <Badge variant="outline" className="w-fit">
                         Só encaixe no painel

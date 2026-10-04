@@ -72,6 +72,11 @@ export default async function PublicBookingPage({
     }),
     listUpcomingClosures(business.id, business.timezone),
   ]);
+  // Serviço que nenhum profissional ativo realiza não teria horário nunca: fica
+  // fora da página (o cliente não entra num beco sem saída). Em Serviços, o
+  // painel avisa "Ninguém realiza".
+  const offeredServiceIds = new Set(professionals.flatMap((p) => p.professionalServices.map((ps) => ps.serviceId)));
+  const bookableServices = services.filter((service) => offeredServiceIds.has(service.id));
 
   return (
     <>
@@ -96,7 +101,7 @@ export default async function PublicBookingPage({
           cancellationDeadlineHours: business.cancellationDeadlineHours,
           closures: closures.map(({ startDate, endDate, reason }) => ({ startDate, endDate, reason })),
         }}
-        services={services.map((service) => ({
+        services={bookableServices.map((service) => ({
           id: service.id,
           name: service.name,
           description: service.description,

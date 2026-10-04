@@ -32,15 +32,20 @@ export function SummaryPanel({
   /** Versão de uma linha para o rodapé fixo do mobile, que não pode ocupar meia tela. */
   compact?: boolean;
 }) {
-  const { terms } = useVertical();
-  const professionalName =
-    selection.professionalId === NO_PREFERENCE
+  const { terms, features } = useVertical();
+  // Com horário escolhido, já se sabe quem atende (em "sem preferência", o
+  // primeiro livre naquele horário): o cliente vê o nome antes de confirmar.
+  const professionalName = selection.slot
+    ? professionals.find((p) => p.id === selection.slot!.professionalId)?.name
+    : selection.professionalId === NO_PREFERENCE
       ? "Sem preferência"
       : professionals.find((p) => p.id === selection.professionalId)?.name;
 
   if (!selection.service) {
     return null;
   }
+  const priceFrom = features.priceFrom && selection.service.priceType === "FROM";
+  const priceLabel = `${priceFrom ? "a partir de " : ""}${formatPriceFromCents(selection.service.priceCents)}`;
 
   if (compact) {
     const details = [
@@ -56,7 +61,10 @@ export function SummaryPanel({
               <p className="truncate text-xs text-muted-foreground">{details.join(" · ")}</p>
             ) : null}
           </div>
-          <p className="shrink-0 text-lg font-bold">{formatPriceFromCents(selection.service.priceCents)}</p>
+          <p className="shrink-0 text-right">
+            {priceFrom ? <span className="block text-caption text-muted-foreground">a partir de</span> : null}
+            <span className="text-lg font-bold">{formatPriceFromCents(selection.service.priceCents)}</span>
+          </p>
         </div>
       </div>
     );
@@ -89,10 +97,13 @@ export function SummaryPanel({
           </div>
         ) : null}
         <div className="mt-2 flex items-baseline justify-between gap-2 border-t pt-3">
-          <dt className="font-medium">Total</dt>
-          <dd className="text-lg font-bold">{formatPriceFromCents(selection.service.priceCents)}</dd>
+          <dt className="font-medium">{priceFrom ? "Valor" : "Total"}</dt>
+          <dd className="text-right text-lg font-bold">{priceLabel}</dd>
         </div>
       </dl>
+      {priceFrom ? (
+        <p className="mt-2 text-caption text-muted-foreground">O valor final é combinado no atendimento (pode variar conforme o caso).</p>
+      ) : null}
     </div>
   );
 }

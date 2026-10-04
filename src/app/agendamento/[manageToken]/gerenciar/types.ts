@@ -1,6 +1,7 @@
 import type { AppointmentStatus } from "@/generated/prisma/enums";
 
 export interface ManagedAppointment {
+  id: string;
   status: AppointmentStatus;
   startAt: string;
   endAt: string;
@@ -11,6 +12,8 @@ export interface ManagedAppointment {
     timezone: string;
     address: string | null;
     whatsapp: string | null;
+    logoUrl: string | null;
+    accentColor: string | null;
     maxBookingWindowDays: number;
     cancellationDeadlineHours: number;
   };

@@ -18,5 +18,5 @@ export interface ServiceListItem {
   categoryId: string | null;
   visibleOnline: boolean;
   category: ServiceCategoryOption | null;
-  professionalServices: { professional: { id: string; name: string } }[];
+  professionalServices: { professional: { id: string; name: string; active: boolean; deletedAt: string | Date | null } }[];
 }

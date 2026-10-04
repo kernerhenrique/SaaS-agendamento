@@ -27,10 +27,13 @@ export function TimeSlotGrid({
   slots,
   onSelect,
   highlightFirst = true,
+  emptyDescription = "Tente outra data ou use “Próximo horário disponível”.",
 }: {
   slots: TimeSlot[];
   onSelect: (slot: TimeSlot) => void;
   highlightFirst?: boolean;
+  /** Texto do estado vazio (ex.: depois que a busca do próximo horário já falhou). */
+  emptyDescription?: string;
 }) {
   const firstFree = slots.filter((slot) => !slot.unavailable).sort((a, b) => a.minutesFromMidnight - b.minutesFromMidnight)[0];
 
@@ -39,7 +42,7 @@ export function TimeSlotGrid({
       <EmptyState
         icon={CalendarX}
         title={slots.length > 0 ? "Todos os horários deste dia estão ocupados" : "Nenhum horário disponível"}
-        description="Tente outra data ou use “Próximo horário disponível”."
+        description={emptyDescription}
       />
     );
   }

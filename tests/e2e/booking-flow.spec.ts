@@ -5,7 +5,8 @@ import { expect, test, type Page } from "@playwright/test";
  * contato → confirmação) contra os dados do seed (prisma/seed.ts). Depende
  * de um servidor rodando com o banco populado — veja README.md.
  */
-async function bookUntilContact(page: Page) {
+/** `slotIndex`: testes em paralelo escolhem horários diferentes (senão disputam o mesmo). */
+async function bookUntilContact(page: Page, slotIndex = 0) {
   await page.goto("/navalha-de-ouro");
 
   await expect(page.getByRole("heading", { name: "Escolha o serviço" })).toBeVisible();
@@ -23,12 +24,17 @@ async function bookUntilContact(page: Page) {
   const dateChips = page.getByTestId("date-strip-day");
   // Só horários livres: os ocupados também aparecem na grade, desabilitados.
   const timeSlot = page.locator('[data-testid="time-slot"]:not([data-unavailable])').first();
+  // Espera cada dia terminar de carregar (grade ou estado vazio) antes de
+  // decidir: sem isso, num dia fechado o laço passava pelos dias sem esperar.
+  const dayLoaded = timeSlot.or(page.getByText(/Nenhum horário disponível|Todos os horários deste dia|Fechado neste dia/));
   for (let dayIndex = 0; dayIndex < 21; dayIndex++) {
+    await dayLoaded.first().waitFor();
     if (await timeSlot.isVisible().catch(() => false)) break;
-    await dateChips.nth(dayIndex).click();
+    await dateChips.nth(dayIndex + 1).click();
   }
   await expect(timeSlot).toBeVisible();
-  await timeSlot.click();
+  const freeSlots = page.locator('[data-testid="time-slot"]:not([data-unavailable])');
+  await freeSlots.nth(Math.min(slotIndex, (await freeSlots.count()) - 1)).click();
 
   await expect(page.getByRole("heading", { name: "Seus dados" })).toBeVisible();
   await page.getByLabel("Nome").fill("Cliente Teste E2E");
@@ -59,13 +65,56 @@ test("cliente agenda, já fica confirmado e o link mostra cancelar (vermelho) e 
   await expect(page.getByText("Confirmado", { exact: true })).toBeVisible();
   await expect(page.getByText(/Use esta página se precisar cancelar ou remarcar/)).toBeVisible();
   await expect(page.getByRole("region", { name: "Não vai poder ir?" }).getByRole("button", { name: "Cancelar agendamento" })).toBeVisible();
-  await page.getByRole("region", { name: "Precisa de outro horário?" }).getByRole("button", { name: "Remarcar" }).click();
-  await expect(page.getByRole("button", { name: "Fechar" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Adicionar ao calendário" })).toBeVisible();
+  // A aba leva o nome do negócio, não o da plataforma.
+  await expect(page).toHaveTitle(/Barbearia Navalha de Ouro/);
   await expect(page.getByRole("button", { name: "Confirmar presença" })).toHaveCount(0);
+
+  // Remarcar: o toque só escolhe; muda de verdade depois de confirmar.
+  const reschedule = page.getByRole("region", { name: "Precisa de outro horário?" });
+  await reschedule.getByRole("button", { name: "Remarcar" }).click();
+  const nextDay = reschedule.getByRole("button", { name: "Próximo dia" });
+  const slot = reschedule.locator("button.min-h-11").first();
+  const dayLoaded = slot.or(reschedule.getByText("Nenhum horário disponível neste dia."));
+  for (let i = 0; i < 14; i++) {
+    await dayLoaded.first().waitFor();
+    if (await slot.isVisible().catch(() => false)) break;
+    await nextDay.click();
+  }
+  await slot.click();
+  await expect(reschedule.getByText(/Remarcar para/)).toBeVisible();
+  await reschedule.getByRole("button", { name: "Confirmar remarcação" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Horário alterado para" })).toBeVisible();
+
+  // Cancelar: modal do sistema (não a caixinha do navegador) e depois "Reservar outro horário".
+  await page.getByRole("region", { name: "Não vai poder ir?" }).getByRole("button", { name: "Cancelar agendamento" }).click();
+  const confirm = page.getByRole("dialog", { name: "Cancelar este agendamento?" });
+  await confirm.getByRole("button", { name: "Sim, cancelar" }).click();
+  await expect(page.getByRole("heading", { name: "Agendamento cancelado" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Reservar outro horário" })).toHaveAttribute("href", "/navalha-de-ouro");
+});
+
+test("serviço que ninguém faz fica fora da página; o resumo mostra quem atende e o preço “a partir de”", async ({ page }) => {
+  await page.goto("/navalha-de-ouro");
+  // "Coloração" (seed) não tem nenhum barbeiro: não aparece para o cliente.
+  await expect(page.getByText("Corte de cabelo", { exact: true })).toBeVisible();
+  await expect(page.getByText("Coloração", { exact: true })).toHaveCount(0);
+
+  // Barba: dois barbeiros, então há "Sem preferência" com explicação.
+  await page.getByRole("button").filter({ hasText: "Barba feita na navalha" }).click();
+  await expect(page.getByText("Mostramos os horários de todos.", { exact: false })).toBeVisible();
+  await page.getByText("Sem preferência", { exact: true }).click();
+  const timeSlot = page.locator('[data-testid="time-slot"]:not([data-unavailable])').first();
+  await page.getByRole("button", { name: "Próximo horário disponível" }).click();
+  await timeSlot.click();
+  // Com o horário escolhido, o resumo já diz quem atende (não "Sem preferência").
+  const summary = page.locator("div.sticky");
+  await expect(summary.getByText("Sem preferência")).toHaveCount(0);
+  await expect(summary.getByText(/João Barbeiro|Marcos Estilista/)).toBeVisible();
 });
 
 test("sem e-mail, a confirmação não promete e-mail e pede para guardar o link", async ({ page }) => {
-  await bookUntilContact(page);
+  await bookUntilContact(page, 4);
   await page.getByRole("button", { name: "Confirmar agendamento" }).click();
 
   await expect(page.getByRole("heading", { name: "Horário confirmado!" })).toBeVisible();

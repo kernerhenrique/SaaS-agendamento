@@ -34,8 +34,8 @@ export function ServiceCard({
           {durationMin}min
         </Badge>
         <Badge variant="outline">
+          {priceType === "FROM" ? "a partir de " : ""}
           {formatPriceFromCents(priceCents)}
-          {priceType === "FROM" ? "+" : ""}
         </Badge>
       </div>
     </SelectableCard>

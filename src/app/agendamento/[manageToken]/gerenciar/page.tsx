@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 
 import { VerticalProvider } from "@/config/vertical-context";
@@ -6,6 +7,18 @@ import { NotFoundError } from "@/server/errors";
 import { clientCanChange, getAppointmentForManagement, getSeriesForClient } from "@/server/modules/appointment/manage.service";
 
 import { ManageView } from "./manage-view";
+
+/** Aba com o nome do negócio (não "Aprazzo") e fora das buscas: o link é pessoal. */
+export async function generateMetadata({ params }: { params: Promise<{ manageToken: string }> }): Promise<Metadata> {
+  const { manageToken } = await params;
+  const robots = { index: false, follow: false };
+  try {
+    const appointment = await getAppointmentForManagement(manageToken);
+    return { title: { absolute: `Seu agendamento · ${appointment.business.name}` }, robots };
+  } catch {
+    return { title: { absolute: "Seu agendamento" }, robots };
+  }
+}
 
 export default async function ManageAppointmentPage({
   params,
@@ -46,6 +59,7 @@ export default async function ManageAppointmentPage({
       initialCanChange={clientCanChange(appointment)}
       series={series}
       appointment={{
+        id: appointment.id,
         status: appointment.status,
         startAt: appointment.startAt.toISOString(),
         endAt: appointment.endAt.toISOString(),
@@ -56,6 +70,8 @@ export default async function ManageAppointmentPage({
           timezone: appointment.business.timezone,
           address: appointment.business.address,
           whatsapp: appointment.business.whatsapp,
+          logoUrl: appointment.business.logoUrl,
+          accentColor: appointment.business.accentColor,
           maxBookingWindowDays: appointment.business.maxBookingWindowDays,
           cancellationDeadlineHours: appointment.business.cancellationDeadlineHours,
         },

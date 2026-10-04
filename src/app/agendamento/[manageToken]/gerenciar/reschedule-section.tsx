@@ -32,49 +32,74 @@ export function RescheduleSection({
   const [today] = useState(() => todayInTimeZone(timezone));
   const lastDate = addDaysToIsoDate(today, maxWindowDays);
   const [date, setDate] = useState(today);
-  const [slots, setSlots] = useState<Slot[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Resultado marcado com o dia: ao trocar de dia, a grade anterior some na hora.
+  const [result, setResult] = useState<{ date: string; slots: Slot[] } | null>(null);
+  const isLoading = result?.date !== date;
+  const slots = isLoading ? [] : result.slots;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState<Slot | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    // Padrão de efeito de fetch com flag de loading e cancelamento de
-    // corrida, não um bug.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsLoading(true);
     const params = new URLSearchParams({ businessId, serviceId, professionalId, date });
     fetch(`/api/availability?${params.toString()}`)
       .then((response) => response.json())
       .then((data) => {
-        if (!cancelled) setSlots(data.slots ?? []);
+        if (!cancelled) setResult({ date, slots: data.slots ?? [] });
       })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
+      .catch(() => {
+        if (!cancelled) setResult({ date, slots: [] });
       });
     return () => {
       cancelled = true;
     };
   }, [businessId, serviceId, professionalId, date]);
 
-  async function handlePick(slot: Slot) {
+  // O toque só escolhe; remarcar de fato pede confirmação (um toque errado não muda o horário).
+  async function confirmPick() {
+    if (!pending) return;
     setError(null);
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/public/appointments/manage/${token}/reschedule`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ startAt: slot.startAt }),
+        body: JSON.stringify({ startAt: pending.startAt }),
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
       if (!response.ok) {
-        setError(data?.error ?? "Não foi possível reagendar");
+        setError(data?.error ?? "Não foi possível remarcar");
         return;
       }
       onRescheduled(data.appointment.startAt, data.appointment.endAt);
+    } catch {
+      setError("Sem conexão. Tente de novo.");
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  const formatTime = (iso: string) =>
+    new Intl.DateTimeFormat("pt-BR", { timeZone: timezone, hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
+
+  if (pending) {
+    return (
+      <div className="flex flex-col gap-3 rounded-lg border bg-background p-4" role="group" aria-labelledby="reschedule-confirm-title">
+        <p id="reschedule-confirm-title" className="text-sm">
+          Remarcar para <strong className="font-semibold">{formatDateLabel(date, timezone)}, às {formatTime(pending.startAt)}</strong>?
+        </p>
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button disabled={isSubmitting} onClick={() => void confirmPick()}>
+            {isSubmitting ? "Remarcando..." : "Confirmar remarcação"}
+          </Button>
+          <Button variant="outline" disabled={isSubmitting} onClick={() => { setPending(null); setError(null); }}>
+            Escolher outro horário
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -113,13 +138,10 @@ export function RescheduleSection({
             <button
               key={slot.startAt}
               type="button"
-              disabled={isSubmitting}
-              className="rounded-lg border px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
-              onClick={() => handlePick(slot)}
+              className="min-h-11 rounded-lg border bg-background px-3 py-2 text-sm font-medium hover:bg-muted"
+              onClick={() => setPending(slot)}
             >
-              {new Intl.DateTimeFormat("pt-BR", { timeZone: timezone, hour: "2-digit", minute: "2-digit" }).format(
-                new Date(slot.startAt),
-              )}
+              {formatTime(slot.startAt)}
             </button>
           ))}
         </div>

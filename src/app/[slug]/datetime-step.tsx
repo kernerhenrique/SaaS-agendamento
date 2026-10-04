@@ -20,6 +20,12 @@ function formatTime(dateISO: string, timeZone: string): string {
 
 const MAX_DAYS_TO_PROBE = 30;
 
+/** "YYYY-MM-DD" → "02/11" (data de calendário, sem fuso). */
+function formatShortDate(isoDate: string): string {
+  const [, month, day] = isoDate.split("-");
+  return `${day}/${month}`;
+}
+
 async function fetchSlotsForDate(params: {
   businessId: string;
   serviceId: string;
@@ -65,29 +71,26 @@ export function DatetimeStep({
   const lastDate = addDaysToIsoDate(today, maxWindowDays);
   const [date, setDate] = useState(today);
   const closedReason = findClosure(date, closures)?.reason ?? null;
-  const [slots, setSlots] = useState<AvailableSlot[]>([]);
-  const [occupied, setOccupied] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // O resultado guarda a qual dia ele pertence: ao trocar de dia, a grade
+  // anterior some na hora (nada de tocar num horário do dia errado enquanto
+  // o novo carrega).
+  const requestKey = `${serviceId}|${professionalId}|${date}`;
+  const [result, setResult] = useState<{ key: string; slots: AvailableSlot[]; occupied: string[] } | null>(null);
+  const isLoading = result?.key !== requestKey;
+  const slots = isLoading ? [] : result.slots;
+  const occupied = isLoading ? [] : result.occupied;
   const [isSearchingNext, setIsSearchingNext] = useState(false);
   const [searchNextError, setSearchNextError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    // Reinicia o estado de carregamento a cada busca; padrão de efeito de
-    // fetch com flag de loading e cancelamento de corrida, não um bug.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsLoading(true);
-
     fetchSlotsForDate({ businessId, serviceId, professionalId, date, includeOccupied: true })
-      .then((result) => {
-        if (cancelled) return;
-        setSlots(result.slots);
-        setOccupied(result.occupied);
+      .then((data) => {
+        if (!cancelled) setResult({ key: `${serviceId}|${professionalId}|${date}`, ...data });
       })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
+      .catch(() => {
+        if (!cancelled) setResult({ key: `${serviceId}|${professionalId}|${date}`, slots: [], occupied: [] });
       });
-
     return () => {
       cancelled = true;
     };
@@ -133,10 +136,11 @@ export function DatetimeStep({
           return;
         }
       }
+      const searchedUntil = addDaysToIsoDate(date, MAX_DAYS_TO_PROBE);
       setSearchNextError(
-        addDaysToIsoDate(date, MAX_DAYS_TO_PROBE) >= lastDate
-          ? "Nenhum horário livre até o fim da agenda aberta."
-          : `Nenhum horário livre nos próximos ${MAX_DAYS_TO_PROBE} dias.`,
+        searchedUntil >= lastDate
+          ? `Não há horário livre até ${formatShortDate(lastDate)}, o último dia que a agenda está aberta. Fale com o negócio pelo WhatsApp, se precisar.`
+          : `Procuramos até ${formatShortDate(searchedUntil)} e não há horário livre. Escolha uma data mais adiante na faixa acima.`,
       );
     } finally {
       setIsSearchingNext(false);
@@ -147,7 +151,7 @@ export function DatetimeStep({
     <div className="flex flex-col gap-4">
       <h2 className="text-lg font-semibold">Escolha data e horário</h2>
 
-      <DateStrip minDate={today} days={maxWindowDays + 1} selectedDate={date} timezone={timezone} closures={closures} onSelect={setDate} />
+      <DateStrip minDate={today} days={maxWindowDays + 1} selectedDate={date} timezone={timezone} closures={closures} onSelect={(nextDate) => { setDate(nextDate); setSearchNextError(null); }} />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-medium first-letter:uppercase">{formatDateLabel(date, timezone)}</p>
@@ -156,7 +160,11 @@ export function DatetimeStep({
           Próximo horário disponível
         </Button>
       </div>
-      {searchNextError ? <p className="text-sm text-muted-foreground">{searchNextError}</p> : null}
+      {searchNextError ? (
+        <p role="status" className="rounded-lg border border-info/30 bg-info/10 p-3 text-sm">
+          {searchNextError}
+        </p>
+      ) : null}
 
       {closedReason ? (
         <p role="status" className="flex items-center gap-2 rounded-lg border bg-muted p-4 text-sm text-muted-foreground">
@@ -166,7 +174,11 @@ export function DatetimeStep({
       ) : isLoading ? (
         <SlotGridSkeleton />
       ) : (
-        <TimeSlotGrid slots={timeSlots} onSelect={(slot) => onSelect(uniqueSlotsByTime.get(slot.key)!)} />
+        <TimeSlotGrid
+          slots={timeSlots}
+          onSelect={(slot) => onSelect(uniqueSlotsByTime.get(slot.key)!)}
+          emptyDescription={searchNextError ? "Escolha outra data na faixa acima." : undefined}
+        />
       )}
     </div>
   );
