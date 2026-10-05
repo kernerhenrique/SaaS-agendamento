@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isOwnBlobUrl, MAX_IMAGE_BYTES, validateImageUpload } from "@/server/modules/business/business-images";
+import { isBlobConfigured, isOwnBlobUrl, MAX_IMAGE_BYTES, validateImageUpload } from "@/server/modules/business/business-images";
 
 describe("envio de logo e capa", () => {
   it("aceita PNG, JPG e WebP até 4 MB e devolve a extensão", () => {
@@ -14,6 +14,14 @@ describe("envio de logo e capa", () => {
     expect(() => validateImageUpload("application/pdf", 1000)).toThrow(/PNG, JPG ou WebP/);
     expect(() => validateImageUpload("image/png", 0)).toThrow(/vazio/);
     expect(() => validateImageUpload("image/png", MAX_IMAGE_BYTES + 1)).toThrow(/4 MB/);
+  });
+
+  it("na Vercel basta o BLOB_STORE_ID (o token vem na requisição); fora dela precisa do token", () => {
+    expect(isBlobConfigured({ BLOB_STORE_ID: "store", VERCEL: "1" })).toBe(true);
+    expect(isBlobConfigured({ BLOB_STORE_ID: "store" })).toBe(false);
+    expect(isBlobConfigured({ BLOB_STORE_ID: "store", VERCEL_OIDC_TOKEN: "t" })).toBe(true);
+    expect(isBlobConfigured({ BLOB_READ_WRITE_TOKEN: "t" })).toBe(true);
+    expect(isBlobConfigured({ VERCEL: "1" })).toBe(false);
   });
 
   it("só apaga do Blob imagens nossas (links externos antigos ficam)", () => {

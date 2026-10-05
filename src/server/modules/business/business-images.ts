@@ -30,7 +30,17 @@ export function isOwnBlobUrl(url: string | null | undefined): url is string {
   }
 }
 
-const blobConfigured = () => Boolean(process.env.BLOB_STORE_ID && (process.env.VERCEL_OIDC_TOKEN || process.env.BLOB_READ_WRITE_TOKEN));
+/**
+ * Na Vercel o token OIDC chega em cada requisição (o `@vercel/blob` busca
+ * sozinho), não como variável de ambiente: lá basta o BLOB_STORE_ID. Fora
+ * dela (computador, scripts), precisa do token no ambiente.
+ */
+export function isBlobConfigured(env: Record<string, string | undefined> = process.env): boolean {
+  if (!env.BLOB_STORE_ID && !env.BLOB_READ_WRITE_TOKEN) return false;
+  return Boolean(env.VERCEL || env.VERCEL_OIDC_TOKEN || env.BLOB_READ_WRITE_TOKEN);
+}
+
+const blobConfigured = () => isBlobConfigured();
 
 /** Pasta do negócio: produção em clientes/<slug>/ (a mesma do novo-cliente); fora dela, local/<slug>/. */
 function folderFor(slug: string): string {
