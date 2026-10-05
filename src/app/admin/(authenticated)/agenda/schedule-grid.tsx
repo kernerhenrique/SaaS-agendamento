@@ -42,6 +42,28 @@ const COMPACT_BLOCK_HEIGHT_PX = 56;
 // Respiro para os rótulos de hora centralizados na linha não serem cortados.
 const GRID_BODY_CLASS = "relative my-3";
 
+/**
+ * Fora do expediente e almoço: listras finas na cor da borda sobre `muted`
+ * (legível no claro e no escuro). Bloqueios usam listras grossas — dá para
+ * diferenciar "não trabalha" de "bloqueado".
+ */
+const OFF_HOURS_STYLE = {
+  backgroundImage: "repeating-linear-gradient(135deg, var(--color-border) 0 1px, transparent 1px 8px)",
+} as const;
+
+/** Cancelado no mesmo horário de um agendamento ativo (o horário foi reocupado). */
+function overlapsActive(cancelled: AppointmentDto, all: AppointmentDto[]): boolean {
+  const start = new Date(cancelled.startAt).getTime();
+  const end = new Date(cancelled.endAt).getTime();
+  return all.some(
+    (other) =>
+      other.id !== cancelled.id &&
+      other.status !== "CANCELLED" &&
+      new Date(other.startAt).getTime() < end &&
+      new Date(other.endAt).getTime() > start,
+  );
+}
+
 /** Uma coluna da grade: um profissional num dia (visão dia) ou um dia de um profissional (visão semana). */
 export interface GridColumn {
   key: string;
@@ -227,21 +249,22 @@ function ColumnView({
         ))}
 
         {!wh ? (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-muted/30 text-center text-caption text-muted-foreground">
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-muted/50 text-center text-caption text-muted-foreground" style={OFF_HOURS_STYLE}>
             Sem expediente
           </div>
         ) : (
           <>
             {wh.startMinute > range.rangeStartMinute ? (
-              <div className="pointer-events-none absolute inset-x-0 bg-muted/30" style={{ top: 0, height: top(wh.startMinute) }} />
+              <div className="pointer-events-none absolute inset-x-0 bg-muted/50" style={{ ...OFF_HOURS_STYLE, top: 0, height: top(wh.startMinute) }} />
             ) : null}
             {wh.endMinute < range.rangeEndMinute ? (
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-muted/30" style={{ top: top(wh.endMinute) }} />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-muted/50" style={{ ...OFF_HOURS_STYLE, top: top(wh.endMinute) }} />
             ) : null}
             {wh.breakStartMinute != null && wh.breakEndMinute != null ? (
               <div
-                className="pointer-events-none absolute inset-x-0 bg-muted/30"
+                className="pointer-events-none absolute inset-x-0 bg-muted/50"
                 style={{
+                  ...OFF_HOURS_STYLE,
                   top: top(wh.breakStartMinute),
                   height: minutesToHeightPx(wh.breakStartMinute, wh.breakEndMinute, PIXELS_PER_HOUR, 0),
                 }}
@@ -305,6 +328,7 @@ function ColumnView({
           <AppointmentBlock
             key={appointment.id}
             appointment={appointment}
+            coversActive={appointment.status === "CANCELLED" && overlapsActive(appointment, column.appointments)}
             column={column}
             minutes={minutesByAppointment.get(appointment.id)!}
             range={range}
@@ -329,6 +353,7 @@ function ColumnView({
 
 function AppointmentBlock({
   appointment,
+  coversActive,
   column,
   minutes,
   range,
@@ -336,6 +361,8 @@ function AppointmentBlock({
   onClick,
 }: {
   appointment: AppointmentDto;
+  /** Cancelado no mesmo horário de um ativo: vira faixa estreita à direita, atrás, sem roubar o clique. */
+  coversActive: boolean;
   column: GridColumn;
   minutes: MinuteRange;
   range: DayRange;
@@ -363,7 +390,9 @@ function AppointmentBlock({
       {...(canDrag ? { ...listeners, ...attributes } : {})}
       title={`${timeLabel} · ${appointment.client.name} · ${appointment.service.name} (${STATUS_LABELS[appointment.status]})${canDrag ? " — arraste para remarcar" : ""}`}
       className={cn(
-        "absolute inset-x-1 flex flex-col overflow-hidden rounded-md px-2 py-1 text-left text-caption leading-tight shadow-sm transition-shadow hover:z-20 hover:shadow-md focus-visible:z-20 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+        coversActive ? "absolute right-1 left-auto z-0 w-1/4 min-w-8" : "absolute inset-x-1",
+        appointment.status !== "CANCELLED" && "z-[1]",
+        "flex flex-col overflow-hidden rounded-md px-2 py-1 text-left text-caption leading-tight shadow-sm transition-shadow hover:z-20 hover:shadow-md focus-visible:z-20 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
         STATUS_BLOCK_CLASSES[appointment.status],
         canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         isDragging && "z-30 opacity-80 shadow-lg",

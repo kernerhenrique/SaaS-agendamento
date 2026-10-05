@@ -49,7 +49,9 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
 `src/app/admin/(authenticated)/agenda/`:
 - `ScheduleGrid` recebe colunas genéricas (`GridColumn`): visão **Dia** = uma coluna por profissional; visão **Semana** = sete colunas de um profissional.
 - Blocos de agendamento usam `STATUS_BLOCK_CLASSES` (fundo suave opaco + faixa `border-l-4` na cor `--status-*`). Blocos com menos de 56 px viram uma linha só ("hora · cliente").
-- Bloqueios (`TimeBlock`) são hachurados. Fora do expediente e intervalo ficam com fundo `muted`.
+- Bloqueios (`TimeBlock`) são hachurados (listras grossas). Fora do expediente e intervalo: `muted/50` com listras finas na cor `--border` (`OFF_HOURS_STYLE`), legíveis também no modo escuro.
+- Cancelado no mesmo horário de um agendamento ativo vira faixa estreita à direita, atrás (`z-0`); o ativo fica por cima e recebe o clique.
+- **Toque (Bloco E7)**: em telas de toque (`pointer-coarse:`) botões, campos, seletores, abas e itens de menu crescem para 36–44 px; no computador nada muda. A gaveta ocupa a largura toda no celular. A navegação inferior usa `viewportFit: "cover"` + `max(env(safe-area-inset-bottom), 0.5rem)` (respiro mesmo sem barra de gestos), itens com `min-h-14`. Cartões dos profissionais mostram "Seg Ter Qua…" (`WEEKDAY_SHORT`).
 - Linha do "agora" em `--destructive`, só na coluna de hoje, atualizada a cada minuto.
 - Clique no vazio abre "Novo agendamento" já preenchido (profissional, data, hora com snap de 15 min).
 - Arrastar (`@dnd-kit/core`, só desktop) remarca com atualização otimista:
