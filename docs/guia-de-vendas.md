@@ -21,7 +21,44 @@ Referências de mercado:
 - Mercado brasileiro: R$ 50–80 fixo é a faixa de "melhor custo-benefício"; R$ 80–150 com extras; desconto anual de 15–25% — [SP Agenda](https://spagenda.com/artigo/quanto-custa-sistema-agendamento).
 - White-label/implantação no mercado internacional: taxa de setup típica de US$ 500–2.500 — [SuiteDash](https://suitedash.com/best-white-label-saas-reseller-programs/), [GainHQ](https://gainhq.com/blog/white-label-saas/).
 
-Proposta:
+Há dois jeitos de cobrar. Escolha **um** por proposta e não misture os dois na mesma conversa.
+
+### Modelo A (recomendado): implantação + mensalidade fixa
+
+Um valor maior na entrada, pelo trabalho de deixar o sistema pronto, e uma **mensalidade fixa**, igual para qualquer tamanho de equipe, que cobre hospedagem, manutenção, atualizações e suporte. O cliente não paga mais quando contrata outro profissional.
+
+| Pacote de implantação | Valor único | O que inclui |
+|---|---|---|
+| Padrão | R$ 1.497 (ou 3× R$ 499) | Identidade (logo, capa, cor), serviços, equipe, expedientes e regras de reserva cadastrados; importação da planilha de clientes; treinamento de 1 h por vídeo (dono e equipe); link pronto para a bio do Instagram; 30 dias de acompanhamento próximo |
+| Completo | R$ 2.497 (ou 3× R$ 833) | Tudo do Padrão + domínio próprio configurado (agendar.negocio.com.br), textos e fotos da página revisados com o dono, migração de clientes de outro sistema, 2 treinamentos e sem "Agendamento por Aprazzo" no rodapé |
+
+| Mensalidade | Mensal | Anual (2 meses grátis) |
+|---|---|---|
+| Manutenção e hospedagem, qualquer número de profissionais | R$ 179 | R$ 1.790 |
+
+**A mensalidade inclui:**
+- hospedagem do sistema e do banco de dados, com cópias de segurança;
+- atualizações e melhorias novas da Aprazzo, sem custo extra;
+- suporte por WhatsApp em horário comercial (link de senha nova, dúvidas de uso, ajustes de cadastro);
+- até 1 h por mês de pequenos ajustes feitos por você (trocar logo, cadastrar uma leva de serviços, rever horários);
+- domínio próprio mantido, quando contratado na implantação.
+
+**Fica fora (orçamento à parte):** funcionalidade feita sob medida para um cliente, integrações novas e treinamentos extras. Lembre: o que entra no sistema vale para todos os clientes, então pedido de um cliente vira melhoria geral só quando fizer sentido para o produto.
+
+**Limite justo:** o preço fixo vale para **um negócio (uma unidade)** com até 20 profissionais ativos. Rede com várias unidades ou equipe maior recebe proposta própria (cada unidade é um negócio cadastrado).
+
+**Por que vender assim:**
+- A implantação paga o seu trabalho logo na entrada e faz o cliente se comprometer: quem pagou R$ 1.497 usa o sistema.
+- Mensalidade única é fácil de explicar ("R$ 179 por mês, tudo incluso") e não pune o crescimento da equipe.
+- Para negócios com equipe grande fica mais barato que o mercado: o Trinks cobra R$ 236/mês de 11 a 20 profissionais.
+
+**Cuidado:** para equipes pequenas, a conta de 12 meses fica acima do mercado (Padrão + 12× R$ 179 = R$ 3.645, contra cerca de R$ 1.130 no Trinks para 3–4 profissionais). Justifique pelo que o concorrente não entrega: sistema pronto em 48 h com a marca do negócio, suporte de uma pessoa que conhece o cliente e nada para configurar sozinho. Para barbearia de 1–2 pessoas que não aceita esse valor, use o Modelo B.
+
+**Fidelidade:** neste modelo, contrato de 12 meses. Se o cliente sair antes, a implantação não é devolvida; os dados dele são exportados (Relatórios › Exportar CSV) e entregues.
+
+### Modelo B: mensalidade por tamanho de equipe
+
+Para quem quer entrada baixa, normalmente negócio pequeno:
 
 | Plano | Profissionais | Mensal | Anual (2 meses grátis) |
 |---|---|---|---|
@@ -29,18 +66,23 @@ Proposta:
 | Equipe | 4–8 | R$ 149 | R$ 1.490 |
 | Completo | 9+ | R$ 249 | R$ 2.490 |
 
-- **Implantação (única): R$ 490–990** — identidade, cadastro de serviços, equipe e horários, treinamento de 30 min por vídeo, link pronto para a bio do Instagram.
-- **Add-ons**: domínio próprio (+R$ 20/mês); remover "Agendamento por Aprazzo" do rodapé (incluso no Completo).
+- **Implantação (única): R$ 490–990**: identidade, cadastro de serviços, equipe e horários, treinamento de 30 min por vídeo, link pronto para a bio do Instagram.
+
+### Para os dois modelos
+
+- **Add-ons**: domínio próprio (+R$ 20/mês no Modelo B; já incluso no pacote Completo do Modelo A); remover "Agendamento por Aprazzo" do rodapé (incluso no Completo).
 - **Exclusivo** (instalação dedicada): sob consulta, a partir de R$ 3.000 + R$ 400/mês.
-- **Regra de ouro**: não dê desconto no mensal. Se precisar ceder, ceda na implantação — o mensal é o seu patrimônio.
+- **Regra de ouro**: não dê desconto no mensal. Se precisar ceder, ceda na implantação (parcelar ou trocar Completo por Padrão): o mensal é o seu patrimônio.
+- **Reajuste anual** da mensalidade pelo IPCA, previsto em contrato.
 
 ## Processo de venda
 
 1. **Abordagem** (Instagram/WhatsApp) com uma **demo personalizada**: logo e cor do prospect num link de demonstração. É o argumento mais forte.
 2. **Call de 20 min**: perguntar pela dor (faltas, agenda no caderno, comissão calculada à mão, cliente que some) e mostrar só as telas que resolvem essa dor.
-3. **Proposta por escrito no mesmo dia**, validade de 7 dias.
-4. **Fechou**: cobrar a implantação antes de começar, assinar o contrato, iniciar a mensalidade na data da entrega.
-5. **Teste de 14 dias** só depois da implantação paga (implantar dá trabalho; teste grátis sem compromisso atrai curioso).
+3. **Proposta por escrito no mesmo dia**, validade de 7 dias. No Modelo A, mostre a conta em duas linhas: "Implantação R$ 1.497 (3× R$ 499) + R$ 179/mês, tudo incluso, para toda a equipe".
+4. **Fechou**: cobrar a implantação antes de começar (ou a 1ª parcela), assinar o contrato, iniciar a mensalidade na data da entrega.
+5. **Teste de 14 dias** só no Modelo B e só depois da implantação paga (implantar dá trabalho; teste grátis sem compromisso atrai curioso). No Modelo A, o "teste" é a demonstração personalizada antes de fechar.
+6. **Entregue o manual de uso** junto com o link de primeiro acesso: o dono e a equipe tiram as dúvidas do dia a dia sozinhos.
 
 ## Entrega e retenção
 
