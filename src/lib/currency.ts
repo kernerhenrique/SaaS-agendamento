@@ -16,3 +16,13 @@ export function digitsToCents(text: string): number {
   const digits = text.replace(/\D/g, "").slice(-9);
   return digits ? Number(digits) : 0;
 }
+
+/**
+ * Campo de dinheiro: o cursor precisa ir para o fim? Sim, sempre que não
+ * estiver lá — exceto quando o texto inteiro está selecionado (digitar substitui tudo).
+ */
+export function caretNeedsMove(start: number | null, end: number | null, length: number): boolean {
+  if (start == null || end == null) return false;
+  if (start === 0 && end === length && length > 0) return false;
+  return start !== length || end !== length;
+}

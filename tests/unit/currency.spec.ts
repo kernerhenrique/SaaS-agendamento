@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { digitsToCents, formatCentsInput, formatPriceFromCents } from "@/lib/currency";
+import { caretNeedsMove, digitsToCents, formatCentsInput, formatPriceFromCents } from "@/lib/currency";
 
 describe("moeda pt-BR", () => {
   it("formata centavos com milhar e vírgula", () => {
@@ -20,5 +20,15 @@ describe("moeda pt-BR", () => {
   it("apagar tudo volta a zero e o valor tem limite", () => {
     expect(digitsToCents("R$ ")).toBe(0);
     expect(digitsToCents("12345678901")).toBe(345678901);
+  });
+
+  it("o cursor vai para o fim, menos quando o texto inteiro está selecionado", () => {
+    // "0,00" com o cursor antes da vírgula: digitar ali bagunçava o valor.
+    expect(caretNeedsMove(1, 1, 4)).toBe(true);
+    expect(caretNeedsMove(0, 0, 4)).toBe(true);
+    expect(caretNeedsMove(2, 4, 4)).toBe(true);
+    expect(caretNeedsMove(4, 4, 4)).toBe(false);
+    expect(caretNeedsMove(0, 4, 4)).toBe(false);
+    expect(caretNeedsMove(null, null, 4)).toBe(false);
   });
 });
