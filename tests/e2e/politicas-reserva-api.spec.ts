@@ -85,6 +85,19 @@ test("antecedência, janela e prazo para cancelar valem na reserva pública", as
     const cancel = await request.post(`/api/public/appointments/manage/${manageToken}/cancel`);
     expect(cancel.status()).toBe(400);
     expect((await cancel.json()).error).toContain("Fale com o estabelecimento");
+
+    // Na tela: a página do link não promete cancelar/remarcar…
+    await page.goto(`/agendamento/${manageToken}/gerenciar`);
+    await expect(page.getByText("Aqui estão os detalhes do atendimento.")).toBeVisible();
+    await expect(page.getByText(/Use esta página se precisar cancelar/)).toHaveCount(0);
+
+    // …e quem reserva dentro do prazo é avisado antes de confirmar.
+    await page.goto("/navalha-de-ouro");
+    await page.getByText("Corte de cabelo", { exact: true }).click();
+    await page.getByText("João Barbeiro", { exact: true }).click();
+    await page.getByRole("button", { name: "Próximo horário disponível" }).click();
+    await page.locator('[data-testid="time-slot"]:not([data-unavailable])').first().click();
+    await expect(page.getByRole("note")).toContainText("não dá para cancelar nem remarcar pelo link");
   } finally {
     await setPolicies({
       minBookingNoticeMinutes: original.minBookingNoticeMinutes,

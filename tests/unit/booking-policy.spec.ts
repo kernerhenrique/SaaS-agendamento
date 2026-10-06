@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { localMinutesToUtc } from "@/lib/date";
-import { bookingWindow, canClientChange } from "@/server/modules/appointment/booking-policy";
+import { bookingWindow, canClientChange, lockedBookingNotice } from "@/server/modules/appointment/booking-policy";
 
 const TIMEZONE = "America/Sao_Paulo";
 const at = (dateISO: string, minutes: number) => localMinutesToUtc(dateISO, minutes, TIMEZONE);
@@ -46,5 +46,24 @@ describe("canClientChange (prazo para cancelar/remarcar pelo link)", () => {
   it("prazo de 24 h atravessa o dia anterior", () => {
     expect(canClientChange(startAt, at("2026-09-23", 14 * 60), 24)).toBe(true);
     expect(canClientChange(startAt, at("2026-09-23", 16 * 60), 24)).toBe(false);
+  });
+});
+
+describe("lockedBookingNotice (reserva que já nasce dentro do prazo)", () => {
+  const start = at("2026-09-24", 16 * 60);
+
+  it("avisa quando falta menos que o prazo", () => {
+    const notice = lockedBookingNotice(start, at("2026-09-24", 15 * 60), 2, "Navalha");
+    expect(notice).toContain("menos de 2 horas");
+    expect(notice).toContain("fale com Navalha");
+  });
+
+  it("sem aviso fora do prazo ou sem prazo", () => {
+    expect(lockedBookingNotice(start, at("2026-09-24", 13 * 60), 2, "Navalha")).toBeNull();
+    expect(lockedBookingNotice(start, at("2026-09-24", 15 * 60), 0, "Navalha")).toBeNull();
+  });
+
+  it("singular para 1 hora", () => {
+    expect(lockedBookingNotice(start, at("2026-09-24", 15 * 60 + 30), 1, "X")).toContain("menos de 1 hora.");
   });
 });

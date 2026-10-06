@@ -17,11 +17,14 @@ export function ContactStep({
   isSubmitting,
   error,
   policyText,
+  lockedNotice,
   onSubmit,
 }: {
   isSubmitting: boolean;
   error: string | null;
   policyText?: string | null;
+  /** Horário dentro do prazo de cancelamento: avisa antes de confirmar que o link não vai cancelar nem remarcar. */
+  lockedNotice?: string | null;
   onSubmit: (contact: ContactInfo) => void;
 }) {
   const [name, setName] = useState("");
@@ -57,6 +60,12 @@ export function ContactStep({
           <Label htmlFor="clientEmail">E-mail (opcional)</Label>
           <Input id="clientEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
+
+        {lockedNotice ? (
+          <p role="note" className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">
+            {lockedNotice}
+          </p>
+        ) : null}
 
         {policyText ? (
           <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">{policyText}</p>

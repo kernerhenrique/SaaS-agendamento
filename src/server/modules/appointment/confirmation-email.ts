@@ -14,6 +14,8 @@ export interface AppointmentConfirmationEmailData {
   startAt: Date;
   timezone: string;
   manageToken: string;
+  /** Reservado já dentro do prazo de cancelamento: o link não cancela nem remarca. */
+  changeLocked?: boolean;
 }
 
 /** Nome do cliente vem do formulário público: nunca interpolar cru no HTML. */
@@ -56,7 +58,10 @@ export async function sendAppointmentConfirmationEmail(
     `${terms.professional.singular}: ${data.professionalName}`,
     `Data/hora: ${formattedDateTime}`,
     "",
-    `Se precisar cancelar ou remarcar: ${manageUrl}`,
+    data.changeLocked
+      ? `Detalhes do agendamento: ${manageUrl}
+Como o horário já está perto, para cancelar ou remarcar fale com ${data.businessName}.`
+      : `Se precisar cancelar ou remarcar: ${manageUrl}`,
   ].join("\n");
 
   const html = `
@@ -67,7 +72,11 @@ export async function sendAppointmentConfirmationEmail(
       <li><strong>${terms.professional.singular}:</strong> ${escapeHtml(data.professionalName)}</li>
       <li><strong>Data/hora:</strong> ${formattedDateTime}</li>
     </ul>
-    <p>Se precisar cancelar ou remarcar, <a href="${manageUrl}"><strong>use este link</strong></a>.</p>
+    ${
+      data.changeLocked
+        ? `<p><a href="${manageUrl}"><strong>Ver o agendamento</strong></a>. Como o horário já está perto, para cancelar ou remarcar fale com ${escapeHtml(data.businessName)}.</p>`
+        : `<p>Se precisar cancelar ou remarcar, <a href="${manageUrl}"><strong>use este link</strong></a>.</p>`
+    }
   `;
 
   const owners = await prisma.user.findMany({

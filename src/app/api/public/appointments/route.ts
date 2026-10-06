@@ -3,6 +3,7 @@ import { after, NextRequest, NextResponse } from "next/server";
 import { ValidationError } from "@/server/errors";
 import { handleApiError } from "@/server/http";
 import { createPublicAppointment } from "@/server/modules/appointment/appointment.service";
+import { canClientChange } from "@/server/modules/appointment/booking-policy";
 import { sendAppointmentConfirmationEmail } from "@/server/modules/appointment/confirmation-email";
 import { notifyBusinessOfClientAction } from "@/server/modules/notification/business-alerts";
 
@@ -80,6 +81,7 @@ export async function POST(request: NextRequest) {
             startAt: appointment.startAt,
             timezone: appointment.business.timezone,
             manageToken: appointment.manageToken,
+            changeLocked: !canClientChange(appointment.startAt, new Date(), appointment.business.cancellationDeadlineHours),
           });
         } catch (emailError) {
           console.error("[appointments] falha ao enviar e-mail de confirmação", emailError);

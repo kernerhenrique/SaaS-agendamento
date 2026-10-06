@@ -14,6 +14,7 @@ import { VerticalProvider } from "@/config/vertical-context";
 import { buildGoogleMapsUrl } from "@/lib/maps";
 import { getInitials } from "@/lib/text";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { lockedBookingNotice } from "@/server/modules/appointment/booking-policy";
 import { cn } from "cn";
 
 import { BusinessDetails } from "./business-details";
@@ -54,6 +55,8 @@ export function BookingFlow({
   });
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Calculado ao escolher o horário (evento, não renderização: "agora" não pode variar entre servidor e cliente).
+  const [lockedNotice, setLockedNotice] = useState<string | null>(null);
   const [confirmedAppointment, setConfirmedAppointment] = useState<ConfirmedAppointmentInfo | null>(
     null,
   );
@@ -74,6 +77,7 @@ export function BookingFlow({
 
   function handleSelectSlot(slot: AvailableSlot) {
     setSelection((prev) => ({ ...prev, slot }));
+    setLockedNotice(lockedBookingNotice(new Date(slot.startAt), new Date(), business.cancellationDeadlineHours, business.name));
     setStep(4);
   }
 
@@ -112,6 +116,7 @@ export function BookingFlow({
         businessWhatsapp: business.whatsapp,
         timezone: data.appointment.business.timezone,
         clientEmail: contact.email?.trim() || null,
+        changeLocked: lockedBookingNotice(new Date(data.appointment.startAt), new Date(), business.cancellationDeadlineHours, business.name) != null,
       });
       setStep(5);
     } finally {
@@ -213,6 +218,7 @@ export function BookingFlow({
                   isSubmitting={isSubmitting}
                   error={submitError}
                   policyText={business.policyText}
+                  lockedNotice={lockedNotice}
                   onSubmit={handleSubmitContact}
                 />
               ) : null}

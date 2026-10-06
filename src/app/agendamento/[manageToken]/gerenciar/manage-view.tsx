@@ -202,8 +202,11 @@ export function ManageView({
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 p-4 sm:p-6">
         <div>
           <h1 className="text-page-title font-bold">Seu agendamento</h1>
-          {isOpen ? (
+          {/* Dentro do prazo o link não cancela nem remarca: a frase não pode prometer isso. */}
+          {canManage ? (
             <p className="pt-1 text-sm">Seu horário está confirmado. Use esta página se precisar cancelar ou remarcar.</p>
+          ) : isOpen ? (
+            <p className="pt-1 text-sm">Seu horário está confirmado. Aqui estão os detalhes do atendimento.</p>
           ) : null}
         </div>
 

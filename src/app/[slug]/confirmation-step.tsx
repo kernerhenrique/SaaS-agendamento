@@ -22,6 +22,8 @@ export interface ConfirmedAppointmentInfo {
   timezone: string;
   /** E-mail informado na reserva (opcional): muda o texto e indica se o link também foi por e-mail. */
   clientEmail: string | null;
+  /** Reservado já dentro do prazo de cancelamento: o link mostra os detalhes, mas não cancela nem remarca. */
+  changeLocked: boolean;
 }
 
 function formatFullDateTime(dateISO: string, timeZone: string): string {
@@ -48,7 +50,7 @@ export function ConfirmationStep({ appointment }: { appointment: ConfirmedAppoin
   const dateTime = formatFullDateTime(appointment.startAt, appointment.timezone);
   const saveToWhatsAppUrl = buildWhatsAppShareUrl(
     `Meu horário em ${appointment.businessName}: ${appointment.serviceName} com ${appointment.professionalName}, ${dateTime}.\n` +
-      `Para cancelar ou remarcar: ${manageUrl}`,
+      `${appointment.changeLocked ? "Detalhes do agendamento" : "Para cancelar ou remarcar"}: ${manageUrl}`,
   );
 
   async function copyLink() {
@@ -68,9 +70,13 @@ export function ConfirmationStep({ appointment }: { appointment: ConfirmedAppoin
         <p className="text-sm text-muted-foreground">
           {appointment.clientEmail ? (
             <>
-              Enviamos os detalhes para <strong className="font-medium text-foreground">{appointment.clientEmail}</strong>.
-              Se precisar cancelar ou remarcar, é pelo link abaixo.
+              Enviamos os detalhes para <strong className="font-medium text-foreground">{appointment.clientEmail}</strong>.{" "}
+              {appointment.changeLocked
+                ? `O link abaixo mostra o seu horário. Como já está perto, para cancelar ou remarcar fale com ${appointment.businessName}.`
+                : "Se precisar cancelar ou remarcar, é pelo link abaixo."}
             </>
+          ) : appointment.changeLocked ? (
+            <>Guarde o link abaixo com os detalhes do seu horário. Como já está perto, para cancelar ou remarcar fale com {appointment.businessName}.</>
           ) : (
             <>Guarde o link abaixo: se precisar cancelar ou remarcar, é por ele.</>
           )}

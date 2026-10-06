@@ -43,6 +43,17 @@ export function canClientChange(startAt: Date, now: Date, deadlineHours: number)
   return now.getTime() < startAt.getTime() - deadlineHours * 60 * 60_000;
 }
 
+/**
+ * Reserva que já nasce dentro do prazo de cancelamento (ex.: 16h reservado às
+ * 15h com prazo de 2 h): o cliente precisa saber ANTES de confirmar que o link
+ * não vai cancelar nem remarcar. Devolve o aviso, ou null quando o link vale.
+ */
+export function lockedBookingNotice(startAt: Date, now: Date, deadlineHours: number, businessName: string): string | null {
+  if (deadlineHours <= 0 || canClientChange(startAt, now, deadlineHours)) return null;
+  const prazo = deadlineHours === 1 ? "1 hora" : `${deadlineHours} horas`;
+  return `Este horário é daqui a menos de ${prazo}. Depois de confirmar, não dá para cancelar nem remarcar pelo link: se precisar, fale com ${businessName}.`;
+}
+
 export function clientChangeDeadlineMessage(deadlineHours: number): string {
   const prazo = deadlineHours === 1 ? "1 hora" : `${deadlineHours} horas`;
   return `Alterações pelo link só até ${prazo} antes do horário. Fale com o estabelecimento.`;
