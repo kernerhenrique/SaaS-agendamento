@@ -21,6 +21,9 @@ test("relatórios por seção batem com o financeiro e exportam CSV", async ({ p
   const atendimentos = await section("atendimentos");
   expect(atendimentos.current.byDay).toHaveLength(30);
   expect(atendimentos.previous).toHaveProperty("total");
+  // Comparação justa: números do período até hoje (`compare`) e a janela anterior equivalente.
+  expect(atendimentos.compare).toHaveProperty("total");
+  expect(atendimentos.comparedWith).toHaveProperty("startDate");
 
   // Faturamento = Financeiro no mesmo período (mesma regra, data de recebimento).
   const faturamento = await section("faturamento");

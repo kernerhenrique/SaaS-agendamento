@@ -34,7 +34,7 @@ import type { AppointmentStatus } from "@/generated/prisma/enums";
 import { STATUS_LABELS, STATUS_TONE } from "@/lib/appointment-status";
 import { formatPriceFromCents } from "@/lib/currency";
 import { todayInTimeZone } from "@/lib/date";
-import { resolvePeriod, type PeriodPreset } from "@/lib/period";
+import { comparisonRanges, resolvePeriod, type PeriodPreset } from "@/lib/period";
 import { useFetchJson } from "@/lib/use-fetch-json";
 import { delta, rateDelta } from "@/server/modules/report/report-rules";
 import type {
@@ -67,6 +67,18 @@ function downloadFile(url: string) {
 const percent = (value: number | null) =>
   value == null ? "—" : new Intl.NumberFormat("pt-BR", { style: "percent", maximumFractionDigits: 1 }).format(value);
 const formatDate = (dateISO: string) => `${dateISO.slice(8, 10)}/${dateISO.slice(5, 7)}/${dateISO.slice(0, 4)}`;
+const formatShort = (dateISO: string) => `${dateISO.slice(8, 10)}/${dateISO.slice(5, 7)}`;
+const shortRange = (r: { startDate: string; endDate: string }) =>
+  r.startDate === r.endDate ? formatShort(r.startDate) : `${formatShort(r.startDate)} a ${formatShort(r.endDate)}`;
+
+/** O que o "vs. período anterior" compara, em palavras (mesma regra do servidor: `comparisonRanges`). */
+function describeComparison(range: { startDate: string; endDate: string }, today: string): string {
+  const { current, previous, cut } = comparisonRanges(range, today);
+  return cut
+    ? `comparação até hoje: ${shortRange(current)} com ${shortRange(previous)}`
+    : `comparado com ${shortRange(previous)}`;
+}
+
 /** Eixo do gráfico em reais inteiros ("R$ 300"). */
 const reaisTick = (reais: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(reais);
@@ -116,8 +128,7 @@ export function ReportsView({
           <h1 className="text-page-title font-bold">Relatórios</h1>
           <p className="text-sm text-muted-foreground">
             {formatDate(range.startDate)}
-            {range.startDate !== range.endDate ? ` – ${formatDate(range.endDate)}` : ""} · comparado com o período
-            anterior de mesmo tamanho
+            {range.startDate !== range.endDate ? ` – ${formatDate(range.endDate)}` : ""} · {describeComparison(range, today)}
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-2">
@@ -204,7 +215,7 @@ function LoadingSection() {
 
 function AppointmentsSection({ report }: { report: AppointmentsReport }) {
   const { terms } = useVertical();
-  const { current, previous } = report;
+  const { current, compare, previous } = report;
   const statusEntries = Object.entries(current.byStatus) as [AppointmentStatus, number][];
   return (
     <>
@@ -213,14 +224,14 @@ function AppointmentsSection({ report }: { report: AppointmentsReport }) {
           icon={CalendarClock}
           label="Agendamentos"
           value={String(current.total)}
-          delta={{ value: delta(current.total, previous.total) }}
+          delta={{ value: delta(compare.total, previous.total) }}
         />
         <KpiCard
           icon={XCircle}
           label="Taxa de cancelamento"
           value={percent(current.cancellationRate)}
           delta={{
-            value: rateDelta({ rate: current.cancellationRate, total: current.total }, { rate: previous.cancellationRate, total: previous.total }),
+            value: rateDelta({ rate: compare.cancellationRate, total: compare.total }, { rate: previous.cancellationRate, total: previous.total }),
             kind: "points",
             higherIsBetter: false,
           }}
@@ -230,7 +241,7 @@ function AppointmentsSection({ report }: { report: AppointmentsReport }) {
           label="Taxa de faltas"
           value={percent(current.noShowRate)}
           delta={{
-            value: rateDelta({ rate: current.noShowRate, total: current.total }, { rate: previous.noShowRate, total: previous.total }),
+            value: rateDelta({ rate: compare.noShowRate, total: compare.total }, { rate: previous.noShowRate, total: previous.total }),
             kind: "points",
             higherIsBetter: false,
           }}
@@ -290,10 +301,10 @@ function AppointmentsSection({ report }: { report: AppointmentsReport }) {
 }
 
 function RevenueSection({ report }: { report: RevenueReport }) {
-  const { current, previous } = report;
+  const { current, compare, previous } = report;
   const ticketDelta =
-    current.averageTicketCents != null && previous.averageTicketCents != null
-      ? delta(current.averageTicketCents, previous.averageTicketCents)
+    compare.averageTicketCents != null && previous.averageTicketCents != null
+      ? delta(compare.averageTicketCents, previous.averageTicketCents)
       : null;
   return (
     <>
@@ -302,7 +313,7 @@ function RevenueSection({ report }: { report: RevenueReport }) {
           icon={Wallet}
           label="Recebido"
           value={formatPriceFromCents(current.receivedCents)}
-          delta={{ value: delta(current.receivedCents, previous.receivedCents) }}
+          delta={{ value: delta(compare.receivedCents, previous.receivedCents) }}
         />
         <KpiCard
           icon={Receipt}
@@ -315,7 +326,7 @@ function RevenueSection({ report }: { report: RevenueReport }) {
           icon={TicketPercent}
           label="Descontos"
           value={formatPriceFromCents(current.discountCents)}
-          delta={{ value: delta(current.discountCents, previous.discountCents), higherIsBetter: false }}
+          delta={{ value: delta(compare.discountCents, previous.discountCents), higherIsBetter: false }}
         />
         <KpiCard icon={CalendarClock} label="Recebimentos" value={String(current.paymentsCount)} />
       </KpiGrid>
@@ -514,7 +525,7 @@ function ServicesSection({ report }: { report: ServicesReport }) {
 
 function ClientsSection({ report }: { report: ClientsReport }) {
   const { terms } = useVertical();
-  const { current, previous } = report;
+  const { current, compare, previous } = report;
   return (
     <>
       <KpiGrid>
@@ -522,19 +533,19 @@ function ClientsSection({ report }: { report: ClientsReport }) {
           icon={Users}
           label="Atendidos"
           value={String(current.served)}
-          delta={{ value: delta(current.served, previous.served) }}
+          delta={{ value: delta(compare.served, previous.served) }}
         />
         <KpiCard
           icon={UserPlus}
           label="Novos"
           value={String(current.newClients)}
-          delta={{ value: delta(current.newClients, previous.newClients) }}
+          delta={{ value: delta(compare.newClients, previous.newClients) }}
         />
         <KpiCard
           icon={UserCheck}
           label="Voltaram"
           value={String(current.returning)}
-          delta={{ value: delta(current.returning, previous.returning) }}
+          delta={{ value: delta(compare.returning, previous.returning) }}
         />
         <KpiCard
           icon={Trophy}

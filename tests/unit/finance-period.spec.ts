@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parsePeriodPreset, previousRange, resolvePeriod } from "@/lib/period";
+import { comparisonRanges, parsePeriodPreset, previousRange, resolvePeriod } from "@/lib/period";
 
 const TODAY = "2026-09-27";
 
@@ -38,5 +38,42 @@ describe("resolvePeriod (Financeiro)", () => {
   it("preset desconhecido na URL vira 'este mês'", () => {
     expect(parsePeriodPreset("ontem")).toBe("mes");
     expect(parsePeriodPreset("7-dias")).toBe("7-dias");
+  });
+});
+
+describe("comparisonRanges (vs. período anterior nos Relatórios)", () => {
+  it("este mês no dia 6: compara 1 a 6 com 1 a 6 do mês anterior", () => {
+    expect(comparisonRanges({ startDate: "2026-10-01", endDate: "2026-10-31" }, "2026-10-06")).toEqual({
+      current: { startDate: "2026-10-01", endDate: "2026-10-06" },
+      previous: { startDate: "2026-09-01", endDate: "2026-09-06" },
+      cut: true,
+    });
+  });
+
+  it("dia 31 compara com o último dia de um mês de 30", () => {
+    expect(comparisonRanges({ startDate: "2026-10-01", endDate: "2026-10-31" }, "2026-10-30").previous).toEqual({
+      startDate: "2026-09-01",
+      endDate: "2026-09-30",
+    });
+  });
+
+  it("mês passado inteiro compara com o mês anterior inteiro", () => {
+    expect(comparisonRanges({ startDate: "2026-09-01", endDate: "2026-09-30" }, "2026-10-06")).toEqual({
+      current: { startDate: "2026-09-01", endDate: "2026-09-30" },
+      previous: { startDate: "2026-08-01", endDate: "2026-08-31" },
+      cut: false,
+    });
+  });
+
+  it("intervalo livre: anterior de mesmo tamanho, cortado em hoje", () => {
+    expect(comparisonRanges({ startDate: "2026-09-30", endDate: "2026-10-06" }, "2026-10-06").previous).toEqual({
+      startDate: "2026-09-23",
+      endDate: "2026-09-29",
+    });
+    expect(comparisonRanges({ startDate: "2026-10-01", endDate: "2026-10-10" }, "2026-10-03")).toEqual({
+      current: { startDate: "2026-10-01", endDate: "2026-10-03" },
+      previous: { startDate: "2026-09-28", endDate: "2026-09-30" },
+      cut: true,
+    });
   });
 });

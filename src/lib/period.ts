@@ -38,6 +38,33 @@ export function previousRange(startDate: string, endDate: string): { startDate: 
 }
 
 /**
+ * Janelas da comparação "vs. período anterior", sem comparar meio mês com um
+ * mês inteiro:
+ * - período que passa de hoje é cortado em hoje (o futuro ainda não aconteceu);
+ * - mês do calendário compara com os mesmos dias do mês anterior
+ *   (1 a 6/10 → 1 a 6/09; outubro inteiro → setembro inteiro);
+ * - o resto, com o intervalo imediatamente anterior de mesmo tamanho.
+ */
+export function comparisonRanges(
+  range: { startDate: string; endDate: string },
+  today: string,
+): { current: { startDate: string; endDate: string }; previous: { startDate: string; endDate: string }; cut: boolean } {
+  const cut = range.startDate <= today && today < range.endDate;
+  const current = { startDate: range.startDate, endDate: cut ? today : range.endDate };
+  const month = monthRange(range.startDate);
+  const isCalendarMonth = range.startDate === month.startDate && range.endDate === month.endDate;
+  if (!isCalendarMonth) return { current, previous: previousRange(current.startDate, current.endDate), cut };
+  const previousMonth = monthRange(addDaysToIsoDate(range.startDate, -1));
+  if (!cut) return { current, previous: previousMonth, cut };
+  const sameDay = addDaysToIsoDate(previousMonth.startDate, rangeLength(current.startDate, current.endDate) - 1);
+  return {
+    current,
+    previous: { startDate: previousMonth.startDate, endDate: sameDay < previousMonth.endDate ? sameDay : previousMonth.endDate },
+    cut,
+  };
+}
+
+/**
  * Intervalo de um período. "Personalizado" usa `custom` quando válido
  * (início ≤ fim); senão cai no mês atual.
  */

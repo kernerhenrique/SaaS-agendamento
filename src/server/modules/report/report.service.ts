@@ -1,6 +1,6 @@
 import { AppointmentStatus } from "@/generated/prisma/enums";
 import { addDaysToIsoDate, localDayRangeUtc, utcToLocalDate } from "@/lib/date";
-import { previousRange, rangeLength } from "@/lib/period";
+import { comparisonRanges, rangeLength } from "@/lib/period";
 import { prisma } from "@/server/db/prisma";
 import { ValidationError } from "@/server/errors";
 import { availableMinutes, datesInRange, workingWindows } from "@/server/modules/dashboard/metrics";
@@ -111,13 +111,25 @@ async function professionalNames(businessId: string) {
   return new Map(professionals.map((p) => [p.id, p.name]));
 }
 
-export interface AppointmentsReport {
-  current: AppointmentsSummary & { byDay: { date: string; count: number }[] };
-  previous: Pick<AppointmentsSummary, "total" | "cancellationRate" | "noShowRate">;
+/**
+ * Comparação "vs. período anterior": `compare` são os números do período atual
+ * na janela comparada (cortada em hoje quando o período passa de hoje) e
+ * `previous` os da janela anterior equivalente (`comparisonRanges`).
+ */
+interface Comparison<T> {
+  compare: T;
+  previous: T;
+  comparedWith: { startDate: string; endDate: string; cut: boolean };
 }
-export interface RevenueReport {
+type AppointmentsCompared = Pick<AppointmentsSummary, "total" | "cancellationRate" | "noShowRate">;
+type RevenueCompared = Pick<RevenueSummary, "receivedCents" | "averageTicketCents" | "discountCents">;
+type ClientsCompared = Pick<ClientsSummary, "served" | "newClients" | "returning">;
+
+export interface AppointmentsReport extends Comparison<AppointmentsCompared> {
+  current: AppointmentsSummary & { byDay: { date: string; count: number }[] };
+}
+export interface RevenueReport extends Comparison<RevenueCompared> {
   current: RevenueSummary & { byDay: { date: string; value: number }[] };
-  previous: Pick<RevenueSummary, "receivedCents" | "averageTicketCents" | "discountCents">;
 }
 export interface ProfessionalsReport {
   rows: ProfessionalRow[];
@@ -125,9 +137,8 @@ export interface ProfessionalsReport {
 export interface ServicesReport {
   rows: ServiceRow[];
 }
-export interface ClientsReport {
+export interface ClientsReport extends Comparison<ClientsCompared> {
   current: ClientsSummary;
-  previous: Pick<ClientsSummary, "served" | "newClients" | "returning">;
 }
 export type ReportBySection = {
   atendimentos: AppointmentsReport;
@@ -148,7 +159,13 @@ export async function getReport<S extends ReportSection>(
   now = new Date(),
 ): Promise<ReportBySection[S]> {
   validateRange(range.startDate, range.endDate);
-  const previous: ReportRange = { ...previousRange(range.startDate, range.endDate), timeZone: range.timeZone };
+  const windows = comparisonRanges(range, utcToLocalDate(now, range.timeZone));
+  const previous: ReportRange = { ...windows.previous, timeZone: range.timeZone };
+  const compareRange: ReportRange = { ...windows.current, timeZone: range.timeZone };
+  const comparedWith = { ...windows.previous, cut: windows.cut };
+  // Período que passa de hoje: os números comparados param em hoje (uma leitura a mais só nesse caso).
+  const loadCompareFacts = (facts: Awaited<ReturnType<typeof loadFacts>>) =>
+    windows.cut ? loadFacts(businessId, compareRange) : Promise.resolve(facts);
 
   switch (section) {
     case "atendimentos": {
@@ -159,6 +176,7 @@ export async function getReport<S extends ReportSection>(
       ]);
       const current = summarizeAppointments(facts.appointments, names);
       const before = summarizeAppointments(prevFacts.appointments, names);
+      const compared = summarizeAppointments((await loadCompareFacts(facts)).appointments, names);
       const report: AppointmentsReport = {
         current: {
           ...current,
@@ -169,7 +187,9 @@ export async function getReport<S extends ReportSection>(
             range.timeZone,
           ),
         },
+        compare: { total: compared.total, cancellationRate: compared.cancellationRate, noShowRate: compared.noShowRate },
         previous: { total: before.total, cancellationRate: before.cancellationRate, noShowRate: before.noShowRate },
+        comparedWith,
       };
       return report as ReportBySection[S];
     }
@@ -181,6 +201,10 @@ export async function getReport<S extends ReportSection>(
         loadCompletedValues(businessId, prevFacts.start, prevFacts.end),
       ]);
       const before = summarizeRevenue(prevFacts.payments, prevCompleted);
+      const compareFacts = await loadCompareFacts(facts);
+      const compared = windows.cut
+        ? summarizeRevenue(compareFacts.payments, await loadCompletedValues(businessId, compareFacts.start, compareFacts.end))
+        : summarizeRevenue(facts.payments, completed);
       const report: RevenueReport = {
         current: {
           ...summarizeRevenue(facts.payments, completed),
@@ -191,11 +215,13 @@ export async function getReport<S extends ReportSection>(
             range.timeZone,
           ),
         },
+        compare: { receivedCents: compared.receivedCents, averageTicketCents: compared.averageTicketCents, discountCents: compared.discountCents },
         previous: {
           receivedCents: before.receivedCents,
           averageTicketCents: before.averageTicketCents,
           discountCents: before.discountCents,
         },
+        comparedWith,
       };
       return report as ReportBySection[S];
     }
@@ -255,6 +281,7 @@ export async function getReport<S extends ReportSection>(
 
     case "clientes": {
       const [facts, prevFacts] = await Promise.all([loadFacts(businessId, range), loadFacts(businessId, previous)]);
+      const compareFacts = await loadCompareFacts(facts);
       const clientIds = [
         ...new Set([
           ...facts.appointments.map((a) => a.clientId),
@@ -289,9 +316,20 @@ export async function getReport<S extends ReportSection>(
         payments: prevFacts.payments,
         clientNames,
       });
+      const compared = windows.cut
+        ? summarizeClients({
+            appointments: compareFacts.appointments,
+            firstVisitByClient,
+            periodStart: compareFacts.start,
+            payments: compareFacts.payments,
+            clientNames,
+          })
+        : current;
       const report: ClientsReport = {
         current,
+        compare: { served: compared.served, newClients: compared.newClients, returning: compared.returning },
         previous: { served: before.served, newClients: before.newClients, returning: before.returning },
+        comparedWith,
       };
       return report as ReportBySection[S];
     }
