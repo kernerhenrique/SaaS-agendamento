@@ -153,7 +153,14 @@ export function PaymentForm({
           <Label htmlFor="pf-amount">Recebido agora</Label>
           <MoneyInput id="pf-amount" valueCents={amountCents} onValueChange={setAmountCents} />
           {fillCents > 0 && amountCents !== fillCents ? (
-            <Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => setAmountCents(fillCents)}>
+            // Quebra linha em vez de sair da coluna (o formulário é estreito no drawer).
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-auto max-w-full self-start py-1 text-left whitespace-normal"
+              onClick={() => setAmountCents(fillCents)}
+            >
               Recebeu tudo ({formatPriceFromCents(fillCents)})
             </Button>
           ) : null}
@@ -224,7 +231,7 @@ export function PaymentForm({
             disabled={submitting != null}
             onClick={() => void send({}, `/api/admin/appointments/${appointmentId}/complete`, "complete-only")}
           >
-            {submitting === "complete-only" ? "Salvando…" : "Só concluir"}
+            {submitting === "complete-only" ? "Salvando…" : summary.paidCents > 0 ? "Concluir sem receber mais" : "Só concluir"}
           </Button>
         ) : null}
         <Button type="button" size="sm" variant="ghost" disabled={submitting != null} onClick={onCancel}>

@@ -3,6 +3,51 @@ import { expect, test } from "@playwright/test";
 import { moveToPast } from "./db";
 import { findFreeSlot, loginAsOwner } from "./helpers";
 
+/** Pagou antes de concluir: "Concluir" não pede o pagamento de novo; o "Recebeu tudo" cabe no formulário. */
+test("pago antes de concluir: um clique para concluir; botão Recebeu tudo dentro do formulário", async ({ page }) => {
+  await loginAsOwner(page);
+  const api = page.request;
+  const professionals = (await (await api.get("/api/admin/professionals")).json()).professionals as { id: string; name: string }[];
+  const services = (await (await api.get("/api/admin/services")).json()).services as { id: string; name: string; businessId: string }[];
+  const joao = professionals.find((p) => p.name === "João Barbeiro")!;
+  const corte = services.find((s) => s.name === "Corte de cabelo")!;
+  const slot = await findFreeSlot(api, { businessId: corte.businessId, serviceId: corte.id, professionalId: joao.id, weekday: 2 });
+  const name = `Pago Antes ${Date.now()}`;
+  const created = await api.post("/api/admin/appointments", {
+    data: { professionalId: joao.id, serviceId: corte.id, startAt: slot.startAt, client: { name, phone: `119${Date.now().toString().slice(-8)}` } },
+  });
+  const id = (await created.json()).appointment.id as string;
+  const { date } = await moveToPast(id);
+  // Sinal de R$ 20 e o resto (R$ 30) antes de concluir.
+  const pay = (amountCents: number) =>
+    api.post(`/api/admin/appointments/${id}/payments`, { data: { amountCents, discountCents: 0, method: "PIX", receivedAt: new Date().toISOString() } });
+  expect((await pay(2000)).status()).toBe(201);
+
+  await page.goto(`/admin/agenda?date=${date}`);
+  await page.getByRole("button", { name: new RegExp(name) }).filter({ visible: true }).first().click({ force: true });
+  const drawer = page.getByRole("dialog", { name: corte.name });
+  // Parcial: o formulário abre com o que falta e "Concluir sem receber mais"; o botão cabe no quadro.
+  await drawer.getByRole("button", { name: "Concluir", exact: true }).click();
+  await expect(drawer.getByRole("button", { name: "Concluir sem receber mais" })).toBeVisible();
+  const fill = drawer.getByRole("button", { name: "Recebeu tudo (R$ 30,00)" });
+  const form = drawer.locator("form").filter({ hasText: "Concluir e receber" });
+  const [fillBox, formBox] = [await fill.boundingBox(), await form.boundingBox()];
+  expect(fillBox!.x + fillBox!.width).toBeLessThanOrEqual(formBox!.x + formBox!.width);
+  await drawer.getByRole("button", { name: "Voltar" }).click();
+
+  // Quitado antes de concluir: um clique, sem pedir pagamento.
+  expect((await pay(3000)).status()).toBe(201);
+  await page.keyboard.press("Escape");
+  await page.reload();
+  await page.getByRole("button", { name: new RegExp(name) }).filter({ visible: true }).first().click({ force: true });
+  await drawer.getByRole("button", { name: "Concluir", exact: true }).click();
+  await expect(drawer.getByText("Pagamento já registrado (R$ 50,00).", { exact: false })).toBeVisible();
+  await expect(drawer.getByLabel("Recebido agora")).toHaveCount(0);
+  await drawer.getByRole("button", { name: "Concluir atendimento" }).click();
+  await expect(page.getByText("Atendimento concluído.")).toBeVisible();
+  await expect(drawer.getByText("Concluído", { exact: true }).first()).toBeVisible();
+});
+
 /** Bloco 4B: recebimento no drawer do agendamento (concluir e receber, saldo, remover). */
 test("dono conclui e recebe no drawer, completa o saldo e remove um recebimento", async ({ page }) => {
   await loginAsOwner(page);

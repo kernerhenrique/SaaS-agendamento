@@ -200,7 +200,19 @@ export function AppointmentPayments({
         </ul>
       ) : null}
 
-      {showForm ? (
+      {completing && summary.balanceCents === 0 && (summary.paidCents > 0 || summary.discountCents > 0) ? (
+        // Já quitado antes de concluir (ex.: pagou adiantado): nada a receber, só concluir.
+        <CompletePaidBox
+          appointmentId={appointmentId}
+          paidCents={summary.paidCents}
+          onDone={() => {
+            onCompletingChange(false);
+            setLocalReload((k) => k + 1);
+            onChanged();
+          }}
+          onCancel={() => onCompletingChange(false)}
+        />
+      ) : showForm ? (
         <PaymentForm
           key={completing ? "complete" : "register"}
           appointmentId={appointmentId}
@@ -260,6 +272,58 @@ function Amount({ label, cents, highlight }: { label: string; cents: number; hig
       <dd className={highlight ? "text-sm font-semibold text-payment-pending tabular-nums" : "text-sm font-semibold tabular-nums"}>
         {formatPriceFromCents(cents)}
       </dd>
+    </div>
+  );
+}
+
+/** "Concluir" num atendimento já pago: um clique, sem pedir o pagamento de novo. */
+function CompletePaidBox({
+  appointmentId,
+  paidCents,
+  onDone,
+  onCancel,
+}: {
+  appointmentId: string;
+  paidCents: number;
+  onDone: () => void;
+  onCancel: () => void;
+}) {
+  const [isSaving, setIsSaving] = useState(false);
+
+  async function complete() {
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/admin/appointments/${appointmentId}/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        toast.error(data?.error ?? "Não foi possível concluir");
+        return;
+      }
+      toast.success("Atendimento concluído.");
+      onDone();
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border border-success/30 bg-success/10 p-3">
+      <p className="text-sm">
+        {paidCents > 0 ? `Pagamento já registrado (${formatPriceFromCents(paidCents)}).` : "Já está quitado."} Não precisa receber de
+        novo: é só concluir.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" disabled={isSaving} onClick={() => void complete()}>
+          {isSaving ? "Concluindo…" : "Concluir atendimento"}
+        </Button>
+        <Button size="sm" variant="ghost" disabled={isSaving} onClick={onCancel}>
+          Voltar
+        </Button>
+      </div>
     </div>
   );
 }
