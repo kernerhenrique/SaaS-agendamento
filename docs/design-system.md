@@ -107,7 +107,7 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
   - prévia ao vivo de quanto ainda falta;
   - uma coluna no celular, duas a partir de `sm`.
 - **"Concluir" abre "Concluir e receber"** (uma transação no servidor), com "Só concluir" para receber depois.
-- **`MoneyInput`** (`src/components/money-input.tsx`): valor em R$ guardado em centavos inteiros; os dígitos entram pela direita, como em maquininha.
+- **`MoneyInput`** (`src/components/money-input.tsx`): valor em R$ guardado em centavos inteiros; os dígitos entram pela direita, como em maquininha. O cursor fica sempre no fim (`caretNeedsMove`, `lib/currency.ts`): com ele no meio, "2000" digitado em "0,00" virava R$ 20.000,00. Selecionar tudo continua valendo (digitar substitui).
 - **`PaymentIndicator`**: ícone discreto nos concluídos da agenda (grade e lista) — check = pago, cifrão = falta receber —, com `aria-label`.
 - **Acessibilidade na grade**: só blocos arrastáveis recebem os atributos do dnd-kit. Nos demais, ele marcava `aria-disabled="true"` num botão que continua clicável.
 
@@ -122,7 +122,7 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
   - **Recebimentos**: filtro por forma e profissional; tabela no desktop, cartões no celular.
   - **A receber**: concluídos com saldo, com botão "Receber".
   - **Comissões**: só com `features.commissions`; % atual, recebido e comissão, com total.
-- Clicar num recebimento ou em "Receber" abre o **mesmo drawer do agendamento**. A lista de profissionais vem de `agenda/professional-options.ts`, compartilhado com a Agenda.
+- Clicar num recebimento ou em "Receber" abre o **mesmo drawer do agendamento**; "Receber" já abre com o formulário de pagamento (`startWithPayment`). A lista de profissionais vem de `agenda/professional-options.ts`, compartilhado com a Agenda.
 - **Comissão no cadastro do profissional**: campo "%" (0–100) na aba Dados, só com o flag. O texto explica que mudar vale só para os próximos pagamentos.
 
 ## Financeiro nas outras telas (Fase 4D)
@@ -146,7 +146,7 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
   - Profissionais: tabela comparativa, cartões no celular;
   - Serviços: receita ou quantidade;
   - Clientes: novos × que voltaram e quem mais gastou. Quem pagou por um atendimento de outra data aparece como "pagamento antecipado".
-- **`KpiCard` com `delta`**: "▲ 12% vs. período anterior" (período imediatamente anterior, de mesmo tamanho).
+- **`KpiCard` com `delta`**: "▲ 12% vs. período anterior". A janela comparada vem de `comparisonRanges` (`lib/period.ts`): período que passa de hoje é cortado em hoje; mês do calendário compara com os mesmos dias do mês anterior (1 a 6/10 × 1 a 6/09; mês inteiro × mês inteiro); o resto, com o intervalo anterior de mesmo tamanho. O subtítulo diz o que é comparado ("comparação até hoje: 01/10 a 06/10 com 01/09 a 06/09"). A API devolve `compare` (atual na janela), `previous` e `comparedWith`; o valor grande do cartão continua sendo o período inteiro.
   - Verde quando é bom, vermelho quando é ruim; `higherIsBetter: false` inverte (faltas, cancelamento, descontos).
   - Taxas comparam em **pontos percentuais** (`kind: "points"`).
   - Sem base (anterior = 0): "Sem base no período anterior". Nas taxas (cancelamento, faltas), vale o mesmo quando um dos períodos não teve nenhum atendimento (`rateDelta`).
@@ -280,6 +280,9 @@ Duas camadas independentes:
 - **Link depois do atendimento**: sem avaliação; quadro "Obrigado pela visita!" com o botão "Reservar de novo" (página do negócio).
 - **Cartão do profissional** (`ProfessionalCard`): "Especialidade: …" com ícone `Award`. A bio não entra no lugar da especialidade.
 - **Início**: o `Alert` ganhou o tom `info` (azul, ícone `CalendarPlus`) para "reservas novas pela página", com as três últimas em `text-caption`.
+  - Os itens do quadro "Hoje" e das listas dos alertas abrem o **drawer do agendamento** ali mesmo (`HomeAppointmentsProvider` + `OpenAppointmentButton`, `admin/(authenticated)/home-appointments.tsx`); alterou algo, a página recarrega os números. Alerta com lista própria não é link (botão dentro de link não vale).
+  - Alerta amarelo (ícone `CalendarClock`) "N atendimentos já passaram e continuam sem desfecho": confirmados/agendados com fim no passado (`pastWithoutOutcome`), os 3 mais recentes listados e "e mais N".
+- **Reserva dentro do prazo de cancelamento** (`lockedBookingNotice`, `booking-policy.ts`): no passo Contato, aviso `warning` "Este horário é daqui a menos de X horas. Depois de confirmar, não dá para cancelar nem remarcar pelo link…"; a confirmação, o e-mail e o "Salvar no meu WhatsApp" deixam de prometer cancelar/remarcar pelo link, e o topo da página do link diz "Aqui estão os detalhes do atendimento."
 - **Esqueci minha senha** e **Criar senha nova**: cartões no padrão do login (marca do produto); a resposta do pedido é sempre a mesma.
 - **`LegalPage`** (`src/components/legal-page.tsx`): moldura de `/termos` e `/privacidade` (logo, título, data, artigo com `h2` de seção e rodapé com o contato).
 
