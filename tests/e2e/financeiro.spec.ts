@@ -72,6 +72,7 @@ test("financeiro mostra recebimentos do dia, filtra, recebe o que falta e lista 
   await row.getByRole("button", { name: "Receber" }).click();
   const drawer = page.getByRole("dialog", { name: barba.name });
   await drawer.getByRole("button", { name: "Registrar pagamento" }).click();
+  await drawer.getByRole("button", { name: /^Recebeu tudo/ }).click();
   await drawer.getByRole("button", { name: "Registrar pagamento" }).last().click();
   await expect(page.getByText("Pagamento registrado.")).toBeVisible();
   await page.keyboard.press("Escape");

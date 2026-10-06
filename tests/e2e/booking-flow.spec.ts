@@ -27,7 +27,11 @@ async function bookUntilContact(page: Page, slotIndex = 0) {
   // Espera cada dia terminar de carregar (grade ou estado vazio) antes de
   // decidir: sem isso, num dia fechado o laço passava pelos dias sem esperar.
   const dayLoaded = timeSlot.or(page.getByText(/Nenhum horário disponível|Todos os horários deste dia|Fechado neste dia/));
-  for (let dayIndex = 0; dayIndex < 21; dayIndex++) {
+  // Começa amanhã: um horário de hoje pode cair dentro do prazo para cancelar
+  // (2 h no seed) e o link não mostraria cancelar/remarcar.
+  await dayLoaded.first().waitFor();
+  await dateChips.nth(1).click();
+  for (let dayIndex = 1; dayIndex < 21; dayIndex++) {
     await dayLoaded.first().waitFor();
     if (await timeSlot.isVisible().catch(() => false)) break;
     await dateChips.nth(dayIndex + 1).click();
@@ -76,6 +80,9 @@ test("cliente agenda, já fica confirmado e o link mostra cancelar (vermelho) e 
   const nextDay = reschedule.getByRole("button", { name: "Próximo dia" });
   const slot = reschedule.locator("button.min-h-11").first();
   const dayLoaded = slot.or(reschedule.getByText("Nenhum horário disponível neste dia."));
+  // A partir de amanhã: remarcar para daqui a pouco cairia no prazo de cancelamento (2 h no seed).
+  await dayLoaded.first().waitFor();
+  await nextDay.click();
   for (let i = 0; i < 14; i++) {
     await dayLoaded.first().waitFor();
     if (await slot.isVisible().catch(() => false)) break;

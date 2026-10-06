@@ -99,9 +99,11 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
   - badge pendente/parcial/pago (tokens `--payment-*`, mapa em `src/lib/payment-status.ts`);
   - três quadrinhos Valor · Recebido · Falta;
   - lista de recebimentos. Um registro só de desconto aparece como "Desconto de R$ X", sem forma de pagamento.
-  - Remover recebimento pede confirmação (modal).
+  - Remover recebimento pede confirmação (modal). O dono remove qualquer um; quem lançou remove o próprio no mesmo dia (`canRemovePayment`; a API devolve `canRemove` por recebimento). Corrigir = remover e registrar de novo (editar mexeria na comissão congelada).
 - **`PaymentForm`** (`src/components/admin/payment-form.tsx`), reusado no Financeiro:
-  - campos: valor do atendimento (ajustável), recebido (padrão = saldo), desconto, data (máximo hoje), forma em chips (`role="radio"`) e observação;
+  - no topo, a situação antes do registro: "Valor R$ 50,00 · já recebido R$ 35,00 · **falta R$ 15,00**";
+  - campos: valor do atendimento (ajustável), **"Recebido agora"** (começa em R$ 0,00, também no "Concluir e receber"; o botão "Recebeu tudo (R$ X)" preenche o que falta), desconto, data (máximo hoje), forma em chips (`role="radio"`) e observação;
+  - recebido + desconto não passa do que falta (`checkPaymentFits`, também no servidor): a mensagem explica "informe só o que o cliente pagou agora (não o total)"; pagamento a mais = ajustar o valor do atendimento. Também não dá para baixar o valor abaixo do já recebido;
   - prévia ao vivo de quanto ainda falta;
   - uma coluna no celular, duas a partir de `sm`.
 - **"Concluir" abre "Concluir e receber"** (uma transação no servidor), com "Só concluir" para receber depois.

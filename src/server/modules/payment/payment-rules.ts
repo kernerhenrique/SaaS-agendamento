@@ -87,6 +87,46 @@ export function validatePaymentInput(input: PaymentInput, endOfToday: Date): str
   return null;
 }
 
+const brl = (cents: number) => `R$ ${(cents / 100).toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+
+/**
+ * O registro cabe no que falta? "Recebido agora" é só o que entrou neste
+ * momento (não o total já pago): recebido + desconto não pode passar do saldo.
+ * Pagamento a mais não vira gorjeta: ajusta-se o valor do atendimento. Também
+ * recusa baixar o valor do atendimento para menos do que já foi recebido/descontado.
+ */
+export function checkPaymentFits(
+  current: { priceCents: number; paidCents: number; discountCents: number },
+  input: { amountCents: number; discountCents: number; priceCents?: number },
+): string | null {
+  const priceCents = input.priceCents ?? current.priceCents;
+  const alreadyCovered = current.paidCents + current.discountCents;
+  if (priceCents < alreadyCovered) {
+    return `O valor do atendimento não pode ficar menor que o já recebido e descontado (${brl(alreadyCovered)}). Remova o recebimento errado antes.`;
+  }
+  const remaining = priceCents - alreadyCovered;
+  if (input.amountCents + input.discountCents > remaining) {
+    return remaining === 0
+      ? "Este atendimento já está quitado. Se o cliente pagou a mais, ajuste o valor do atendimento."
+      : `Faltam só ${brl(remaining)}. Informe só o que o cliente pagou agora (não o total). Se ele pagou a mais, ajuste o valor do atendimento.`;
+  }
+  return null;
+}
+
+/**
+ * Quem pode remover um recebimento: o dono, sempre; quem lançou, no mesmo
+ * dia (corrigir um erro na hora, sem depender do dono). `day` = data local
+ * do negócio (YYYY-MM-DD) do registro e de hoje.
+ */
+export function canRemovePayment(
+  viewer: { isOwner: boolean; userId: string },
+  payment: { createdByUserId: string | null; createdDay: string },
+  today: string,
+): boolean {
+  if (viewer.isOwner) return true;
+  return payment.createdByUserId === viewer.userId && payment.createdDay === today;
+}
+
 export function validatePriceCents(priceCents: number): string | null {
   return Number.isInteger(priceCents) && priceCents >= 0
     ? null

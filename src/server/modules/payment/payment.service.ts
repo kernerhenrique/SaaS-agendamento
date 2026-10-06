@@ -1,5 +1,5 @@
 import { AppointmentStatus, type PaymentMethod } from "@/generated/prisma/enums";
-import { localDayRangeUtc, todayInTimeZone } from "@/lib/date";
+import { localDayRangeUtc, todayInTimeZone, utcToLocalDate } from "@/lib/date";
 import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
 import { canTransition } from "@/server/modules/appointment/appointment.service";
@@ -8,6 +8,8 @@ import { summarizeRevenue } from "@/server/modules/report/report-rules";
 import { loadCompletedValues } from "@/server/modules/report/report.service";
 
 import {
+  canRemovePayment,
+  checkPaymentFits,
   commissionFor,
   summarizePayments,
   validatePaymentInput,
@@ -47,8 +49,8 @@ function rangeToUtc(range: FinanceRange, timeZone: string) {
 
 const activePayments = { deletedAt: null } as const;
 
-/** Pagamentos e situação de um atendimento (drawer da agenda). */
-export async function getAppointmentPayments(businessId: string, appointmentId: string) {
+/** Pagamentos e situação de um atendimento (drawer da agenda), com "pode remover" para quem está vendo. */
+export async function getAppointmentPayments(businessId: string, appointmentId: string, viewer?: Viewer) {
   const appointment = await prisma.appointment.findFirst({
     where: { id: appointmentId, businessId },
     select: {
@@ -64,10 +66,15 @@ export async function getAppointmentPayments(businessId: string, appointmentId: 
         (await prisma.user.findMany({ where: { id: { in: authorIds } }, select: { id: true, name: true } })).map((u) => [u.id, u.name]),
       )
     : new Map<string, string>();
+  const timeZone = await businessTimezone(businessId);
+  const today = todayInTimeZone(timeZone);
   return {
     payments: appointment.payments.map((payment) => ({
       ...payment,
       createdByName: payment.createdByUserId ? (authors.get(payment.createdByUserId) ?? null) : null,
+      canRemove: viewer
+        ? canRemovePayment(viewer, { createdByUserId: payment.createdByUserId, createdDay: utcToLocalDate(payment.createdAt, timeZone) }, today)
+        : false,
     })),
     summary: summarizePayments(appointment.priceCents, appointment.payments),
   };
@@ -91,6 +98,16 @@ async function insertPayment(
   if (input.priceCents !== undefined) {
     const priceProblem = validatePriceCents(input.priceCents);
     if (priceProblem) throw new ValidationError(priceProblem);
+  }
+  // Dentro da transação: o saldo considera o que já está gravado agora.
+  const current = await tx.appointment.findUniqueOrThrow({
+    where: { id: appointment.id },
+    select: { priceCents: true, payments: { where: activePayments, select: { amountCents: true, discountCents: true } } },
+  });
+  const summary = summarizePayments(current.priceCents, current.payments);
+  const fits = checkPaymentFits(summary, input);
+  if (fits) throw new ValidationError(fits);
+  if (input.priceCents !== undefined && input.priceCents !== current.priceCents) {
     await tx.appointment.update({ where: { id: appointment.id }, data: { priceCents: input.priceCents } });
   }
   return tx.payment.create({
@@ -153,14 +170,30 @@ export async function completeAppointment(
   });
 }
 
-/** Remove (soft delete) um recebimento lançado por engano. */
-export async function deletePayment(businessId: string, paymentId: string) {
+/**
+ * Remove (soft delete) um recebimento lançado por engano. Dono: qualquer um;
+ * quem lançou: o próprio, no mesmo dia (`canRemovePayment`). Recebimento que a
+ * pessoa não pode ver/remover responde 404, como se não existisse.
+ */
+export async function deletePayment(businessId: string, paymentId: string, viewer: Viewer) {
   const payment = await prisma.payment.findFirst({
-    where: { id: paymentId, businessId, ...activePayments },
-    select: { id: true },
+    where: { id: paymentId, businessId, ...activePayments, ...(viewer.isOwner ? {} : { appointment: { professionalId: viewer.professionalId ?? "__sem-cadastro__" } }) },
+    select: { id: true, createdByUserId: true, createdAt: true },
   });
   if (!payment) throw new NotFoundError("Pagamento não encontrado");
+  const timeZone = await businessTimezone(businessId);
+  const today = todayInTimeZone(timeZone);
+  if (!canRemovePayment(viewer, { createdByUserId: payment.createdByUserId, createdDay: utcToLocalDate(payment.createdAt, timeZone) }, today)) {
+    throw new ValidationError("Só dá para remover um recebimento que você lançou hoje. Para os outros, fale com o dono.");
+  }
   await prisma.payment.update({ where: { id: paymentId }, data: { deletedAt: new Date() } });
+}
+
+/** Quem está olhando/agindo (para "pode remover este recebimento?"). */
+export interface Viewer {
+  isOwner: boolean;
+  userId: string;
+  professionalId: string | null;
 }
 
 export interface PaymentRow {

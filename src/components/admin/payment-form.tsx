@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { PaymentMethod } from "@/generated/prisma/enums";
 import { formatPriceFromCents } from "@/lib/currency";
 import { localMinutesToUtc, todayInTimeZone } from "@/lib/date";
-import { PAYMENT_METHOD_LABELS, summarizePayments } from "@/server/modules/payment/payment-rules";
+import { checkPaymentFits, PAYMENT_METHOD_LABELS, summarizePayments } from "@/server/modules/payment/payment-rules";
 import { cn } from "cn";
 
 import { useAdminAccess } from "./admin-access-context";
@@ -49,8 +49,8 @@ export function PaymentForm({
   // Desconto e valor do atendimento: só quem tem a permissão (o dono). O profissional registra o que entrou.
   const canDiscount = useAdminAccess().can("payment.discount");
   const [priceCents, setPriceCents] = useState(summary.priceCents);
-  const [amountCents, setAmountCents] = useState(summary.balanceCents);
-  const [amountTouched, setAmountTouched] = useState(false);
+  // Começa em zero: "recebido agora" é só o que entrou neste momento (o botão "Recebeu tudo" preenche o que falta).
+  const [amountCents, setAmountCents] = useState(0);
   const [discountCents, setDiscountCents] = useState(0);
   const [method, setMethod] = useState<PaymentMethod>(PaymentMethod.PIX);
   const [date, setDate] = useState(today);
@@ -64,11 +64,10 @@ export function PaymentForm({
     { amountCents, discountCents },
   ]);
 
-  function updatePrice(cents: number) {
-    setPriceCents(cents);
-    // Enquanto o valor recebido não foi mexido, acompanha o novo saldo.
-    if (!amountTouched) setAmountCents(Math.max(0, cents - summary.discountCents - summary.paidCents));
-  }
+  // O que ainda falta antes deste registro (com o valor do atendimento já ajustado na tela).
+  const remainingCents = Math.max(0, priceCents - summary.paidCents - summary.discountCents);
+  const fillCents = Math.max(0, remainingCents - discountCents);
+  const fitsProblem = checkPaymentFits(summary, { amountCents, discountCents, priceCents });
 
   async function send(body: unknown, url: string, kind: "pay" | "complete-only") {
     setError(null);
@@ -100,7 +99,15 @@ export function PaymentForm({
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (amountCents === 0 && discountCents === 0) {
-      setError(mode === "complete" ? "Informe o valor recebido ou use “Só concluir”." : "Informe o valor recebido.");
+      setError(
+        mode === "complete"
+          ? "Informe quanto recebeu agora (ou um desconto), ou use “Só concluir”."
+          : "Informe quanto recebeu agora ou um desconto.",
+      );
+      return;
+    }
+    if (fitsProblem) {
+      setError(fitsProblem);
       return;
     }
     if (!date || date > today) {
@@ -126,25 +133,30 @@ export function PaymentForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-lg border bg-muted/40 p-3" noValidate>
       <p className="text-sm font-medium">{mode === "complete" ? "Concluir e receber" : "Registrar pagamento"}</p>
+      {/* A situação antes deste registro: deixa claro que se informa só o que entrou agora. */}
+      <p className="rounded-md bg-background px-2.5 py-2 text-sm" aria-live="polite">
+        Valor {formatPriceFromCents(priceCents)}
+        {summary.paidCents > 0 ? ` · já recebido ${formatPriceFromCents(summary.paidCents)}` : ""}
+        {summary.discountCents > 0 ? ` · desconto ${formatPriceFromCents(summary.discountCents)}` : ""} ·{" "}
+        <span className="font-semibold">falta {formatPriceFromCents(remainingCents)}</span>
+      </p>
 
       {/* Uma coluna no celular (o drawer tem ~290px); duas a partir de sm. */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {canDiscount ? (
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="pf-price">Valor do atendimento</Label>
-            <MoneyInput id="pf-price" valueCents={priceCents} onValueChange={updatePrice} />
+            <MoneyInput id="pf-price" valueCents={priceCents} onValueChange={setPriceCents} />
           </div>
         ) : null}
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="pf-amount">Valor recebido</Label>
-          <MoneyInput
-            id="pf-amount"
-            valueCents={amountCents}
-            onValueChange={(cents) => {
-              setAmountTouched(true);
-              setAmountCents(cents);
-            }}
-          />
+          <Label htmlFor="pf-amount">Recebido agora</Label>
+          <MoneyInput id="pf-amount" valueCents={amountCents} onValueChange={setAmountCents} />
+          {fillCents > 0 && amountCents !== fillCents ? (
+            <Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => setAmountCents(fillCents)}>
+              Recebeu tudo ({formatPriceFromCents(fillCents)})
+            </Button>
+          ) : null}
         </div>
         {canDiscount ? (
           <div className="flex flex-col gap-1.5">
@@ -186,10 +198,12 @@ export function PaymentForm({
         <Input id="pf-note" placeholder="Ex.: sinal, pagou metade no cartão" value={note} onChange={(e) => setNote(e.target.value)} />
       </div>
 
-      <p className="text-caption text-muted-foreground" aria-live="polite">
-        {after.balanceCents > 0
-          ? `Depois deste registro ainda faltam ${formatPriceFromCents(after.balanceCents)}.`
-          : "Com este registro o atendimento fica quitado."}
+      <p className={cn("text-caption", fitsProblem ? "text-destructive" : "text-muted-foreground")} aria-live="polite">
+        {fitsProblem
+          ? fitsProblem
+          : after.balanceCents > 0
+            ? `Depois deste registro ainda faltam ${formatPriceFromCents(after.balanceCents)}.`
+            : "Com este registro o atendimento fica quitado."}
       </p>
 
       {error ? (

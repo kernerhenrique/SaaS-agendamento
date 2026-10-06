@@ -43,10 +43,12 @@ test("dono conclui e recebe no drawer, completa o saldo e remove um recebimento"
   const drawer = page.getByRole("dialog", { name: corte.name });
   await expect(drawer.getByText("A receber")).toBeVisible();
 
-  // Concluir abre o recebimento; recebe só R$ 30 em dinheiro.
+  // Concluir abre o recebimento com "Recebido agora" em zero; recebe só R$ 30 em dinheiro.
   await drawer.getByRole("button", { name: "Concluir", exact: true }).click();
   await expect(drawer.getByText("Concluir e receber")).toBeVisible();
-  const amount = drawer.getByLabel("Valor recebido");
+  const amount = drawer.getByLabel("Recebido agora");
+  await expect(amount).toHaveValue("0,00");
+  await expect(drawer.getByText("falta R$ 50,00")).toBeVisible();
   await amount.fill("");
   await amount.pressSequentially("3000");
   await expect(amount).toHaveValue("30,00");
@@ -56,9 +58,16 @@ test("dono conclui e recebe no drawer, completa o saldo e remove um recebimento"
   await expect(page.getByText("Atendimento concluído e pagamento registrado.")).toBeVisible();
   await expect(drawer.getByText("Parcial")).toBeVisible();
 
-  // Saldo de R$ 20 no PIX → pago.
+  // Erro comum: digitar o TOTAL pago (R$ 50) em vez do que entrou agora. Recusado, explicando.
   await drawer.getByRole("button", { name: "Registrar pagamento" }).click();
-  await expect(drawer.getByLabel("Valor recebido")).toHaveValue("20,00");
+  await expect(drawer.getByText("já recebido R$ 30,00")).toBeVisible();
+  const again = drawer.getByLabel("Recebido agora");
+  await again.fill("");
+  await again.pressSequentially("5000");
+  await expect(drawer.getByText(/Faltam só R\$ 20,00\. Informe só o que o cliente pagou agora/).first()).toBeVisible();
+  // "Recebeu tudo" preenche os R$ 20 que faltam → pago.
+  await drawer.getByRole("button", { name: "Recebeu tudo (R$ 20,00)" }).click();
+  await expect(again).toHaveValue("20,00");
   await drawer.getByRole("button", { name: "Registrar pagamento" }).last().click();
   await expect(page.getByText("Pagamento registrado.")).toBeVisible();
   await expect(drawer.getByText("Pago", { exact: true })).toBeVisible();
@@ -70,8 +79,18 @@ test("dono conclui e recebe no drawer, completa o saldo e remove um recebimento"
   await expect(page.getByText("Recebimento removido.")).toBeVisible();
   await expect(drawer.getByText("Parcial")).toBeVisible();
 
-  // Quita de novo para não deixar pendência no banco local.
+  // Só desconto: com o recebido em zero, basta digitar o desconto (R$ 10 dos R$ 30 que faltam).
   await drawer.getByRole("button", { name: "Registrar pagamento" }).click();
+  const discount = drawer.getByLabel("Desconto");
+  await discount.fill("");
+  await discount.pressSequentially("1000");
+  await expect(drawer.getByText("ainda faltam R$ 20,00")).toBeVisible();
+  await drawer.getByRole("button", { name: "Registrar pagamento" }).last().click();
+  await expect(drawer.getByText("Desconto de R$ 10,00")).toBeVisible();
+
+  // Quita o resto com "Recebeu tudo" para não deixar pendência no banco local.
+  await drawer.getByRole("button", { name: "Registrar pagamento" }).click();
+  await drawer.getByRole("button", { name: "Recebeu tudo (R$ 20,00)" }).click();
   await drawer.getByRole("button", { name: "Registrar pagamento" }).last().click();
   await expect(drawer.getByText("Pago", { exact: true })).toBeVisible();
 });

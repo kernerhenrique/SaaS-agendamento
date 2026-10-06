@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { handleApiError } from "@/server/http";
 import { assertPaymentAllowed, requireAppointmentAccess } from "@/server/modules/auth/appointment-access";
+import { can } from "@/server/modules/auth/permissions";
 import { requireAdminSession } from "@/server/modules/auth/session";
 import { getAppointmentPayments, registerPayment } from "@/server/modules/payment/payment.service";
 
@@ -15,7 +16,13 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     const session = await requireAdminSession();
     const { id } = await params;
     await requireAppointmentAccess(session, id);
-    return NextResponse.json(await getAppointmentPayments(session.businessId, id));
+    return NextResponse.json(
+      await getAppointmentPayments(session.businessId, id, {
+        isOwner: can(session.role, "payment.delete"),
+        userId: session.userId,
+        professionalId: session.professionalId,
+      }),
+    );
   } catch (error) {
     return handleApiError(error);
   }

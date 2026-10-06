@@ -42,7 +42,8 @@ test("profissional: só a própria agenda e clientes, sem áreas do dono nem des
       expect((await asJoao.get(url)).status(), url).toBe(403);
     }
     expect((await asJoao.post("/api/admin/services", { data: { name: "X" } })).status()).toBe(403);
-    expect((await asJoao.delete("/api/admin/payments/qualquer")).status()).toBe(403);
+    // Recebimento que ele não pode ver responde como inexistente.
+    expect((await asJoao.delete("/api/admin/payments/qualquer")).status()).toBe(404);
 
     // Equipe: só o próprio cadastro; o do colega "não existe".
     const visible = (await (await asJoao.get("/api/admin/professionals")).json()).professionals as { id: string }[];
@@ -114,6 +115,18 @@ test("profissional: só a própria agenda e clientes, sem áreas do dono nem des
       data: { payment: payment({ priceCents: barba.priceCents }) },
     });
     expect(completed.status()).toBe(200);
+
+    // Errou? O João remove o recebimento que ele mesmo lançou hoje e registra de novo.
+    const paymentsOf = async () =>
+      (await (await asJoao.get(`/api/admin/appointments/${withJoao.id}/payments`)).json()).payments as { id: string; canRemove: boolean }[];
+    const [own] = await paymentsOf();
+    expect(own.canRemove).toBe(true);
+    expect((await asJoao.delete(`/api/admin/payments/${own.id}`)).status()).toBe(200);
+    // Um recebimento lançado pelo dono, ele não remove (só o dono).
+    expect((await owner.post(`/api/admin/appointments/${withJoao.id}/payments`, { data: payment({}) })).status()).toBe(201);
+    const [byOwner] = await paymentsOf();
+    expect(byOwner.canRemove).toBe(false);
+    expect((await asJoao.delete(`/api/admin/payments/${byOwner.id}`)).status()).toBe(400);
 
     // O dono vê quem marcou; e quem cancelou quando o João cancela o próprio.
     const detail = await (await owner.get(`/api/admin/appointments/${withJoao.id}`)).json();

@@ -32,25 +32,26 @@ test("antecedência, janela e prazo para cancelar valem na reserva pública", as
 
   let manageToken: string | null = null;
   try {
-    // Antecedência de 3 dias, janela de 14 dias, cancelamento até 7 dias antes.
-    expect((await setPolicies({ minBookingNoticeMinutes: 3 * 24 * 60, maxBookingWindowDays: 14, cancellationDeadlineHours: 7 * 24 })).status()).toBe(200);
+    // Antecedência de 2 dias, janela de 14 dias, cancelamento até 7 dias antes.
+    expect((await setPolicies({ minBookingNoticeMinutes: 2 * 24 * 60, maxBookingWindowDays: 14, cancellationDeadlineHours: 7 * 24 })).status()).toBe(200);
 
     // Antes da antecedência: nenhum horário. Depois da janela: nenhum horário.
     expect(await slotsOn(localDate(1))).toEqual([]);
     expect(await slotsOn(localDate(20))).toEqual([]);
 
-    // Entre 4 e 6 dias (algum é dia útil): há horário, e nenhum antes de agora + 3 dias.
+    // Entre 3 e 6 dias (quatro dias seguidos: sempre há dia útil, mesmo com feriado):
+    // há horário, e nenhum antes de agora + 2 dias. Tudo a menos de 7 dias (prazo de cancelamento).
     let date = "";
     let slots: { startAt: string }[] = [];
-    for (const offset of [4, 5, 6]) {
+    for (const offset of [3, 4, 5, 6]) {
       slots = await slotsOn(localDate(offset));
       if (slots.length > 0) {
         date = localDate(offset);
         break;
       }
     }
-    expect(slots.length, "dia útil entre 4 e 6 dias à frente").toBeGreaterThan(0);
-    const earliest = Date.now() + 3 * 24 * 60 * 60 * 1000;
+    expect(slots.length, "dia útil entre 3 e 6 dias à frente").toBeGreaterThan(0);
+    const earliest = Date.now() + 2 * 24 * 60 * 60 * 1000;
     expect(slots.every((slot) => Date.parse(slot.startAt) >= earliest - 60_000)).toBe(true);
 
     // Reserva além da janela é recusada, mesmo num horário de expediente.

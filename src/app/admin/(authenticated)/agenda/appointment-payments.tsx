@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Plus, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { useAdminAccess } from "@/components/admin/admin-access-context";
 import { PaymentForm } from "@/components/admin/payment-form";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
@@ -35,6 +34,8 @@ interface PaymentItem {
   note: string | null;
   /** Quem registrou (null = registro antigo, de antes do controle por usuário). */
   createdByName: string | null;
+  /** Quem está vendo pode remover? Dono: sempre; quem lançou: no mesmo dia (regra do servidor). */
+  canRemove: boolean;
 }
 
 /**
@@ -60,7 +61,6 @@ export function AppointmentPayments({
   onCompletingChange: (completing: boolean) => void;
   onChanged: () => void;
 }) {
-  const canDelete = useAdminAccess().can("payment.delete");
   const [data, setData] = useState<{ payments: PaymentItem[]; summary: PaymentSummary } | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [localReload, setLocalReload] = useState(0);
@@ -181,7 +181,7 @@ export function AppointmentPayments({
                   <span className="block truncate text-caption text-muted-foreground">Registrado por {payment.createdByName}</span>
                 ) : null}
               </span>
-              {canDelete ? (
+              {payment.canRemove ? (
                 <Button
                   variant="ghost"
                   size="icon-sm"
