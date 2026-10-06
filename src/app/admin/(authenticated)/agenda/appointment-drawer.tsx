@@ -81,12 +81,15 @@ export function AppointmentDrawer({
   appointmentId,
   timezone,
   professionals,
+  startWithPayment = false,
   onClose,
   onChanged,
 }: {
   appointmentId: string | null;
   timezone: string;
   professionals: ProfessionalOption[];
+  /** Abre já com o formulário "Registrar pagamento" (botão "Receber" do Financeiro). */
+  startWithPayment?: boolean;
   onClose: () => void;
   onChanged: () => void;
 }) {
@@ -98,6 +101,7 @@ export function AppointmentDrawer({
           appointmentId={appointmentId}
           timezone={timezone}
           professionals={professionals}
+          startWithPayment={startWithPayment}
           onChanged={onChanged}
         />
       ) : null}
@@ -109,11 +113,13 @@ function DrawerBody({
   appointmentId,
   timezone,
   professionals,
+  startWithPayment,
   onChanged,
 }: {
   appointmentId: string;
   timezone: string;
   professionals: ProfessionalOption[];
+  startWithPayment: boolean;
   onChanged: () => void;
 }) {
   const { terms } = useVertical();
@@ -369,6 +375,7 @@ function DrawerBody({
           timezone={timezone}
           reloadKey={reloadKey}
           completing={isCompleting}
+          startRegistering={startWithPayment}
           onCompletingChange={setIsCompleting}
           onChanged={() => {
             setReloadKey((k) => k + 1);

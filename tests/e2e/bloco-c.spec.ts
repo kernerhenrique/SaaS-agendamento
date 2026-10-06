@@ -80,9 +80,10 @@ test("reserva feita pela página aparece como novidade no Início do dono", asyn
   expect(detail.status).toBe("CONFIRMED");
 
   await page.goto("/admin");
-  const alert = page.getByRole("link", { name: /reservas? novas? pela página/ });
-  await expect(alert).toBeVisible();
-  await expect(alert).toContainText(clientName);
+  await expect(page.getByText(/reservas? novas? pela página/)).toBeVisible();
+  // Cada reserva da lista abre o agendamento no drawer.
+  await page.getByRole("button", { name: new RegExp(clientName) }).click();
+  await expect(page.getByRole("dialog", { name: corte.name })).toBeVisible();
 });
 
 test("termos e privacidade abrem e estão no rodapé da página de reservas", async ({ page }) => {

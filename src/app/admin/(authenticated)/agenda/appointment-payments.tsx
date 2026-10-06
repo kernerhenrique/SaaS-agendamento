@@ -49,6 +49,7 @@ export function AppointmentPayments({
   timezone,
   reloadKey,
   completing,
+  startRegistering = false,
   onCompletingChange,
   onChanged,
 }: {
@@ -58,13 +59,15 @@ export function AppointmentPayments({
   /** Muda quando o drawer recarrega (ex.: status alterado). */
   reloadKey: number;
   completing: boolean;
+  /** Abre com o formulário de registro já aberto (vale só na montagem). */
+  startRegistering?: boolean;
   onCompletingChange: (completing: boolean) => void;
   onChanged: () => void;
 }) {
   const [data, setData] = useState<{ payments: PaymentItem[]; summary: PaymentSummary } | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [localReload, setLocalReload] = useState(0);
-  const [registering, setRegistering] = useState(false);
+  const [registering, setRegistering] = useState(startRegistering);
   const [removing, setRemoving] = useState<PaymentItem | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
 

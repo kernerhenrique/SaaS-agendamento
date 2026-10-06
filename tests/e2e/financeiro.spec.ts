@@ -65,15 +65,15 @@ test("financeiro mostra recebimentos do dia, filtra, recebe o que falta e lista 
   await page.getByRole("option", { name: "Débito" }).click();
   await expect(table.getByText(paidName)).toBeVisible();
 
-  // A receber → Receber abre o drawer; registrar tira da lista.
+  // A receber → Receber abre o drawer já com o formulário; registrar tira da lista.
   await page.getByRole("tab", { name: /A receber/ }).click();
   const row = page.getByRole("listitem").filter({ hasText: openName });
   await expect(row).toBeVisible();
   await row.getByRole("button", { name: "Receber" }).click();
   const drawer = page.getByRole("dialog", { name: barba.name });
-  await drawer.getByRole("button", { name: "Registrar pagamento" }).click();
+  await expect(drawer.getByLabel("Recebido agora")).toBeVisible();
   await drawer.getByRole("button", { name: /^Recebeu tudo/ }).click();
-  await drawer.getByRole("button", { name: "Registrar pagamento" }).last().click();
+  await drawer.getByRole("button", { name: "Registrar pagamento" }).click();
   await expect(page.getByText("Pagamento registrado.")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("listitem").filter({ hasText: openName })).toHaveCount(0);

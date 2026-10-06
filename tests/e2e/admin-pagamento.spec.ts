@@ -94,7 +94,10 @@ test("dono conclui e recebe no drawer, completa o saldo e remove um recebimento"
   const amount = drawer.getByLabel("Recebido agora");
   await expect(amount).toHaveValue("0,00");
   await expect(drawer.getByText("falta R$ 50,00")).toBeVisible();
-  await amount.fill("");
+  // Toque no começo do campo (cursor longe do fim): o valor continua entrando pela direita.
+  const box = (await amount.boundingBox())!;
+  await amount.click({ position: { x: box.width - 30, y: box.height / 2 } });
+  await page.keyboard.press("Home");
   await amount.pressSequentially("3000");
   await expect(amount).toHaveValue("30,00");
   await expect(drawer.getByText("ainda faltam R$ 20,00")).toBeVisible();
@@ -138,4 +141,28 @@ test("dono conclui e recebe no drawer, completa o saldo e remove um recebimento"
   await drawer.getByRole("button", { name: "Recebeu tudo (R$ 20,00)" }).click();
   await drawer.getByRole("button", { name: "Registrar pagamento" }).last().click();
   await expect(drawer.getByText("Pago", { exact: true })).toBeVisible();
+});
+
+/** Início: atendimento que já passou sem desfecho aparece no quadro Atenção e abre o drawer sem sair da tela. */
+test("Início avisa atendimento passado sem desfecho e o item abre o drawer", async ({ page }) => {
+  await loginAsOwner(page);
+  const api = page.request;
+  const professionals = (await (await api.get("/api/admin/professionals")).json()).professionals as { id: string; name: string }[];
+  const services = (await (await api.get("/api/admin/services")).json()).services as { id: string; name: string; businessId: string }[];
+  const joao = professionals.find((p) => p.name === "João Barbeiro")!;
+  const corte = services.find((s) => s.name === "Corte de cabelo")!;
+  const slot = await findFreeSlot(api, { businessId: corte.businessId, serviceId: corte.id, professionalId: joao.id, weekday: 3 });
+  const name = `Sem Desfecho ${Date.now()}`;
+  const created = await api.post("/api/admin/appointments", {
+    data: { professionalId: joao.id, serviceId: corte.id, startAt: slot.startAt, client: { name, phone: `119${Date.now().toString().slice(-8)}` } },
+  });
+  await moveToPast((await created.json()).appointment.id as string);
+
+  await page.goto("/admin");
+  const alert = page.getByText(/sem desfecho/).first();
+  await expect(alert).toBeVisible();
+  await page.getByRole("button", { name: new RegExp(name) }).click();
+  const drawer = page.getByRole("dialog", { name: corte.name });
+  await drawer.getByRole("button", { name: "Não compareceu" }).click();
+  await expect(page.getByRole("button", { name: new RegExp(name) })).toHaveCount(0);
 });

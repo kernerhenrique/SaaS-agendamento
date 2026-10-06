@@ -60,6 +60,12 @@ export function FinanceView({
   const [professionalId, setProfessionalId] = useState<string>(ALL);
   const [reloadKey, setReloadKey] = useState(0);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
+  /** "Receber" abre a gaveta já com o formulário de pagamento (sem o clique extra). */
+  const [payOnOpen, setPayOnOpen] = useState(false);
+  const openAppointment = (id: string, pay = false) => {
+    setPayOnOpen(pay);
+    setSelectedAppointmentId(id);
+  };
 
   // A URL guarda período e aba (dá para voltar e compartilhar o link).
   useEffect(() => {
@@ -224,7 +230,7 @@ export function FinanceView({
                       <TableRow
                         key={payment.id}
                         className="cursor-pointer"
-                        onClick={() => setSelectedAppointmentId(payment.appointmentId)}
+                        onClick={() => openAppointment(payment.appointmentId)}
                       >
                         <TableCell className="tabular-nums">{formatDate(payment.receivedAt)}</TableCell>
                         <TableCell>
@@ -233,7 +239,7 @@ export function FinanceView({
                             className="text-left font-medium hover:underline focus-visible:underline focus-visible:outline-none"
                             onClick={(event) => {
                               event.stopPropagation();
-                              setSelectedAppointmentId(payment.appointmentId);
+                              openAppointment(payment.appointmentId);
                             }}
                           >
                             {payment.clientName}
@@ -263,7 +269,7 @@ export function FinanceView({
                   <li key={payment.id}>
                     <button
                       type="button"
-                      onClick={() => setSelectedAppointmentId(payment.appointmentId)}
+                      onClick={() => openAppointment(payment.appointmentId)}
                       className="flex w-full items-center gap-3 rounded-lg border bg-card p-3 text-left shadow-sm transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
                     >
                       <span className="min-w-0 flex-1">
@@ -316,7 +322,7 @@ export function FinanceView({
                       de {formatPriceFromCents(row.summary.priceCents)}
                     </span>
                   </span>
-                  <Button size="sm" variant="outline" onClick={() => setSelectedAppointmentId(row.appointmentId)}>
+                  <Button size="sm" variant="outline" onClick={() => openAppointment(row.appointmentId, true)}>
                     Receber
                   </Button>
                 </li>
@@ -389,6 +395,7 @@ export function FinanceView({
         appointmentId={selectedAppointmentId}
         timezone={timezone}
         professionals={professionals}
+        startWithPayment={payOnOpen}
         onClose={() => setSelectedAppointmentId(null)}
         onChanged={reloadAll}
       />

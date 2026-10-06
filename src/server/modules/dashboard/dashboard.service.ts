@@ -52,8 +52,13 @@ export interface DashboardData {
     completedPartialPayment: { count: number; cents: number };
     /** Reservas feitas pela página pública (sem autor do painel) nas últimas 24 h, não canceladas. */
     recentOnlineBookings: { count: number; latest: { id: string; startAt: string; clientName: string; serviceName: string }[] };
+    /** Já terminaram e continuam confirmados/agendados: falta concluir ou marcar falta (os mais recentes primeiro). */
+    pastWithoutOutcome: { count: number; latest: { id: string; startAt: string; clientName: string; serviceName: string }[] };
   };
 }
+
+/** Quantos itens os alertas do Início listam (o resto entra só na contagem). */
+const ALERT_LIST_LIMIT = 3;
 
 /** Janela do aviso "reservas novas pela página" no Início. */
 export const RECENT_ONLINE_BOOKING_HOURS = 24;
@@ -86,15 +91,26 @@ export async function getDashboard(
     status: { not: "CANCELLED" as const },
     createdAt: { gte: new Date(now.getTime() - RECENT_ONLINE_BOOKING_HOURS * 60 * 60 * 1000) },
   };
-  const [recentOnlineCount, recentOnline] = await Promise.all([
+  // Terminou e ninguém registrou o desfecho: some dos números (ocupação, faltas) até alguém concluir ou marcar falta.
+  const pastOpenWhere = { businessId, ...scope, status: { in: ["PENDING" as const, "CONFIRMED" as const] }, endAt: { lte: now } };
+  const listInclude = { client: { select: { name: true } }, service: { select: { name: true } } };
+  const [recentOnlineCount, recentOnline, pastOpenCount, pastOpen] = await Promise.all([
     prisma.appointment.count({ where: onlineBookingsWhere }),
     prisma.appointment.findMany({
       where: onlineBookingsWhere,
-      include: { client: { select: { name: true } }, service: { select: { name: true } } },
+      include: listInclude,
       orderBy: { createdAt: "desc" },
-      take: 3,
+      take: ALERT_LIST_LIMIT,
     }),
+    prisma.appointment.count({ where: pastOpenWhere }),
+    prisma.appointment.findMany({ where: pastOpenWhere, include: listInclude, orderBy: { startAt: "desc" }, take: ALERT_LIST_LIMIT }),
   ]);
+  const toListItem = (a: (typeof pastOpen)[number]) => ({
+    id: a.id,
+    startAt: a.startAt.toISOString(),
+    clientName: a.client.name,
+    serviceName: a.service.name,
+  });
 
   const [todayAppointments, monthAppointments, professionals, blocks, firstVisits, inactiveClients, received, receivables] =
     await Promise.all([
@@ -192,10 +208,8 @@ export async function getDashboard(
       inactiveClients,
       completedWithoutPayment: totalReceivable(receivables.filter((r) => r.summary.status === "PENDING")),
       completedPartialPayment: totalReceivable(receivables.filter((r) => r.summary.status === "PARTIAL")),
-      recentOnlineBookings: {
-        count: recentOnlineCount,
-        latest: recentOnline.map((a) => ({ id: a.id, startAt: a.startAt.toISOString(), clientName: a.client.name, serviceName: a.service.name })),
-      },
+      recentOnlineBookings: { count: recentOnlineCount, latest: recentOnline.map(toListItem) },
+      pastWithoutOutcome: { count: pastOpenCount, latest: pastOpen.map(toListItem) },
     },
   };
 }
