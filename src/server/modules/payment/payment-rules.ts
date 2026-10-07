@@ -105,10 +105,17 @@ export function checkPaymentFits(
     return `O valor do atendimento não pode ficar menor que o já recebido e descontado (${brl(alreadyCovered)}). Remova o recebimento errado antes.`;
   }
   const remaining = priceCents - alreadyCovered;
-  if (input.amountCents + input.discountCents > remaining) {
-    return remaining === 0
-      ? "Este atendimento já está quitado. Se o cliente pagou a mais, ajuste o valor do atendimento."
-      : `Faltam só ${brl(remaining)}. Informe só o que o cliente pagou agora (não o total). Se ele pagou a mais, ajuste o valor do atendimento.`;
+  if (remaining === 0 && input.amountCents + input.discountCents > 0) {
+    return "Este atendimento já está quitado. Se o cliente pagou a mais, ajuste o valor do atendimento.";
+  }
+  if (input.discountCents > remaining) {
+    return `O desconto não pode passar do que falta (${brl(remaining)}).`;
+  }
+  // O desconto deste registro já reduz o que falta: R$ 35 com R$ 10 de desconto = faltam R$ 25.
+  const dueAfterDiscount = remaining - input.discountCents;
+  if (input.amountCents > dueAfterDiscount) {
+    const due = input.discountCents > 0 ? `Com o desconto, faltam só ${brl(dueAfterDiscount)}` : `Faltam só ${brl(dueAfterDiscount)}`;
+    return `${due}. Informe só o que o cliente pagou agora (não o total). Se ele pagou a mais, ajuste o valor do atendimento.`;
   }
   return null;
 }

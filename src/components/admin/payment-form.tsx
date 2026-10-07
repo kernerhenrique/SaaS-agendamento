@@ -133,12 +133,12 @@ export function PaymentForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-lg border bg-muted/40 p-3" noValidate>
       <p className="text-sm font-medium">{mode === "complete" ? "Concluir e receber" : "Registrar pagamento"}</p>
-      {/* A situação antes deste registro: deixa claro que se informa só o que entrou agora. */}
+      {/* Quanto o cliente ainda deve: já com o desconto digitado agora, para "Recebido agora" bater com a conta. */}
       <p className="rounded-md bg-background px-2.5 py-2 text-sm" aria-live="polite">
         Valor {formatPriceFromCents(priceCents)}
         {summary.paidCents > 0 ? ` · já recebido ${formatPriceFromCents(summary.paidCents)}` : ""}
-        {summary.discountCents > 0 ? ` · desconto ${formatPriceFromCents(summary.discountCents)}` : ""} ·{" "}
-        <span className="font-semibold">falta {formatPriceFromCents(remainingCents)}</span>
+        {summary.discountCents + discountCents > 0 ? ` · desconto ${formatPriceFromCents(summary.discountCents + discountCents)}` : ""} ·{" "}
+        <span className="font-semibold">falta {formatPriceFromCents(fillCents)}</span>
       </p>
 
       {/* Uma coluna no celular (o drawer tem ~290px); duas a partir de sm. */}

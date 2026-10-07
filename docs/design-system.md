@@ -101,7 +101,7 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
   - lista de recebimentos. Um registro só de desconto aparece como "Desconto de R$ X", sem forma de pagamento.
   - Remover recebimento pede confirmação (modal). O dono remove qualquer um; quem lançou remove o próprio no mesmo dia (`canRemovePayment`; a API devolve `canRemove` por recebimento). Corrigir = remover e registrar de novo (editar mexeria na comissão congelada).
 - **`PaymentForm`** (`src/components/admin/payment-form.tsx`), reusado no Financeiro:
-  - no topo, a situação antes do registro: "Valor R$ 50,00 · já recebido R$ 35,00 · **falta R$ 15,00**";
+  - no topo, a situação: "Valor R$ 50,00 · já recebido R$ 35,00 · **falta R$ 15,00**". O desconto digitado entra na hora ("desconto R$ 10,00 · falta R$ 25,00"), e a mensagem de valor alto demais diz "Com o desconto, faltam só R$ X"; desconto maior que o saldo: "O desconto não pode passar do que falta";
   - campos: valor do atendimento (ajustável), **"Recebido agora"** (começa em R$ 0,00, também no "Concluir e receber"; o botão "Recebeu tudo (R$ X)" preenche o que falta), desconto, data (máximo hoje), forma em chips (`role="radio"`) e observação;
   - recebido + desconto não passa do que falta (`checkPaymentFits`, também no servidor): a mensagem explica "informe só o que o cliente pagou agora (não o total)"; pagamento a mais = ajustar o valor do atendimento. Também não dá para baixar o valor abaixo do já recebido;
   - prévia ao vivo de quanto ainda falta;

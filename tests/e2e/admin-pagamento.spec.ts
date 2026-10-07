@@ -133,6 +133,8 @@ test("dono conclui e recebe no drawer, completa o saldo e remove um recebimento"
   await discount.fill("");
   await discount.pressSequentially("1000");
   await expect(drawer.getByText("ainda faltam R$ 20,00")).toBeVisible();
+  // O topo já desconta: R$ 30 que faltavam − R$ 10 de desconto.
+  await expect(drawer.getByText("falta R$ 20,00", { exact: true })).toBeVisible();
   await drawer.getByRole("button", { name: "Registrar pagamento" }).last().click();
   await expect(drawer.getByText("Desconto de R$ 10,00")).toBeVisible();
 
@@ -159,10 +161,14 @@ test("Início avisa atendimento passado sem desfecho e o item abre o drawer", as
   await moveToPast((await created.json()).appointment.id as string);
 
   await page.goto("/admin");
-  const alert = page.getByText(/sem desfecho/).first();
-  await expect(alert).toBeVisible();
-  await page.getByRole("button", { name: new RegExp(name) }).click();
-  const drawer = page.getByRole("dialog", { name: corte.name });
-  await drawer.getByRole("button", { name: "Não compareceu" }).click();
-  await expect(page.getByRole("button", { name: new RegExp(name) })).toHaveCount(0);
+  // O banco local acumula passados de outros testes: o alerta lista só os 3 mais recentes, então vale a contagem.
+  const alert = page.locator("div").filter({ hasText: /continuam? sem desfecho/ }).last();
+  const count = async () => Number(await alert.locator("strong").first().innerText());
+  const before = await count();
+  expect(before).toBeGreaterThan(0);
+  await alert.getByRole("button").first().click();
+  await page.getByRole("dialog").getByRole("button", { name: "Não compareceu" }).click();
+  await expect(page.getByText("Status: Não compareceu")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect.poll(count).toBe(before - 1);
 });

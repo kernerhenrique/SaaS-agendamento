@@ -20,7 +20,14 @@ describe("pagamento cabe no que falta", () => {
   it("caso 2: só desconto, com o recebido em zero, funciona; desconto + o valor todo é recusado", () => {
     const current = after(5000, []);
     expect(checkPaymentFits(current, { amountCents: 0, discountCents: 1000 })).toBeNull();
-    expect(checkPaymentFits(current, { amountCents: 5000, discountCents: 1000 })).toMatch(/Faltam só R\$ 50,00/);
+    expect(checkPaymentFits(current, { amountCents: 5000, discountCents: 1000 })).toMatch(/Com o desconto, faltam só R\$ 40,00/);
+  });
+
+  it("caso da tela: serviço de R$ 35 com R$ 10 de desconto → faltam R$ 25 (o desconto não conta como pagamento)", () => {
+    const current = after(3500, []);
+    expect(checkPaymentFits(current, { amountCents: 2500, discountCents: 1000 })).toBeNull();
+    expect(checkPaymentFits(current, { amountCents: 3500, discountCents: 1000 })).toMatch(/^Com o desconto, faltam só R\$ 25,00\./);
+    expect(checkPaymentFits(current, { amountCents: 0, discountCents: 4000 })).toBe("O desconto não pode passar do que falta (R$ 35,00).");
   });
 
   it("caso 3: depois de quitado, nem desconto nem recebimento entram", () => {
