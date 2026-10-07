@@ -52,9 +52,30 @@ Um valor maior na entrada, pelo trabalho de deixar o sistema pronto, e uma **men
 - Mensalidade única é fácil de explicar ("R$ 179 por mês, tudo incluso") e não pune o crescimento da equipe.
 - Para negócios com equipe grande fica mais barato que o mercado: o Trinks cobra R$ 236/mês de 11 a 20 profissionais.
 
-**Cuidado:** para equipes pequenas, a conta de 12 meses fica acima do mercado (Padrão + 12× R$ 179 = R$ 3.645, contra cerca de R$ 1.130 no Trinks para 3–4 profissionais). Justifique pelo que o concorrente não entrega: sistema pronto em 48 h com a marca do negócio, suporte de uma pessoa que conhece o cliente e nada para configurar sozinho. Para barbearia de 1–2 pessoas que não aceita esse valor, use o Modelo B.
+**Cuidado:** para equipes pequenas, a conta de 12 meses fica acima do mercado (Padrão + 12× R$ 179 = R$ 3.645, contra cerca de R$ 1.130 no Trinks para 3–4 profissionais). Justifique pelo que o concorrente não entrega: sistema pronto em 48 h com a marca do negócio, suporte de uma pessoa que conhece o cliente e nada para configurar sozinho. Se o cliente achar caro, ofereça o **Modelo A Leve** (abaixo); para barbearia de 1–2 pessoas que ainda assim não aceita, use o Modelo B.
 
-**Fidelidade:** neste modelo, contrato de 12 meses. Se o cliente sair antes, a implantação não é devolvida; os dados dele são exportados (Relatórios › Exportar CSV) e entregues.
+### Modelo A Leve: a mesma ideia, mais barata
+
+Mesma lógica do Modelo A (implantação + mensalidade fixa, sem cobrar por profissional), com menos serviço incluído. É a porta de entrada para negócios pequenos que acham o Modelo A caro, sem cair na cobrança por tamanho de equipe.
+
+| | A Leve | A |
+|---|---|---|
+| Implantação | R$ 997 (ou 3× R$ 332) | R$ 1.497 a R$ 2.497 |
+| Mensalidade | R$ 149 (anual R$ 1.490) | R$ 179 (anual R$ 1.790) |
+| Primeiro ano | R$ 2.785 | a partir de R$ 3.645 |
+
+**A implantação Leve inclui:** identidade (logo, capa, cor), serviços, equipe, expedientes e regras de reserva cadastrados a partir do formulário de onboarding, importação da planilha de clientes se ela vier pronta no modelo, treinamento de 30 min por vídeo, o manual de uso e 15 dias de acompanhamento.
+
+**A mensalidade Leve inclui:** hospedagem, cópias de segurança, atualizações e suporte por WhatsApp em horário comercial. **Não inclui** a 1 h mensal de ajustes feitos por você: o próprio dono mexe em serviços, equipe, horários, logo e cor pelo painel (está tudo no manual). Ajuste feito por você é cobrado à parte ou resolvido com a troca para o Modelo A.
+
+**Fica de fora do Leve:** domínio próprio, migração de outro sistema, revisão de textos e fotos e o segundo treinamento.
+
+**Como usar na venda:**
+- Ofereça o Modelo A primeiro. Se o cliente achar caro, apresente o Leve como "a mesma coisa, mas você mesmo faz os ajustes do dia a dia".
+- Subir do Leve para o A depois é simples: o cliente paga a diferença da implantação e a mensalidade passa a R$ 179.
+- Mesmo limite justo do Modelo A: um negócio, até 20 profissionais.
+
+**Fidelidade:** nos dois (A e A Leve), contrato de 12 meses. Se o cliente sair antes, a implantação não é devolvida; os dados dele são exportados (Relatórios › Exportar CSV) e entregues.
 
 ### Modelo B: mensalidade por tamanho de equipe
 
@@ -97,4 +118,7 @@ Para quem quer entrada baixa, normalmente negócio pequeno:
 - **Documentos**: contrato de assinatura (SLA, suporte, reajuste anual, cancelamento, exportação dos dados ao sair), termos de uso e política de privacidade.
 - **LGPD**: o negócio é o *controlador* dos dados dos clientes dele; você é o *operador*. Cláusula de tratamento de dados no contrato.
 - **Cobrança da mensalidade**: Pix automático/boleto/cartão por serviço externo (ex.: Asaas). Fica fora do sistema.
-- **Custo de infraestrutura**: Vercel Pro (US$ 20/mês por pessoa — o plano gratuito proíbe uso comercial: [Vercel Pricing](https://vercel.com/pricing), [Flexprice](https://flexprice.io/blog/vercel-pricing-breakdown)) + Postgres gerenciado (US$ 0–25/mês). Custo fixo: o segundo cliente já paga a infraestrutura.
+- **Custo de infraestrutura**: **uma** assinatura para todos os clientes, não uma por cliente. Todos os negócios usam o mesmo app e o mesmo banco.
+  - Vercel Pro: US$ 20/mês por **membro da sua equipe** na Vercel (quem publica o sistema; hoje, só você). O plano gratuito proíbe uso comercial. O Pro já inclui uma cota de uso; só se paga a mais com muito tráfego. [Vercel Pricing](https://vercel.com/pricing), [Flexprice](https://flexprice.io/blog/vercel-pricing-breakdown).
+  - Banco Postgres gerenciado (Neon): US$ 0–25/mês, também um só para todos.
+  - Ou seja, custo quase fixo: o segundo cliente já paga a infraestrutura, e cada cliente novo é quase todo lucro.
