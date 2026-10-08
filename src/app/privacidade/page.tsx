@@ -80,9 +80,10 @@ export default function PrivacyPage() {
         <ul>
           <li>Com o negócio em que você agendou, que é quem atende você.</li>
           <li>
-            Com fornecedores que operam a infraestrutura da plataforma: hospedagem (Vercel), banco de dados (Neon) e envio
-            de e-mails (Google). Eles só tratam os dados para prestar esse serviço e podem manter servidores fora do Brasil,
-            com garantias contratuais de proteção compatíveis com a LGPD.
+            Com fornecedores que operam a infraestrutura da plataforma: hospedagem e armazenamento de imagens (Vercel),
+            banco de dados (Neon, com servidores em São Paulo) e envio de e-mails (Hostinger). Eles só tratam os dados para
+            prestar esse serviço e podem manter servidores fora do Brasil, com garantias contratuais de proteção compatíveis
+            com a LGPD.
           </li>
           <li>Com autoridades, quando a lei exigir.</li>
         </ul>

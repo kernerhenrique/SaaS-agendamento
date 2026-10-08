@@ -117,7 +117,8 @@ export function TemplateEditor({
         </CardTitle>
         <CardDescription>{MESSAGE_KIND_DESCRIPTIONS[template.kind]}</CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-5 lg:grid-cols-2">
+      {/* grid-cols-1 = minmax(0, 1fr): sem ele a coluna cresce com o texto (field-sizing-content) e corta no celular. */}
+      <CardContent className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor={id}>Texto</Label>
           <Textarea

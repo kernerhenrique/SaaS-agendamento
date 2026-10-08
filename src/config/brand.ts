@@ -32,5 +32,5 @@ export const LEGAL = {
   cnpj: null as string | null,
   /** Canal oficial para dúvidas e pedidos sobre dados (LGPD). Só dígitos, com DDD. */
   contactWhatsapp: "27996950409",
-  updatedAt: "3 de outubro de 2026",
+  updatedAt: "8 de outubro de 2026",
 } as const;
