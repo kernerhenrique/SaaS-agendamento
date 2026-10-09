@@ -114,7 +114,14 @@ Para quem quer entrada baixa, normalmente negócio pequeno:
 
 ## Legal e operação
 
-- **Empresa**: MEI não pode ter atividade de SaaS. Abrir ME no Simples Nacional (CNAE 6203-1/00 ou 6311-9/00); Anexo V (a partir de 15,5%) ou Anexo III (a partir de 6%) via Fator R com pró-labore. **Confirmar com um contador.** — [Meu Contador Online](https://www.meucontadoronline.com.br/blog/cnae-software-servico-saas-guia-completo/), [Agilize](https://agilize.com.br/artigos/cnae-6203100-o-que-e/).
+- **Começo como pessoa física** (até os primeiros clientes): é permitido vender serviço e licença de software com CPF, como autônomo. Cuidados:
+  - o contrato sai no seu nome e CPF, "sob o nome comercial Aprazzo", com a cláusula que permite passar o contrato para o CNPJ depois (10.4 do modelo);
+  - imposto: o que receber de pessoa física entra no **Carnê-Leão** (DARF todo mês, tabela progressiva até 27,5%); de empresa, ela pode ter de reter IR e INSS e emitir RPA. Combine antes da primeira cobrança;
+  - ISS e recibo: veja na prefeitura se precisa de inscrição de autônomo e se emite nota fiscal avulsa; senão, entregue recibo;
+  - você responde com o patrimônio pessoal (não há separação como numa empresa);
+  - não coloque o CPF no site: as páginas de termos e privacidade só mostram razão social e CNPJ quando existirem (`LEGAL` em `src/config/brand.ts`).
+  - **Confirmar com um contador** antes da primeira cobrança.
+- **Empresa** (depois dos primeiros clientes): MEI não pode ter atividade de SaaS. Abrir ME no Simples Nacional (CNAE 6203-1/00 ou 6311-9/00); Anexo V (a partir de 15,5%) ou Anexo III (a partir de 6%) via Fator R com pró-labore. **Confirmar com um contador.** — [Meu Contador Online](https://www.meucontadoronline.com.br/blog/cnae-software-servico-saas-guia-completo/), [Agilize](https://agilize.com.br/artigos/cnae-6203100-o-que-e/).
 - **Documentos**: contrato de assinatura (SLA, suporte, reajuste anual, cancelamento, exportação dos dados ao sair), termos de uso e política de privacidade.
 - **LGPD**: o negócio é o *controlador* dos dados dos clientes dele; você é o *operador*. Cláusula de tratamento de dados no contrato.
 - **Cobrança da mensalidade**: Pix automático/boleto/cartão por serviço externo (ex.: Asaas). Fica fora do sistema.
