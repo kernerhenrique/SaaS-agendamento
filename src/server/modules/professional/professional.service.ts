@@ -2,6 +2,7 @@ import type { Weekday } from "@/generated/prisma/enums";
 import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
 import { describeHoursConflict, findHoursConflicts } from "@/server/modules/business/hours-rules";
+import { canActivateAnotherProfessional, professionalLimitMessage } from "@/server/modules/business/plan-rules";
 
 export interface WorkingHoursInput {
   weekday: Weekday;
@@ -79,6 +80,20 @@ async function assertWithinBusinessHours(businessId: string, workingHours: Worki
   }
 }
 
+/**
+ * Limite do plano (`Business.maxProfessionals`): recusa um profissional ATIVO a mais.
+ * Sem limite (null, o padrão), não faz nada. `excludeId` = o profissional sendo reativado.
+ */
+async function assertPlanAllowsActiveProfessional(businessId: string, excludeId?: string): Promise<void> {
+  const business = await prisma.business.findUnique({ where: { id: businessId }, select: { maxProfessionals: true } });
+  const max = business?.maxProfessionals ?? null;
+  if (max === null) return;
+  const active = await prisma.professional.count({
+    where: { businessId, active: true, deletedAt: null, ...(excludeId ? { id: { not: excludeId } } : {}) },
+  });
+  if (!canActivateAnotherProfessional(active, max)) throw new ValidationError(professionalLimitMessage(max), "PLAN_LIMIT");
+}
+
 export function listProfessionals(businessId: string) {
   return prisma.professional.findMany({
     where: { businessId, deletedAt: null },
@@ -109,6 +124,7 @@ export async function createProfessional(businessId: string, input: Professional
   if (!input.name.trim()) throw new ValidationError("Nome é obrigatório");
   validateWorkingHours(input.workingHours);
   await assertWithinBusinessHours(businessId, input.workingHours);
+  if (input.active ?? true) await assertPlanAllowsActiveProfessional(businessId);
 
   return prisma.professional.create({
     data: {
@@ -141,6 +157,8 @@ export async function updateProfessional(
 
   const existing = await prisma.professional.findFirst({ where: { id, businessId, deletedAt: null } });
   if (!existing) throw new NotFoundError("Cadastro não encontrado");
+  // Reativar alguém pausado conta no limite do plano; editar quem já está ativo, não.
+  if (!existing.active && input.active === true) await assertPlanAllowsActiveProfessional(businessId, id);
 
   return prisma.$transaction(async (tx) => {
     await tx.workingHours.deleteMany({ where: { professionalId: id } });

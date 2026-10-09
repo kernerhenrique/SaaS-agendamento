@@ -80,6 +80,11 @@ model Business {
   isDemo        Boolean   @default(false)
   demoExpiresAt DateTime? @db.Timestamptz(6)
 
+  // Limite do plano: quantos profissionais ATIVOS o negócio pode ter (Solo = 1;
+  // Modelo B = 3, 8 ou 15). null = sem limite, que é o padrão e vale para todos os
+  // negócios anteriores. Conferido na API de profissionais (business/plan-rules.ts).
+  maxProfessionals Int?
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?

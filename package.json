@@ -11,6 +11,7 @@
     "test:e2e": "playwright test",
     "novo-cliente": "tsx --tsconfig tsconfig.json scripts/novo-cliente.ts",
     "link-senha": "tsx --tsconfig tsconfig.json scripts/link-senha.ts",
+    "limite-profissionais": "tsx --tsconfig tsconfig.json scripts/limite-profissionais.ts",
     "remover-cliente": "tsx --tsconfig tsconfig.json scripts/remover-cliente.ts",
     "importar-clientes": "tsx --tsconfig tsconfig.json scripts/importar-clientes.ts"
   },

@@ -58,3 +58,8 @@ export async function moveToPast(appointmentId: string): Promise<{ date: string;
     throw new Error("Nenhum horário livre ontem para o teste");
   });
 }
+
+/** Limite do plano de um negócio (null = sem limite, o padrão). Use com try/finally para devolver null. */
+export async function setProfessionalLimit(slug: string, maxProfessionals: number | null): Promise<void> {
+  await withDb((client) => client.query(`UPDATE "Business" SET "maxProfessionals" = $1 WHERE slug = $2`, [maxProfessionals, slug]));
+}

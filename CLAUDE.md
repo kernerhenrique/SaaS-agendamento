@@ -149,6 +149,7 @@ npm run test                # Vitest
 npm run test:e2e            # Playwright
 npm run novo-cliente -- clientes/<slug>.json [--simular] [--producao]   # cliente novo (docs/como-clonar.md)
 npm run link-senha -- <email> [--producao]                              # suporte: link de senha nova (24 h)
+npm run limite-profissionais -- <slug> [número | sem] [--producao]     # suporte: limite do plano (profissionais ativos)
 npm run remover-cliente -- <slug> [--confirmar <slug>] [--producao]     # sem --confirmar só mostra o que apagaria
 npm run importar-clientes -- <slug> <arquivo.csv> [--confirmar] [--atualizar] [--producao]
 ```
@@ -212,6 +213,7 @@ Pré-requisitos: Node ≥20.19, Docker.
   - Reserva pública na demo não envia e-mail. `resetDemoData` recusa negócio que não seja demo (apaga dados).
   - Vercel Cron diário (`vercel.json`, 06:00 UTC = 03:00 BRT) chama `/api/cron/demos` com `CRON_SECRET`: apaga prévias vencidas e recria os dados das demos. Agendamentos são apagados antes do negócio (FK `Restrict`).
 - **"Quem fez":** `Appointment.createdByUserId`/`cancelledByUserId`, `Payment.createdByUserId`, `Client.notesUpdatedByUserId`. Registros antigos ficam sem autor e a tela não mostra a linha (não dá para distinguir "página pública" de "antes do controle").
+- **Limite do plano** (`Business.maxProfessionals`, `business/plan-rules.ts`): quantos profissionais **ativos** o negócio pode ter (Solo = 1; Modelo B = 3, 8 ou 15). `null` = sem limite, o padrão: nenhum negócio anterior foi enquadrado. Conferido na API ao criar um profissional ativo ou reativar um pausado (`code: "PLAN_LIMIT"`, mensagem com o WhatsApp da Aprazzo); cadastrar pausado e editar quem já está ativo continuam livres. Definido na entrega (`limiteProfissionais` no arquivo do cliente) ou pelo suporte (`npm run limite-profissionais`); a tela não muda o limite.
 - Rate limit em memória via `globalThis`: funciona só em instância única. Limitação conhecida; Redis/Upstash só quando pedido.
 
 # This is NOT the Next.js you know

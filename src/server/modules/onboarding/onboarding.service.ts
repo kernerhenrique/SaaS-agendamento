@@ -80,6 +80,7 @@ export async function insertClientBusiness(
         minBookingNoticeMinutes: input.policies.minBookingNoticeMinutes,
         maxBookingWindowDays: input.policies.maxBookingWindowDays,
         cancellationDeadlineHours: input.policies.cancellationDeadlineHours,
+        maxProfessionals: input.maxProfessionals,
         workingHours: { create: input.businessHours },
       },
     });

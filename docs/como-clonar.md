@@ -28,6 +28,7 @@ Em `clientes/<slug>.json` (a pasta fica **fora do git**: são dados do cliente),
 | `horarioFuncionamento` | `[{ "dias": "ter-sex", "horario": "09:00-20:00" }]` | dias: `dom seg ter qua qui sex sab`, intervalos (`seg-sex`) e listas (`seg,qua`) |
 | `politicas` | `antecedenciaMinutos`, `janelaDias`, `cancelamentoHoras`, `texto` | opcional; padrão 0 min, 60 dias, 0 h |
 | `servicos` | `{ nome, categoria, duracao, preco, aPartirDe, descricao }` | opcional: sem a lista, entra o catálogo do nicho (`onboarding/niche-catalogs.ts`); preço `40` ou `"45,90"` |
+| `limiteProfissionais` | `1`, `3`, `8`, `15` | opcional: limite do plano em profissionais **ativos** (Solo = 1; Modelo B = 3, 8 ou 15). Sem o campo, sem limite. O comando recusa um arquivo com mais profissionais que o limite |
 | `profissionais` | `{ nome, especialidade, comissao, cor, servicos, expediente }` | pelo menos um; sem `expediente` segue o horário do negócio; o `expediente` precisa **caber** no `horarioFuncionamento` (o comando recusa e diz o dia); sem `servicos` faz todos; `expediente` aceita `intervalo` (`"12:00-13:00"`) |
 
 ## 3. Conferir no banco local
@@ -94,6 +95,7 @@ Uma demo é um negócio comum marcado como demonstração (`Business.isDemo`): s
 | Situação | O que fazer |
 |---|---|
 | Alguém do painel esqueceu a senha | Primeiro, "Esqueci minha senha" na tela de login (link por e-mail, 1 h). Se o e-mail não chegar: `npm run link-senha -- email@do.dono --producao` e mande o link pelo WhatsApp (vale 24 h, uso único). |
+| Cliente mudou de plano (mais ou menos profissionais) | `npm run limite-profissionais -- <slug> 3 --producao` (ou `sem`). Sem o número, só mostra o limite atual. Baixar o limite não desativa ninguém: só impede ativar mais gente. |
 | O link de primeiro acesso do dono venceu | `createOwnerInvite(businessId)` gera outro (o anterior deixa de valer). |
 | Cliente saiu / negócio de teste | Exporte os dados (Relatórios › Exportar CSV) se for um cliente real; depois `npm run remover-cliente -- <slug> --producao` (só mostra) e `... --confirmar <slug> --producao` (apaga banco e imagens). |
 

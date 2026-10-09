@@ -5,6 +5,7 @@ import { PROFESSIONAL_COLORS, isProfessionalColorKey, type ProfessionalColorKey 
 import { isReservedSlug, SLUG_LENGTH, SLUG_PATTERN } from "@/lib/reserved-slugs";
 import { ValidationError } from "@/server/errors";
 import { describeHoursConflict, findHoursConflicts } from "@/server/modules/business/hours-rules";
+import { parseProfessionalLimit } from "@/server/modules/business/plan-rules";
 import {
   parseAccentColor,
   parseBookingPolicies,
@@ -49,6 +50,8 @@ export interface NewClientInput {
   policies: BookingPoliciesInput;
   services: CatalogService[];
   professionals: NewProfessionalInput[];
+  /** Limite do plano (profissionais ativos): 1 no Solo; 3, 8 ou 15 no Modelo B; null = sem limite. */
+  maxProfessionals: number | null;
 }
 
 type Body = Record<string, unknown>;
@@ -327,6 +330,17 @@ export function parseClientFile(raw: unknown): { input: NewClientInput; warnings
 
   const services = parseServices(body.servicos, nicho);
   const professionals = parseProfessionals(body.profissionais, businessHours, services, nicho, warnings);
+  let maxProfessionals: number | null;
+  try {
+    maxProfessionals = parseProfessionalLimit(body.limiteProfissionais);
+  } catch (error) {
+    throw new ValidationError((error as Error).message);
+  }
+  if (maxProfessionals !== null && professionals.length > maxProfessionals) {
+    throw new ValidationError(
+      `O arquivo tem ${professionals.length} profissionais, mas o plano permite ${maxProfessionals}. Ajuste "limiteProfissionais" ou a equipe.`,
+    );
+  }
   const unused = services.filter((service) => !professionals.some((pro) => pro.serviceNames.includes(service.name)));
   for (const service of unused) warnings.push(`Ninguém realiza "${service.name}": ele não terá horários na página`);
 
@@ -346,6 +360,7 @@ export function parseClientFile(raw: unknown): { input: NewClientInput; warnings
       policies,
       services,
       professionals,
+      maxProfessionals,
     },
     warnings,
   };

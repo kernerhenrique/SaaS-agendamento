@@ -121,6 +121,7 @@ async function main() {
     console.log(`  Endereço: ${process.env.APP_BASE_URL}/${input.slug}`);
     console.log(`  ${input.services.length} ${vertical.terms.service.plural.toLowerCase()} · ${input.professionals.length} ${vertical.terms.professional.plural.toLowerCase()}: ${input.professionals.map((p) => p.name).join(", ")}`);
     console.log(`  Cor ${input.accentColor} · logo: ${input.logoFile ?? "sem"} · capa: ${input.coverFile ?? "sem"}`);
+    console.log(`  Limite do plano: ${input.maxProfessionals === null ? "sem limite" : `${input.maxProfessionals} ${input.maxProfessionals === 1 ? "profissional ativo (Solo)" : "profissionais ativos"}`}`);
     for (const warning of warnings) console.log(`  ⚠ ${warning}`);
   }
   if (options.dryRun) {
