@@ -55,6 +55,9 @@ export function DatetimeStep({
   timezone,
   maxWindowDays,
   closures,
+  initialDate = null,
+  notice = null,
+  onDateChange,
   onSelect,
 }: {
   businessId: string;
@@ -65,11 +68,22 @@ export function DatetimeStep({
   maxWindowDays: number;
   /** Dias fechados do negócio (riscados na faixa; o dia fechado mostra o motivo no lugar da grade). */
   closures: ClosureRange[];
+  /** Dia já escolhido antes (o "Voltar" do passo dos dados reabre nele, não em hoje). */
+  initialDate?: string | null;
+  /** Aviso no topo da grade (ex.: o horário escolhido acabou de ser reservado por outra pessoa). */
+  notice?: string | null;
+  onDateChange?: (date: string) => void;
   onSelect: (slot: AvailableSlot) => void;
 }) {
   const [today] = useState(() => todayInTimeZone(timezone));
   const lastDate = addDaysToIsoDate(today, maxWindowDays);
-  const [date, setDate] = useState(today);
+  const [date, setDateState] = useState(() =>
+    initialDate && initialDate >= today && initialDate <= lastDate ? initialDate : today,
+  );
+  function setDate(next: string) {
+    setDateState(next);
+    onDateChange?.(next);
+  }
   const closedReason = findClosure(date, closures)?.reason ?? null;
   // O resultado guarda a qual dia ele pertence: ao trocar de dia, a grade
   // anterior some na hora (nada de tocar num horário do dia errado enquanto
@@ -160,6 +174,11 @@ export function DatetimeStep({
           Próximo horário disponível
         </Button>
       </div>
+      {notice ? (
+        <p role="alert" className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">
+          {notice}
+        </p>
+      ) : null}
       {searchNextError ? (
         <p role="status" className="rounded-lg border border-info/30 bg-info/10 p-3 text-sm">
           {searchNextError}

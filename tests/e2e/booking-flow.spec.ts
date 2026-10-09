@@ -38,12 +38,49 @@ async function bookUntilContact(page: Page, slotIndex = 0) {
   }
   await expect(timeSlot).toBeVisible();
   const freeSlots = page.locator('[data-testid="time-slot"]:not([data-unavailable])');
+  const dayLabel = await dayLabelOf(page);
   await freeSlots.nth(Math.min(slotIndex, (await freeSlots.count()) - 1)).click();
 
   await expect(page.getByRole("heading", { name: "Seus dados" })).toBeVisible();
   await page.getByLabel("Nome").fill("Cliente Teste E2E");
   await page.getByLabel("WhatsApp").fill(`119${Date.now().toString().slice(-8)}`);
+  return { dayLabel };
 }
+
+/** "sexta-feira, 09 de outubro": o dia mostrado acima da grade de horários. */
+const dayLabelOf = (page: Page) => page.getByText(/^\S+, \d{2} de \S+$/).first().innerText();
+
+test("voltar do passo dos dados mantém o dia e o que foi digitado", async ({ page }) => {
+  const { dayLabel } = await bookUntilContact(page, 2);
+  await page.getByLabel("Nome").fill("Volta E2E");
+  await page.getByRole("button", { name: "Voltar" }).click();
+  // Volta no mesmo dia (não em hoje) e, ao escolher outro horário, os dados continuam lá.
+  expect(await dayLabelOf(page)).toBe(dayLabel);
+  await page.locator('[data-testid="time-slot"]:not([data-unavailable])').nth(3).click();
+  await expect(page.getByLabel("Nome")).toHaveValue("Volta E2E");
+  await expect(page.getByLabel("WhatsApp")).not.toHaveValue("");
+});
+
+test("horário reservado por outra pessoa no meio do caminho: volta aos horários do dia, com os dados guardados", async ({ browser }) => {
+  test.setTimeout(90_000); // dois clientes percorrem a reserva inteira
+  const [a, b] = await Promise.all([browser.newPage(), browser.newPage()]);
+  // Os dois chegam ao mesmo horário (o 7º livre do mesmo dia).
+  await bookUntilContact(a, 6);
+  const { dayLabel } = await bookUntilContact(b, 6);
+  await b.getByLabel("Nome").fill("Segundo E2E");
+  await a.getByRole("button", { name: "Confirmar agendamento" }).click();
+  await expect(a.getByRole("heading", { name: "Horário confirmado!" })).toBeVisible();
+
+  await b.getByRole("button", { name: "Confirmar agendamento" }).click();
+  await expect(b.getByRole("alert").filter({ hasText: "acabou de ser reservado por outra pessoa" })).toBeVisible();
+  await expect(b.getByRole("heading", { name: "Escolha data e horário" })).toBeVisible();
+  expect(await dayLabelOf(b)).toBe(dayLabel);
+  await b.locator('[data-testid="time-slot"]:not([data-unavailable])').first().click();
+  await expect(b.getByLabel("Nome")).toHaveValue("Segundo E2E");
+  await b.getByRole("button", { name: "Confirmar agendamento" }).click();
+  await expect(b.getByRole("heading", { name: "Horário confirmado!" })).toBeVisible();
+  await Promise.all([a.close(), b.close()]);
+});
 
 test("cliente agenda, já fica confirmado e o link mostra cancelar (vermelho) e remarcar (amarelo)", async ({ page }) => {
   await bookUntilContact(page);

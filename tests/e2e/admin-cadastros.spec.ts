@@ -100,3 +100,25 @@ test("serviço oculto some da página pública e não pode ser reservado", async
     expect(restored.status()).toBe(200);
   }
 });
+
+test("preço do serviço entra pela direita: clicar no campo e digitar 3500 salva R$ 35,00", async ({ page }) => {
+  await loginAsOwner(page);
+  await page.goto("/admin/servicos");
+  await page.getByRole("button", { name: /Novo serviço/ }).click();
+  const dialog = page.getByRole("dialog");
+  const name = `Preço E2E ${Date.now()}`;
+  await dialog.getByLabel("Nome").fill(name);
+  // Clique no meio do campo (cursor longe do fim): antes virava "0.0035" e salvava R$ 0,00.
+  const price = dialog.getByLabel("Preço", { exact: true });
+  await price.click({ position: { x: 20, y: 10 } });
+  await price.pressSequentially("3500");
+  await expect(price).toHaveValue("35,00");
+  await dialog.getByRole("button", { name: "Salvar" }).click();
+  const row = page.getByRole("row").filter({ hasText: name });
+  await expect(row).toContainText("R$ 35,00");
+
+  // Limpa: o serviço de teste sai da lista.
+  const services = (await (await page.request.get("/api/admin/services")).json()).services as { id: string; name: string }[];
+  const created = services.find((s) => s.name === name)!;
+  expect((await page.request.delete(`/api/admin/services/${created.id}`)).ok()).toBe(true);
+});

@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 import { addDaysToIsoDate, formatWeekdayShort } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { findClosure, type ClosureRange } from "@/server/modules/business/closure-rules";
@@ -31,9 +33,22 @@ export function DateStrip({
   onSelect: (dateISO: string) => void;
 }) {
   const dates = buildDateStripDays(minDate, days);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // O dia escolhido fica sempre à vista (ex.: o "Voltar" reabre a faixa num dia lá na frente).
+  // Rola só a faixa, nunca a página.
+  useEffect(() => {
+    const list = listRef.current;
+    const chip = list?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (!list || !chip) return;
+    const left = chip.offsetLeft - list.offsetLeft;
+    if (left < list.scrollLeft || left + chip.offsetWidth > list.scrollLeft + list.clientWidth) {
+      list.scrollLeft = Math.max(0, left - (list.clientWidth - chip.offsetWidth) / 2);
+    }
+  }, [selectedDate]);
 
   return (
-    <div role="listbox" aria-label="Escolha o dia" className="flex gap-2 overflow-x-auto pb-2">
+    <div ref={listRef} role="listbox" aria-label="Escolha o dia" className="flex gap-2 overflow-x-auto pb-2">
       {dates.map((dateISO) => {
         const isSelected = dateISO === selectedDate;
         const dayNumber = Number(dateISO.slice(8, 10));

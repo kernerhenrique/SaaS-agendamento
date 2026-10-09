@@ -3,7 +3,7 @@ import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
 
 import { isOverlapConstraintViolation, MANAGE_TOKEN_TTL_DAYS_AFTER_APPOINTMENT } from "./appointment.service";
-import { assertSlotAvailable } from "./availability";
+import { assertSlotAvailable, SLOT_UNAVAILABLE_CODE } from "./availability";
 import { canClientChange, clientChangeDeadlineMessage } from "./booking-policy";
 
 /**
@@ -105,7 +105,7 @@ export async function rescheduleAppointmentByToken(token: string, newStartAt: Da
     return { appointment: updated, previousStartAt: appointment.startAt };
   } catch (error) {
     if (isOverlapConstraintViolation(error)) {
-      throw new ValidationError("Esse horário acabou de deixar de estar disponível");
+      throw new ValidationError("Esse horário acabou de deixar de estar disponível", SLOT_UNAVAILABLE_CODE);
     }
     throw error;
   }

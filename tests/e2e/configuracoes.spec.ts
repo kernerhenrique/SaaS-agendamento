@@ -53,8 +53,10 @@ test("configurações salvam capa, horário e janela e aparecem na página públ
     await reservas.getByRole("combobox", { name: "Agenda aberta para" }).click();
     await page.getByRole("option", { name: "14 dias" }).click();
     await expect(reservas.getByText("Agenda aberta para os próximos 14 dias")).toBeVisible();
+    // Espera a gravação DESTE cartão: o aviso "Alterações salvas" do cartão anterior ainda pode estar na tela.
+    const savedReservas = page.waitForResponse((r) => r.url().endsWith("/api/admin/business") && r.request().method() === "PATCH" && (r.request().postData() ?? "").includes('"reservas"'));
     await reservas.getByRole("button", { name: "Salvar" }).click();
-    await expect(page.getByText("Alterações salvas").first()).toBeVisible();
+    expect((await savedReservas).ok()).toBe(true);
 
     // Página pública: capa, horário agrupado e políticas.
     await page.goto("/navalha-de-ouro");

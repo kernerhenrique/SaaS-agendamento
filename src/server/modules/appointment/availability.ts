@@ -220,6 +220,8 @@ export function isOfferedSlot(slots: Slot[], professionalId: string, startAt: Da
   return slots.some((slot) => slot.professionalId === professionalId && slot.startAt.getTime() === startAt.getTime());
 }
 
+/** Código do erro: a tela da reserva volta aos horários do dia em vez de só mostrar o texto. */
+export const SLOT_UNAVAILABLE_CODE = "SLOT_UNAVAILABLE";
 export const SLOT_UNAVAILABLE_MESSAGE = "Esse horário não está mais disponível. Escolha outro.";
 
 /**
@@ -250,6 +252,6 @@ export async function assertSlotAvailable(params: {
     excludeAppointmentId: params.excludeAppointmentId,
   });
   if (!isOfferedSlot(slots, params.professionalId, params.startAt)) {
-    throw new ValidationError(SLOT_UNAVAILABLE_MESSAGE);
+    throw new ValidationError(SLOT_UNAVAILABLE_MESSAGE, SLOT_UNAVAILABLE_CODE);
   }
 }

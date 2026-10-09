@@ -78,18 +78,28 @@ export function localDateInDays(days: number): string {
 export async function createEveningAppointment(
   api: APIRequestContext,
   params: { professionalId: string; serviceId: string; date: string; client: { name: string; phone: string } },
-): Promise<{ id: string; hhmm: string }> {
+): Promise<{ id: string; hhmm: string; date: string }> {
   const first = Math.floor(Math.random() * 14);
   let lastError = "";
-  for (let attempt = 0; attempt < 14; attempt++) {
-    const minute = 20 * 60 + 15 * ((first + attempt) % 14);
-    const hhmm = `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
-    const response = await api.post("/api/admin/appointments", {
-      data: { ...params, startAt: `${params.date}T${hhmm}:00-03:00`, allowOutsideHours: true },
-    });
-    if (response.status() === 201) return { id: (await response.json()).appointment.id as string, hhmm };
-    lastError = await response.text();
-    if (response.status() !== 400) throw new Error(`Encaixe falhou: ${response.status()} ${lastError}`);
+  // Dia bloqueado de propósito (ex.: a folga fixa do seed em 12/10/2026) ou fechado: tenta o dia seguinte.
+  for (let dayShift = 0; dayShift < 5; dayShift++) {
+    const date = addDaysToIsoDate(params.date, dayShift);
+    for (let attempt = 0; attempt < 14; attempt++) {
+      const minute = 20 * 60 + 15 * ((first + attempt) % 14);
+      const hhmm = `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+      const response = await api.post("/api/admin/appointments", {
+        data: { ...params, date: undefined, startAt: `${date}T${hhmm}:00-03:00`, allowOutsideHours: true },
+      });
+      if (response.status() === 201) return { id: (await response.json()).appointment.id as string, hhmm, date };
+      lastError = await response.text();
+      if (response.status() !== 400) throw new Error(`Encaixe falhou: ${response.status()} ${lastError}`);
+      if (/bloqueado|fechado/i.test(lastError)) break;
+    }
   }
   throw new Error(`Nenhum horário livre à noite para o teste (último erro: ${lastError})`);
+}
+
+function addDaysToIsoDate(dateISO: string, days: number): string {
+  const [year, month, day] = dateISO.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
 }

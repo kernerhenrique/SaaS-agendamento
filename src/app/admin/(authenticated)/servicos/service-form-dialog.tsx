@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 
+import { MoneyInput } from "@/components/money-input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -24,17 +25,6 @@ import type { ProfessionalOption, ServiceCategoryOption, ServiceListItem } from 
 
 const NO_CATEGORY = "none";
 const NEW_CATEGORY = "new";
-
-function centsToReaisInput(cents: number): string {
-  return (cents / 100).toFixed(2);
-}
-
-function reaisInputToCents(value: string): number | null {
-  const normalized = value.replace(",", ".");
-  const parsed = Number(normalized);
-  if (Number.isNaN(parsed) || parsed < 0) return null;
-  return Math.round(parsed * 100);
-}
 
 export function ServiceFormDialog({
   trigger,
@@ -109,7 +99,8 @@ function ServiceFormFields({
   const [name, setName] = useState(service?.name ?? "");
   const [description, setDescription] = useState(service?.description ?? "");
   const [durationMin, setDurationMin] = useState(String(service?.durationMin ?? 30));
-  const [price, setPrice] = useState(centsToReaisInput(service?.priceCents ?? 0));
+  // Mesmo campo dos pagamentos: os dígitos entram pela direita ("3500" = R$ 35,00), nada de "0.0035" virar R$ 0,00.
+  const [priceCents, setPriceCents] = useState(service?.priceCents ?? 0);
   const [priceType, setPriceType] = useState<"FIXED" | "FROM">(service?.priceType ?? "FIXED");
   const [categoryId, setCategoryId] = useState(service?.categoryId ?? NO_CATEGORY);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -133,17 +124,12 @@ function ServiceFormFields({
     setError(null);
 
     const parsedDuration = Number(durationMin);
-    const parsedCents = reaisInputToCents(price);
     if (!name.trim()) {
       setError("Nome é obrigatório");
       return;
     }
     if (!Number.isInteger(parsedDuration) || parsedDuration <= 0) {
       setError("Duração deve ser um número inteiro de minutos maior que zero");
-      return;
-    }
-    if (parsedCents === null) {
-      setError("Preço inválido");
       return;
     }
     if (categoryId === NEW_CATEGORY && !newCategoryName.trim()) {
@@ -174,7 +160,7 @@ function ServiceFormFields({
         name,
         description: description || null,
         durationMin: parsedDuration,
-        priceCents: parsedCents,
+        priceCents,
         priceType,
         categoryId: finalCategoryId,
         professionalIds: Array.from(selectedProfessionalIds),
@@ -267,14 +253,8 @@ function ServiceFormFields({
             />
           </div>
           <div className="flex flex-1 flex-col gap-2">
-            <Label htmlFor="price">Preço (R$)</Label>
-            <Input
-              id="price"
-              inputMode="decimal"
-              value={price}
-              onChange={(event) => setPrice(event.target.value)}
-              required
-            />
+            <Label htmlFor="price">Preço</Label>
+            <MoneyInput id="price" valueCents={priceCents} onValueChange={setPriceCents} />
           </div>
           {features.priceFrom ? (
           <div className="flex flex-1 flex-col gap-2">

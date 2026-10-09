@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import type { FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,8 @@ export function ContactStep({
   error,
   policyText,
   lockedNotice,
+  value,
+  onChange,
   onSubmit,
 }: {
   isSubmitting: boolean;
@@ -25,11 +27,15 @@ export function ContactStep({
   policyText?: string | null;
   /** Horário dentro do prazo de cancelamento: avisa antes de confirmar que o link não vai cancelar nem remarcar. */
   lockedNotice?: string | null;
+  /** Os dados ficam no fluxo (não aqui): o "Voltar" para trocar o horário não apaga o que foi digitado. */
+  value: ContactInfo;
+  onChange: (contact: ContactInfo) => void;
   onSubmit: (contact: ContactInfo) => void;
 }) {
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
+  const { name, phone, email } = value;
+  const setName = (next: string) => onChange({ ...value, name: next });
+  const setPhone = (next: string) => onChange({ ...value, phone: next });
+  const setEmail = (next: string) => onChange({ ...value, email: next });
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

@@ -2,7 +2,7 @@ import { AppointmentStatus, type Prisma } from "@/generated/prisma/client";
 import { normalizePhoneBR } from "@/lib/phone";
 import { prisma } from "@/server/db/prisma";
 import { checkAdminBookingTime } from "./admin-booking-rules";
-import { assertSlotAvailable } from "./availability";
+import { assertSlotAvailable, SLOT_UNAVAILABLE_CODE } from "./availability";
 import { checkAdminReschedule } from "./reschedule-rules";
 import { isStatusChangeAvailable, NOT_STARTED_MESSAGE } from "./status-rules";
 import { NotFoundError, ValidationError } from "@/server/errors";
@@ -157,7 +157,7 @@ async function insertAppointment(params: InsertAppointmentParams) {
     });
   } catch (error) {
     if (isOverlapConstraintViolation(error)) {
-      throw new ValidationError("Esse horário acabou de deixar de estar disponível");
+      throw new ValidationError("Esse horário acabou de deixar de estar disponível", SLOT_UNAVAILABLE_CODE);
     }
     throw error;
   }

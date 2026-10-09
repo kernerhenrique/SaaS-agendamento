@@ -55,6 +55,9 @@ export function BookingFlow({
   });
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Dados do cliente e o aviso de horário perdido ficam aqui: sobrevivem ao "Voltar".
+  const [contact, setContact] = useState<ContactInfo>({ name: "", phone: "", email: "" });
+  const [slotNotice, setSlotNotice] = useState<string | null>(null);
   // Calculado ao escolher o horário (evento, não renderização: "agora" não pode variar entre servidor e cliente).
   const [lockedNotice, setLockedNotice] = useState<string | null>(null);
   const [confirmedAppointment, setConfirmedAppointment] = useState<ConfirmedAppointmentInfo | null>(
@@ -67,16 +70,19 @@ export function BookingFlow({
 
   function handleSelectService(service: ServiceOption) {
     setSelection((prev) => ({ ...prev, service, professionalId: null, slot: null }));
+    setSlotNotice(null);
     setStep(2);
   }
 
   function handleSelectProfessional(professionalId: string | typeof NO_PREFERENCE) {
     setSelection((prev) => ({ ...prev, professionalId, slot: null }));
+    setSlotNotice(null);
     setStep(3);
   }
 
   function handleSelectSlot(slot: AvailableSlot) {
     setSelection((prev) => ({ ...prev, slot }));
+    setSlotNotice(null);
     setLockedNotice(lockedBookingNotice(new Date(slot.startAt), new Date(), business.cancellationDeadlineHours, business.name));
     setStep(4);
   }
@@ -100,6 +106,13 @@ export function BookingFlow({
       });
       const data = await response.json();
       if (!response.ok) {
+        if (data?.code === "SLOT_UNAVAILABLE") {
+          // Outra pessoa reservou antes: volta aos horários do mesmo dia, sem o horário perdido no resumo e com os dados guardados.
+          setSelection((prev) => ({ ...prev, slot: null }));
+          setSlotNotice("Esse horário acabou de ser reservado por outra pessoa. Escolha outro: seus dados continuam preenchidos.");
+          setStep(3);
+          return;
+        }
         setSubmitError(data?.error ?? "Não foi possível confirmar o agendamento");
         return;
       }
@@ -209,6 +222,9 @@ export function BookingFlow({
                   timezone={business.timezone}
                   maxWindowDays={business.maxBookingWindowDays}
                   closures={business.closures}
+                  initialDate={selection.date}
+                  notice={slotNotice}
+                  onDateChange={(date) => setSelection((prev) => ({ ...prev, date }))}
                   onSelect={handleSelectSlot}
                 />
               ) : null}
@@ -219,6 +235,8 @@ export function BookingFlow({
                   error={submitError}
                   policyText={business.policyText}
                   lockedNotice={lockedNotice}
+                  value={contact}
+                  onChange={setContact}
                   onSubmit={handleSubmitContact}
                 />
               ) : null}
