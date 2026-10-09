@@ -208,6 +208,10 @@ export function LandingFooter() {
             <WhatsAppTextLink section="footer" className="text-foreground underline underline-offset-3">
               {phone}
             </WhatsAppTextLink>
+            {" · "}E-mail:{" "}
+            <a href="mailto:contato@aprazzo.com.br" className="text-foreground underline underline-offset-3">
+              contato@aprazzo.com.br
+            </a>
           </p>
         </div>
         <ul className="flex flex-wrap gap-x-5 gap-y-2">
