@@ -37,6 +37,7 @@ export const metadata: Metadata = {
 // Aplica o tema salvo (ou a preferência do sistema) antes da primeira pintura,
 // para não mostrar o tema errado por um instante (flash of wrong theme).
 const THEME_INIT_SCRIPT = `
+  document.documentElement.classList.add("js");
   try {
     var stored = localStorage.getItem("theme");
     var isDark = stored ? stored === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;

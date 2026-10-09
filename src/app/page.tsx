@@ -1,61 +1,72 @@
-import Link from "next/link";
-import { CalendarCheck, Users, Wallet } from "lucide-react";
+import type { Metadata } from "next";
 
-import { BrandLogo } from "@/components/brand-logo";
-import { buttonVariants } from "@/components/ui/button";
-import { BRAND } from "@/config/brand";
+import { AfterDemo, BookingDemo } from "@/components/landing/booking-demo";
+import { FeatureTabs } from "@/components/landing/feature-tabs";
+import { Hero } from "@/components/landing/hero";
+import { LandingHeader } from "@/components/landing/landing-header";
+import { Faq, FinalCta, HowToStart, LandingFooter, SectionHeading } from "@/components/landing/landing-sections";
+import { Segments } from "@/components/landing/segments";
+import { StickyCta } from "@/components/landing/sticky-cta";
 
-const HIGHLIGHTS = [
-  { icon: CalendarCheck, title: "Reserva pelo link", text: "Seu cliente agenda pelo celular, sem baixar app nem criar conta." },
-  { icon: Users, title: "Agenda da equipe", text: "Cada profissional com a própria agenda, e o dono vendo tudo." },
-  { icon: Wallet, title: "Financeiro e comissões", text: "Recebimentos, a receber e comissão de cada um, sem planilha." },
-] as const;
+export const metadata: Metadata = {
+  title: { absolute: "Aprazzo: agendamento online e gestão para negócios com hora marcada" },
+  description:
+    "Página de agendamento com a sua marca, agenda da equipe, lembretes no WhatsApp, cadastro de clientes e recebimentos em um só lugar. Entregue pronta para usar.",
+};
 
-/** Página inicial do domínio: apresentação curta da Aprazzo e acesso ao painel. */
+/** Página de vendas da Aprazzo (aprazzo.com.br): também é a porta do painel ("Entrar"). */
 export default function Home() {
   return (
-    <main className="flex flex-1 flex-col">
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-5 sm:px-6">
-        <BrandLogo />
-        <Link href="/admin/login" className={buttonVariants({ variant: "outline" })}>
-          Entrar
-        </Link>
-      </header>
+    <>
+      <a
+        href="#conteudo"
+        className="fixed top-3 left-3 z-100 -translate-y-20 rounded-lg bg-foreground px-3.5 py-2.5 text-background focus:translate-y-0"
+      >
+        Pular para o conteúdo
+      </a>
+      <LandingHeader />
 
-      <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center gap-10 px-4 py-12 sm:px-6">
-        <div className="flex max-w-2xl flex-col gap-4">
-          <h1 className="text-display font-semibold tracking-tight text-balance">{BRAND.tagline}</h1>
-          <p className="text-lg text-muted-foreground text-pretty">
-            Página de reservas com a cara do seu negócio, agenda da equipe, clientes, mensagens pelo WhatsApp e
-            financeiro, entregue pronta para usar.
-          </p>
-        </div>
+      <main id="conteudo" className="flex-1 max-md:pb-21">
+        <Hero />
 
-        <ul className="grid gap-4 sm:grid-cols-3">
-          {HIGHLIGHTS.map(({ icon: Icon, title, text }) => (
-            <li key={title} className="flex flex-col gap-2 rounded-lg border bg-card p-5">
-              <Icon className="size-5 text-primary" aria-hidden />
-              <h2 className="text-section-title font-semibold">{title}</h2>
-              <p className="text-sm text-muted-foreground">{text}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
+        <section id="como-funciona" aria-labelledby="h-demo" className="scroll-mt-20 bg-brand-deep py-18 text-on-brand lg:py-28">
+          <div className="mx-auto max-w-290 px-5">
+            <span className="inline-flex items-center gap-2 rounded-full bg-on-brand/12 px-3 py-1.5 text-[13px] font-semibold">
+              <span className="size-2 rounded-full bg-brand-mint" aria-hidden />
+              Demonstração com dados fictícios
+            </span>
+            <div className="mt-4">
+              <SectionHeading id="h-demo" title="Faça um agendamento como o seu cliente faria" onDark>
+                Escolha um serviço e um horário na página de agendamento. Ao confirmar, veja o atendimento entrar na agenda do
+                profissional. É só uma simulação: nenhum dado é pedido e nada é marcado de verdade.
+              </SectionHeading>
+            </div>
+            <BookingDemo />
+            <AfterDemo />
+          </div>
+        </section>
 
-      <footer className="mx-auto flex w-full max-w-5xl flex-wrap justify-between gap-2 px-4 py-6 text-caption text-muted-foreground sm:px-6">
-        <span>
-          © {new Date().getFullYear()} {BRAND.name}
-        </span>
-        <span>
-          <Link href="/privacidade" className="underline-offset-4 hover:underline">
-            Privacidade
-          </Link>{" "}
-          ·{" "}
-          <Link href="/termos" className="underline-offset-4 hover:underline">
-            Termos
-          </Link>
-        </span>
-      </footer>
-    </main>
+        <section id="recursos" aria-labelledby="h-rec" className="scroll-mt-20 py-18 lg:py-28">
+          <div className="mx-auto max-w-290 px-5">
+            <SectionHeading id="h-rec" title="O que muda no dia a dia">
+              Tudo conversa entre si: o que o cliente agenda aparece na agenda, fica no cadastro dele, gera o lembrete e entra
+              nos relatórios.
+            </SectionHeading>
+            <FeatureTabs />
+          </div>
+        </section>
+
+        <section aria-labelledby="h-seg" className="bg-card py-18 lg:py-28">
+          <Segments />
+        </section>
+
+        <HowToStart />
+        <Faq />
+        <FinalCta />
+      </main>
+
+      <LandingFooter />
+      <StickyCta />
+    </>
   );
 }

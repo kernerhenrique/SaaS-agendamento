@@ -20,6 +20,7 @@ Antes de qualquer mudança de schema, autenticação ou lógica de disponibilida
 Se algum desses arquivos ainda não existir, crie-o quando a tarefa tocar no assunto. Se este CLAUDE.md divergir do código real, **o código manda**: avise e atualize este arquivo.
 
 ## Produto em uma tela
+- **Página de vendas** `/` (aprazzo.com.br): apresentação da Aprazzo, demonstração interativa, CTA de WhatsApp de vendas e "Entrar" para o painel (`src/components/landing/`).
 - **Página pública** `/{slug}`: página do negócio (capa, logo, serviços, equipe, portfólio, políticas) + fluxo de reserva serviço → profissional → data/hora → dados → confirmação. Cliente final **não cria conta**.
 - **Gerenciar reserva** `/agendamento/{manageToken}/gerenciar`: cancelar/reagendar via token.
 - **Painel admin** `/admin/*`: Início, Agenda, Clientes, Profissionais, Serviços, Financeiro, Relatórios, Mensagens, Configurações.

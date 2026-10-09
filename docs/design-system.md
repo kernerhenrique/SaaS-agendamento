@@ -317,3 +317,12 @@ Duas camadas independentes:
 - **Drawer**: seção "Horário fixo · toda semana" com as próximas datas e "até dd/mm/aaaa", "Enviar as datas pelo WhatsApp" (texto pronto com o link de cancelar uma data), "Renovar" (só na última data) e "Cancelar datas" (modal com "Só esta data" / "Esta e as próximas").
 - **Agenda**: `SeriesIndicator` (ícone `Repeat`, `aria-label` "Horário fixo") ao lado do indicador de pagamento.
 - **Link do cliente**: quadro "Horário fixo" com a frase em linguagem simples, a lista das próximas datas com "Não vou neste dia" (ou "Perto demais: fale com o negócio" dentro do prazo) e "Cancelar todas as próximas".
+
+## Página de vendas (aprazzo.com.br)
+
+`src/app/page.tsx` + `src/components/landing/`. A página de vendas da Aprazzo é também a porta do painel ("Entrar" → `/admin/login`). Protótipo original em `design/pagina-de-vendas/` (fora do git).
+- **Ordem:** hero → demonstração (fundo `brand-deep`) → recursos em abas (Agenda, Clientes, WhatsApp, Financeiro, Relatórios) → tipos de negócio (interativo) → como começar → dúvidas (centralizadas) → chamada final. CTA principal = WhatsApp de vendas (`LEGAL.contactWhatsapp`, `landing-config.ts`), no cabeçalho, hero, após a demo, como começar, final e barra fixa do celular (que some no hero, na demo e na chamada final).
+- **Cores só por token**: `brand-cover` (verde da marca, fixo nos dois temas), `brand-deep`, `brand-mint`, `on-brand`, `on-brand-muted`; sombras `shadow-float` e `shadow-cta`. Nada usa `primary` para faixas com texto branco, porque no tema escuro `primary` clareia.
+- **Animações** (`--animate-*` em `globals.css`, curva `ease-brand`), sempre com `motion-safe:`: um momento orquestrado no hero (14:30 escolhido → confirmado → "Novo" na agenda → "Confirmação pronta no WhatsApp"); troca de etapa e o atendimento deslizando para a agenda na demo; troca de aba, barras crescendo, balão de mensagem; `Reveal` (aparece ao rolar) só nos passos. A variante `js:` (classe `js` no `<html>`, posta antes da pintura) garante que, sem JavaScript, nada fica escondido.
+- **Telas ilustrativas** usam dados fictícios coerentes com um negócio só (barbearia) e os textos reais dos modelos de WhatsApp. Estilos de botão ficam em `landing-config.ts` (módulo neutro): importados de arquivo `"use client"` chegariam vazios no servidor.
+- **Medição:** `track()` só envia ao `dataLayer` se um gerenciador de tags for instalado (com aviso de cookies). Hoje não há rastreador.
