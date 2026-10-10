@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  CalendarClock,
   BarChart3,
   Briefcase,
   CalendarDays,
@@ -21,6 +22,7 @@ import { useVertical } from "@/config/vertical-context";
 import type { Permission } from "@/server/modules/auth/permissions";
 
 import { useAdminAccess } from "./admin-access-context";
+import { useAdminShell } from "./admin-shell-context";
 
 export type AdminNavGroup = "operacao" | "cadastros" | "gestao" | "rodape";
 
@@ -50,11 +52,15 @@ const SERVICE_ICONS: Record<ServiceIconKey, LucideIcon> = {
 export function useAdminNav(): AdminNavItem[] {
   const { terms, serviceIcon } = useVertical();
   const access = useAdminAccess();
+  const { solo, soloProfessionalId } = useAdminShell();
+  const team = solo
+    ? { href: soloProfessionalId ? `/admin/profissionais/${soloProfessionalId}?aba=dados` : "/admin/profissionais", label: "Meu expediente", icon: CalendarClock }
+    : { href: "/admin/profissionais", label: terms.professional.plural, icon: Users };
   const items: (AdminNavItem & { permission?: Permission })[] = [
     { href: "/admin", label: "Início", icon: House, group: "operacao" },
     { href: "/admin/agenda", label: "Agenda", icon: CalendarDays, group: "operacao" },
     { href: "/admin/clientes", label: terms.client.plural, icon: Contact, group: "operacao" },
-    { href: "/admin/profissionais", label: terms.professional.plural, icon: Users, group: "cadastros", permission: "catalog.manage" },
+    { ...team, group: "cadastros", permission: "catalog.manage" },
     { href: "/admin/servicos", label: terms.service.plural, icon: SERVICE_ICONS[serviceIcon], group: "cadastros", permission: "catalog.manage" },
     { href: "/admin/financeiro", label: "Financeiro", icon: Wallet, group: "gestao", permission: "finance.view" },
     { href: "/admin/relatorios", label: "Relatórios", icon: BarChart3, group: "gestao", permission: "reports.view" },
@@ -68,5 +74,6 @@ export function useAdminNav(): AdminNavItem[] {
 export function isNavItemActive(pathname: string | null, href: string): boolean {
   if (!pathname) return false;
   if (href === "/admin") return pathname === "/admin";
-  return pathname === href || pathname.startsWith(`${href}/`);
+  const path = href.split("?")[0];
+  return pathname === path || pathname.startsWith(`${path}/`);
 }

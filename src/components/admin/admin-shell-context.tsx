@@ -9,6 +9,10 @@ interface AdminShellContextValue {
   timezone: string;
   /** Página de reservas do negócio ("/{slug}"): atalho "Ver minha página". */
   publicPath: string;
+  /** Plano Solo (limite = 1 profissional): o painel esconde o que é de equipe. */
+  solo: boolean;
+  /** No Solo, o cadastro da única pessoa (o "Meu expediente" do menu). */
+  soloProfessionalId: string | null;
   /** Abre o "novo agendamento" de qualquer tela, opcionalmente já preenchido. */
   openNewAppointment: (initial?: NewAppointmentInitial) => void;
   /** Muda a cada agendamento criado — telas que listam agendamentos recarregam ao ver a mudança. */
@@ -23,7 +27,19 @@ interface AdminShellContextValue {
 
 const AdminShellContext = createContext<AdminShellContextValue | null>(null);
 
-export function AdminShellProvider({ timezone, publicPath, children }: { timezone: string; publicPath: string; children: ReactNode }) {
+export function AdminShellProvider({
+  timezone,
+  publicPath,
+  solo = false,
+  soloProfessionalId = null,
+  children,
+}: {
+  timezone: string;
+  publicPath: string;
+  solo?: boolean;
+  soloProfessionalId?: string | null;
+  children: ReactNode;
+}) {
   const [newAppointment, setNewAppointment] = useState<{ open: boolean; initial?: NewAppointmentInitial }>({
     open: false,
   });
@@ -51,8 +67,8 @@ export function AdminShellProvider({ timezone, publicPath, children }: { timezon
   }, []);
 
   const value = useMemo(
-    () => ({ timezone, publicPath, openNewAppointment, appointmentsVersion, openSearch, setContextDate }),
-    [timezone, publicPath, openNewAppointment, appointmentsVersion, openSearch],
+    () => ({ timezone, publicPath, solo, soloProfessionalId, openNewAppointment, appointmentsVersion, openSearch, setContextDate }),
+    [timezone, publicPath, solo, soloProfessionalId, openNewAppointment, appointmentsVersion, openSearch],
   );
 
   return (
@@ -62,6 +78,7 @@ export function AdminShellProvider({ timezone, publicPath, children }: { timezon
         open={newAppointment.open}
         initial={newAppointment.initial}
         timezone={timezone}
+        solo={solo}
         onOpenChange={(open) => setNewAppointment((prev) => ({ ...prev, open }))}
         onCreated={() => setAppointmentsVersion((v) => v + 1)}
       />

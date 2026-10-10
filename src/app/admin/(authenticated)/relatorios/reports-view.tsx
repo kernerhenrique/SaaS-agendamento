@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { MethodBreakdown } from "@/components/admin/method-breakdown";
+import { useAdminShell } from "@/components/admin/admin-shell-context";
 import { PeriodPicker } from "@/components/admin/period-picker";
 import { EmptyState } from "@/components/empty-state";
 import { KpiCard } from "@/components/kpi-card";
@@ -99,7 +100,8 @@ export function ReportsView({
   const [preset, setPreset] = useState<PeriodPreset>(initialPreset);
   const [custom, setCustom] = useState(() => resolvePeriod("personalizado", today, initialCustom));
   const range = resolvePeriod(preset, today, custom);
-  const [section, setSection] = useState<ReportSection>(initialSection);
+  const { solo } = useAdminShell();
+  const [section, setSection] = useState<ReportSection>(solo && initialSection === "profissionais" ? "atendimentos" : initialSection);
   const [reloadKey, setReloadKey] = useState(0);
 
   // A URL guarda período e aba (dá para voltar e compartilhar o link).
@@ -112,6 +114,8 @@ export function ReportsView({
     window.history.replaceState(null, "", `/admin/relatorios?${params}`);
   }, [preset, section, range.startDate, range.endDate]);
 
+  // Plano Solo: comparar profissionais não faz sentido com uma pessoa só.
+  const sections = (Object.keys(SECTION_LABELS) as ReportSection[]).filter((key) => !(solo && key === "profissionais"));
   const rangeQuery = `startDate=${range.startDate}&endDate=${range.endDate}`;
   const report = useFetchJson<{ report: unknown }>(`/api/admin/reports?${rangeQuery}&secao=${section}`, reloadKey);
   const labels: Record<ReportSection, string> = {
@@ -155,14 +159,14 @@ export function ReportsView({
       <Tabs value={section} onValueChange={(value) => setSection(value as ReportSection)}>
         {/* No celular as 5 abas rolam na horizontal; no desktop cabem. */}
         <TabsList className="w-full justify-start overflow-x-auto overflow-y-hidden sm:w-fit sm:overflow-visible">
-          {(Object.keys(labels) as ReportSection[]).map((key) => (
+          {sections.map((key) => (
             <TabsTrigger key={key} value={key} className="shrink-0">
               {labels[key]}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        {(Object.keys(labels) as ReportSection[]).map((key) => (
+        {sections.map((key) => (
           <TabsContent key={key} value={key} className="flex flex-col gap-5 pt-4">
             {key !== section ? null : report.error ? (
               <div className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm">
@@ -214,6 +218,7 @@ function LoadingSection() {
 // ---------------------------------------------------------------------------
 
 function AppointmentsSection({ report }: { report: AppointmentsReport }) {
+  const { solo } = useAdminShell();
   const { terms } = useVertical();
   const { current, compare, previous } = report;
   const statusEntries = Object.entries(current.byStatus) as [AppointmentStatus, number][];
@@ -246,15 +251,17 @@ function AppointmentsSection({ report }: { report: AppointmentsReport }) {
             higherIsBetter: false,
           }}
         />
-        <KpiCard
-          icon={Trophy}
-          label={mostRequestedLabel(terms.professional)}
-          value={
-            current.mostRequestedProfessional
-              ? `${current.mostRequestedProfessional.name} (${current.mostRequestedProfessional.count})`
-              : "—"
-          }
-        />
+        {solo ? null : (
+          <KpiCard
+            icon={Trophy}
+            label={mostRequestedLabel(terms.professional)}
+            value={
+              current.mostRequestedProfessional
+                ? `${current.mostRequestedProfessional.name} (${current.mostRequestedProfessional.count})`
+                : "—"
+            }
+          />
+        )}
       </KpiGrid>
 
       <ChartCard
@@ -263,7 +270,8 @@ function AppointmentsSection({ report }: { report: AppointmentsReport }) {
         table={<DataTable columns={["Data", "Agendamentos"]} rows={current.byDay.map((d) => [formatDate(d.date), d.count])} />}
       />
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className={solo ? "grid gap-5" : "grid gap-5 lg:grid-cols-2"}>
+        {solo ? null : (
         <ChartCard
           title={`Agendamentos por ${lowerTerm(terms.professional.singular)}`}
           chart={
@@ -280,6 +288,7 @@ function AppointmentsSection({ report }: { report: AppointmentsReport }) {
             />
           }
         />
+        )}
         <ChartCard
           title="Agendamentos por status"
           chart={

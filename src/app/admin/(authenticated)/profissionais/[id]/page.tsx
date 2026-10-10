@@ -17,9 +17,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: professional?.name ?? "Cadastro" };
 }
 
-export default async function ProfissionalPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ProfissionalPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ aba?: string }>;
+}) {
   const session = await requirePagePermission("catalog.manage");
   const { id } = await params;
+  const { aba } = await searchParams;
   const business = await prisma.business.findUniqueOrThrow({
     where: { id: session.businessId },
     select: { timezone: true },
@@ -53,6 +60,7 @@ export default async function ProfissionalPage({ params }: { params: Promise<{ i
       services={services}
       timezone={business.timezone}
       businessHours={businessHours}
+      initialTab={aba === "dados" || aba === "desempenho" ? aba : "proximos"}
     />
   );
 }

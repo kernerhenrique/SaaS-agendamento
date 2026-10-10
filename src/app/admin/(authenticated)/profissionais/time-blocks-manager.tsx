@@ -116,7 +116,7 @@ export function TimeBlocksManager({
           Folgas e ausências de {professionalName}
         </h2>
         <p className="text-sm text-muted-foreground">
-          Folga, médico, férias: nesses dias e horários a agenda dele fica bloqueada e a página não oferece horário com ele.
+          Folga, médico, férias: nesses dias e horários a agenda fica bloqueada e a página não oferece horário nesse período.
           Feriado ou recesso de todos?{" "}
           <Link href="/admin/configuracoes#fechados" className="font-medium text-primary underline-offset-4 hover:underline">
             Use Dias fechados

@@ -179,6 +179,14 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
 - Estados: skeleton, vazio com explicação de quando a lista enche, erro com "Tentar de novo".
 - No style guide, o editor roda em modo `demo` (não grava).
 
+## Plano Solo no painel
+
+Só com `Business.maxProfessionals = 1` (`isSoloPlan`); o layout do painel calcula uma vez e entrega `solo` ao `VerticalProvider` e ao `AdminShellProvider` (`useAdminShell().solo` / `soloProfessionalId`).
+- **Comissão some sozinha**: no Solo, o `VerticalProvider` desliga `features.commissions`, então Financeiro (aba Comissões), Relatórios (coluna e CSV), cadastro e perfil escondem sem regra própria.
+- **Menu**: "Profissionais" vira **"Meu expediente"** (ícone `CalendarClock`), que abre o perfil da pessoa já na aba Dados (`?aba=dados`); `isNavItemActive` ignora a query.
+- **Escondido no Solo**: convite da equipe (`StaffAccessCard`), "Remover cadastro", o interruptor "Ativo" (pausar a única pessoa deixaria a página sem horários; férias = folgas), o "‹ Profissionais" do perfil, a aba Profissionais e o "mais requisitado" dos Relatórios, o gráfico por profissional e o campo de profissional no "Novo agendamento" (a pessoa já vem escolhida).
+- Tudo depende do plano, nunca da contagem: negócio de equipe com uma pessoa só cadastrada continua com o painel de equipe.
+
 ## Equipe: dono + profissionais
 
 - **`AdminAccessProvider` / `useAdminAccess()`** (`src/components/admin/admin-access-context.tsx`): papel e permissões de quem está logado, com a mesma matriz do servidor (`permissions.ts`). Serve só para esconder o que o papel não pode; quem garante é a API.

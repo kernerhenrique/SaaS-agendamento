@@ -87,12 +87,15 @@ export function NewAppointmentDialog({
   open,
   initial,
   timezone,
+  solo = false,
   onOpenChange,
   onCreated,
 }: {
   open: boolean;
   initial?: NewAppointmentInitial;
   timezone: string;
+  /** Plano Solo: a única pessoa já vem escolhida e o campo de profissional some. */
+  solo?: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: () => void;
 }) {
@@ -111,6 +114,7 @@ export function NewAppointmentDialog({
             <NewAppointmentForm
               initial={initial}
               timezone={timezone}
+              solo={solo}
               onDone={(createdId, repeat) => {
                 onOpenChange(false);
                 onCreated();
@@ -135,10 +139,12 @@ export function NewAppointmentDialog({
 function NewAppointmentForm({
   initial,
   timezone,
+  solo,
   onDone,
 }: {
   initial?: NewAppointmentInitial;
   timezone: string;
+  solo: boolean;
   onDone: (createdId: string, repeat: boolean) => void;
 }) {
   const { terms } = useVertical();
@@ -304,7 +310,8 @@ function NewAppointmentForm({
 
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-      <div className="flex flex-col gap-2">
+      {/* Plano Solo: sem escolha (a única pessoa já está selecionada). */}
+      <div className={solo && professionals.length === 1 ? "hidden" : "flex flex-col gap-2"}>
         <Label htmlFor="na-professional">{terms.professional.singular}</Label>
         <Select
           value={professionalId}
