@@ -101,14 +101,16 @@ export function AgendaDayList({
                             {formatTime(item.appointment.startAt)}
                           </span>
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate text-sm font-medium">{item.appointment.client.name}</span>
+                            <span className="flex min-w-0 items-center gap-1.5">
+                              <span className="truncate text-sm font-medium">{item.appointment.client.name}</span>
+                              <PaymentIndicator status={item.appointment.paymentStatus} />
+                            </span>
                             <span className="block truncate text-caption text-muted-foreground">
                               {item.appointment.service.name}
                             </span>
                           </span>
                           <span className="flex shrink-0 items-center gap-1.5">
                             <SeriesIndicator seriesId={item.appointment.seriesId} />
-                            <PaymentIndicator status={item.appointment.paymentStatus} />
                             <StatusBadge tone={STATUS_TONE[item.appointment.status]}>
                               {STATUS_LABELS[item.appointment.status]}
                             </StatusBadge>

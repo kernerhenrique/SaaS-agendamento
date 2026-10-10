@@ -7,7 +7,7 @@ import { handleApiError } from "@/server/http";
 import { assertOwnProfessional } from "@/server/modules/auth/appointment-access";
 import { can, professionalScope } from "@/server/modules/auth/permissions";
 import { requireAdminSession } from "@/server/modules/auth/session";
-import { summarizePayments } from "@/server/modules/payment/payment-rules";
+import { agendaPaymentStatus } from "@/server/modules/payment/payment-rules";
 import {
   createManualAppointment,
   listAppointments,
@@ -45,9 +45,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       appointments: appointments.map(({ payments, ...appointment }) => ({
         ...appointment,
-        // Só faz sentido cobrar o que já foi atendido.
-        paymentStatus:
-          appointment.status === "COMPLETED" ? summarizePayments(appointment.priceCents, payments).status : null,
+        // Concluído: pago, parcial ou a receber. Ainda por vir: só se já entrou algo (sinal).
+        paymentStatus: agendaPaymentStatus(appointment.status, appointment.priceCents, payments),
       })),
       timeBlocks,
     });

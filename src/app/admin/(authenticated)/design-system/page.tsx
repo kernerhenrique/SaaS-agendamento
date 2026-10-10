@@ -163,7 +163,7 @@ export default function DesignSystemPage() {
 
           <Section
             title="Valor em reais e pagamento (MoneyInput, PaymentIndicator)"
-            description="MoneyInput guarda centavos e digita como maquininha. PaymentIndicator marca concluídos na agenda: pago ou falta receber."
+            description="MoneyInput guarda centavos e digita como maquininha. PaymentIndicator, ao lado do nome do cliente na agenda: pago, falta receber (concluído sem nada pago) ou o selo Parcial (inclusive sinal num agendamento futuro)."
           >
             <div className="flex flex-wrap items-center gap-6">
               <div className="flex w-48 flex-col gap-1.5">
@@ -174,7 +174,10 @@ export default function DesignSystemPage() {
                 <PaymentIndicator status="PAID" /> Pago
               </span>
               <span className="flex items-center gap-2 text-sm">
-                <PaymentIndicator status="PARTIAL" /> Falta receber
+                <PaymentIndicator status="PENDING" /> Falta receber
+              </span>
+              <span className="flex items-center gap-2 text-sm">
+                <PaymentIndicator status="PARTIAL" /> Parcial
               </span>
             </div>
           </Section>

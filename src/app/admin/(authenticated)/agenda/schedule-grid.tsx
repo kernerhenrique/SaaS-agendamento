@@ -410,21 +410,25 @@ function AppointmentBlock({
       {isCompact ? (
         <span className="truncate">
           <span className="inline-flex items-center gap-1 align-middle">
-            <PaymentIndicator status={appointment.paymentStatus} />
             <SeriesIndicator seriesId={appointment.seriesId} />
             <span className="font-semibold">{formatTime(appointment.startAt, timezone)}</span>
           </span>{" "}
-          · {appointment.client.name}
+          · {appointment.client.name}{" "}
+          <span className="inline-flex align-middle">
+            <PaymentIndicator status={appointment.paymentStatus} />
+          </span>
           <span className="block truncate opacity-80">{appointment.service.name}</span>
         </span>
       ) : (
         <>
           <span className="flex items-center gap-1 truncate font-semibold">
             {timeLabel}
-            <PaymentIndicator status={appointment.paymentStatus} />
             <SeriesIndicator seriesId={appointment.seriesId} />
           </span>
-          <span className="truncate">{appointment.client.name}</span>
+          <span className="flex min-w-0 items-center gap-1">
+            <span className="truncate">{appointment.client.name}</span>
+            <PaymentIndicator status={appointment.paymentStatus} />
+          </span>
           <span className="truncate opacity-80">{appointment.service.name}</span>
         </>
       )}

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  agendaPaymentStatus,
   commissionFor,
   summarizePayments,
   validateCommissionPercent,
@@ -96,5 +97,24 @@ describe("validações", () => {
     expect(validateCommissionPercent(40)).toBeNull();
     expect(validateCommissionPercent(101)).not.toBeNull();
     expect(validateCommissionPercent(12.5)).not.toBeNull();
+  });
+});
+
+describe("agendaPaymentStatus (selo no cartão da agenda)", () => {
+  const sinal = [{ amountCents: 2000, discountCents: 0 }];
+  it("concluído mostra sempre: a receber, parcial ou pago", () => {
+    expect(agendaPaymentStatus("COMPLETED", 5000, [])).toBe("PENDING");
+    expect(agendaPaymentStatus("COMPLETED", 5000, sinal)).toBe("PARTIAL");
+    expect(agendaPaymentStatus("COMPLETED", 5000, [{ amountCents: 5000, discountCents: 0 }])).toBe("PAID");
+  });
+  it("ainda por vir: só quando já entrou algum valor (sinal = parcial, adiantado = pago)", () => {
+    expect(agendaPaymentStatus("CONFIRMED", 5000, [])).toBeNull();
+    expect(agendaPaymentStatus("CONFIRMED", 0, [])).toBeNull();
+    expect(agendaPaymentStatus("CONFIRMED", 5000, sinal)).toBe("PARTIAL");
+    expect(agendaPaymentStatus("PENDING", 5000, [{ amountCents: 5000, discountCents: 0 }])).toBe("PAID");
+  });
+  it("cancelado e falta: nada", () => {
+    expect(agendaPaymentStatus("CANCELLED", 5000, sinal)).toBeNull();
+    expect(agendaPaymentStatus("NO_SHOW", 5000, sinal)).toBeNull();
   });
 });

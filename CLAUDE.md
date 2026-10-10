@@ -144,6 +144,7 @@ npx prisma db seed          # dados de exemplo
 npx prisma migrate reset    # zera o banco local e roda o seed de novo
 npx prisma studio           # inspecionar dados
 npm run dev                 # http://localhost:3000
+npx next dev -H <IP do Wi-Fi>   # testar no celular pela rede (o `next start` marca os cookies como Secure e o celular, sem https, descarta o login)
 npm run build
 npm run lint
 npm run test                # Vitest

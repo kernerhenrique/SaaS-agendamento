@@ -57,6 +57,22 @@ export function summarizePayments(priceCents: number, payments: PaymentLike[]): 
   return { priceCents, paidCents, discountCents, balanceCents, status };
 }
 
+/**
+ * Selo de pagamento no cartão da agenda. Concluído: sempre (pago, parcial ou a
+ * receber). Ainda por vir: só quando já entrou algum valor (sinal = parcial, pago
+ * adiantado = pago). Cancelado e falta: nada, porque não há o que cobrar na agenda.
+ */
+export function agendaPaymentStatus(
+  appointmentStatus: string,
+  priceCents: number,
+  payments: PaymentLike[],
+): PaymentStatus | null {
+  if (appointmentStatus === "CANCELLED" || appointmentStatus === "NO_SHOW") return null;
+  const summary = summarizePayments(priceCents, payments);
+  if (appointmentStatus === "COMPLETED") return summary.status;
+  return summary.paidCents > 0 || summary.discountCents > 0 ? summary.status : null;
+}
+
 /** Comissão de um pagamento: % congelada sobre o valor recebido, arredondada ao centavo. */
 export function commissionFor(payment: { amountCents: number; commissionPercent: number | null }): number {
   if (!payment.commissionPercent) return 0;
