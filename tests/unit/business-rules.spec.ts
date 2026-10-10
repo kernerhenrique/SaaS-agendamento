@@ -145,3 +145,18 @@ describe("parseSoloProfessionalName", () => {
     expect(() => parseSoloProfessionalName(undefined)).toThrow(/seu nome/i);
   });
 });
+
+describe("ligações entre cadastros (isolamento multi-tenant)", () => {
+  it("tira ids repetidos e acusa o id que não é do negócio", async () => {
+    const { hasForeignIds, uniqueIds } = await import("@/server/modules/business/tenant-refs");
+    expect(uniqueIds(["a", "b", "a"])).toEqual(["a", "b"]);
+    expect(hasForeignIds(["a", "b"], [{ id: "a" }, { id: "b" }])).toBe(false);
+    expect(hasForeignIds(["a", "x"], [{ id: "a" }])).toBe(true);
+    expect(hasForeignIds([], [])).toBe(false);
+  });
+
+  it("id do próprio negócio já removido sai em silêncio (salvar sem mexer continua funcionando)", async () => {
+    const { withoutDeleted } = await import("@/server/modules/business/tenant-refs");
+    expect(withoutDeleted(["a", "b"], [{ id: "a", deletedAt: null }, { id: "b", deletedAt: new Date() }])).toEqual(["a"]);
+  });
+});

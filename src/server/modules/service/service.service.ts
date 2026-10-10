@@ -2,6 +2,7 @@ import { ServicePriceType } from "@/generated/prisma/enums";
 import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
 import { getSoloProfessional } from "@/server/modules/business/solo.service";
+import { ownedCategoryId, ownedProfessionalIds } from "@/server/modules/business/tenant-refs";
 
 import { moveWithinCategory, type MoveDirection } from "./service-order";
 
@@ -34,7 +35,7 @@ function validateServiceInput(input: ServiceInput): void {
  */
 async function professionalIdsFor(businessId: string, professionalIds: string[]): Promise<string[]> {
   const soloProfessional = await getSoloProfessional(businessId);
-  return soloProfessional ? [soloProfessional.id] : professionalIds;
+  return soloProfessional ? [soloProfessional.id] : ownedProfessionalIds(businessId, professionalIds);
 }
 
 /**
@@ -60,6 +61,7 @@ export async function createService(businessId: string, input: ServiceInput) {
   // Novo serviço entra no fim da lista.
   const last = await prisma.service.aggregate({ where: { businessId, deletedAt: null }, _max: { position: true } });
   const professionalIds = await professionalIdsFor(businessId, input.professionalIds);
+  const categoryId = await ownedCategoryId(businessId, input.categoryId);
 
   return prisma.service.create({
     data: {
@@ -70,7 +72,7 @@ export async function createService(businessId: string, input: ServiceInput) {
       durationMin: input.durationMin,
       priceCents: input.priceCents,
       priceType: input.priceType ?? ServicePriceType.FIXED,
-      categoryId: input.categoryId ?? null,
+      categoryId,
       professionalServices: {
         create: professionalIds.map((professionalId) => ({ professionalId })),
       },
@@ -85,6 +87,7 @@ export async function updateService(businessId: string, id: string, input: Servi
   const existing = await prisma.service.findFirst({ where: { id, businessId, deletedAt: null } });
   if (!existing) throw new NotFoundError("Cadastro não encontrado");
   const professionalIds = await professionalIdsFor(businessId, input.professionalIds);
+  const categoryId = await ownedCategoryId(businessId, input.categoryId);
 
   return prisma.$transaction(async (tx) => {
     await tx.professionalService.deleteMany({ where: { serviceId: id } });
@@ -97,7 +100,7 @@ export async function updateService(businessId: string, id: string, input: Servi
         durationMin: input.durationMin,
         priceCents: input.priceCents,
         priceType: input.priceType ?? ServicePriceType.FIXED,
-        categoryId: input.categoryId ?? null,
+        categoryId,
         professionalServices: {
           create: professionalIds.map((professionalId) => ({ professionalId })),
         },

@@ -128,6 +128,7 @@ Nunca integrar gateway de pagamento sem pedido explícito.
 - TypeScript `strict: true`, sem `any` não justificado.
 - Rotas públicas buscam por `slug`/`manage_token`, nunca por ID sequencial.
 - Isolamento multi-tenant: toda query filtra por `businessId` **derivado da sessão**, nunca de valor vindo do client, nem confiando só no ID do recurso filho.
+- Ids que ligam um cadastro a outro (profissionais de um serviço, serviços de um profissional, categoria) passam por `business/tenant-refs.ts`: de outro negócio = "Cadastro não encontrado"; do próprio, já removido, sai em silêncio.
 - Toda conversão de horário passa por `src/lib/date.ts`. `Appointment`/`TimeBlock` em `timestamptz` UTC.
 - Lógica de disponibilidade com teste unitário cobrindo: sobreposição, timezone, duração variável, buffer, bloqueios, horário por profissional.
 - Lógica de pagamentos, comissões e relatórios com teste unitário.

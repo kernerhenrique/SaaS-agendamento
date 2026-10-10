@@ -66,3 +66,19 @@ export async function moveToPast(appointmentId: string): Promise<{ date: string;
 export async function setProfessionalLimit(slug: string, maxProfessionals: number | null): Promise<void> {
   await withDb((client) => client.query(`UPDATE "Business" SET "maxProfessionals" = $1 WHERE slug = $2`, [maxProfessionals, slug]));
 }
+
+/** Ids de cadastros de um negócio (o primeiro de cada): para testar que outro negócio não consegue usá-los. */
+export async function businessRefs(slug: string): Promise<{ professionalId: string; serviceId: string; categoryId: string }> {
+  return withDb(async (client) => {
+    const { rows } = await client.query(
+      `SELECT
+         (SELECT p.id FROM "Professional" p WHERE p."businessId" = b.id ORDER BY p."createdAt" LIMIT 1) AS "professionalId",
+         (SELECT s.id FROM "Service" s WHERE s."businessId" = b.id ORDER BY s."createdAt" LIMIT 1) AS "serviceId",
+         (SELECT c.id FROM "ServiceCategory" c WHERE c."businessId" = b.id ORDER BY c."createdAt" LIMIT 1) AS "categoryId"
+       FROM "Business" b WHERE b.slug = $1`,
+      [slug],
+    );
+    if (rows.length === 0) throw new Error(`Negócio ${slug} não encontrado`);
+    return rows[0] as { professionalId: string; serviceId: string; categoryId: string };
+  });
+}

@@ -3,6 +3,7 @@ import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
 import { describeHoursConflict, findHoursConflicts } from "@/server/modules/business/hours-rules";
 import { canActivateAnotherProfessional, professionalLimitMessage } from "@/server/modules/business/plan-rules";
+import { ownedServiceIds } from "@/server/modules/business/tenant-refs";
 
 export interface WorkingHoursInput {
   weekday: Weekday;
@@ -125,6 +126,7 @@ export async function createProfessional(businessId: string, input: Professional
   validateWorkingHours(input.workingHours);
   await assertWithinBusinessHours(businessId, input.workingHours);
   if (input.active ?? true) await assertPlanAllowsActiveProfessional(businessId);
+  const serviceIds = await ownedServiceIds(businessId, input.serviceIds);
 
   return prisma.professional.create({
     data: {
@@ -138,7 +140,7 @@ export async function createProfessional(businessId: string, input: Professional
       photoUrl: input.photoUrl ?? null,
       workingHours: { create: input.workingHours },
       professionalServices: {
-        create: input.serviceIds.map((serviceId) => ({ serviceId })),
+        create: serviceIds.map((serviceId) => ({ serviceId })),
       },
       photos: { create: toPhotoCreateData(input.photoUrls) },
     },
@@ -159,6 +161,7 @@ export async function updateProfessional(
   if (!existing) throw new NotFoundError("Cadastro não encontrado");
   // Reativar alguém pausado conta no limite do plano; editar quem já está ativo, não.
   if (!existing.active && input.active === true) await assertPlanAllowsActiveProfessional(businessId, id);
+  const serviceIds = await ownedServiceIds(businessId, input.serviceIds);
 
   return prisma.$transaction(async (tx) => {
     await tx.workingHours.deleteMany({ where: { professionalId: id } });
@@ -178,7 +181,7 @@ export async function updateProfessional(
         photoUrl: input.photoUrl ?? null,
         workingHours: { create: input.workingHours },
         professionalServices: {
-          create: input.serviceIds.map((serviceId) => ({ serviceId })),
+          create: serviceIds.map((serviceId) => ({ serviceId })),
         },
         photos: { create: toPhotoCreateData(input.photoUrls) },
       },
