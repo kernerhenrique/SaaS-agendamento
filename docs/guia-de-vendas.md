@@ -105,7 +105,7 @@ Manicure, esteticista, tatuador ou barbeiro que trabalha sem equipe. O sistema �
 
 - **Inclui** a implantação (identidade, serviços, expediente e regras pelo formulário de onboarding, importação da planilha pronta, treinamento de 30 min e manual) e a mensalidade (hospedagem, cópias de segurança, atualizações e suporte por WhatsApp). **Não inclui** domínio próprio, migração nem ajustes feitos por você (cobrados à parte).
 - **Contratou alguém?** Mude para um plano com equipe: `npm run limite-profissionais -- <slug> sem --producao` (A Leve ou A) ou `<slug> 3` (Essencial). Os dados continuam, e o painel ganha as telas de equipe na hora.
-- **Demonstração**: monte a partir de `docs/exemplo-cliente-solo.json`, trocando nome, cor, logo e serviços pelos do prospect, com `--demo`.
+- **Demonstração**: no primeiro contato, mande `aprazzo.com.br/demo-solo` (Ana Sobrancelhas, reserva em 3 passos e painel do Solo). Para quem está quase fechando, monte a prévia com a cara dele a partir de `docs/exemplo-cliente-solo.json`, com `--demo`.
 - Contrato de 12 meses, como os outros planos.
 
 ### Para todos os modelos

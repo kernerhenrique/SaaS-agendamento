@@ -1,0 +1,37 @@
+{
+  "nome": "Ana Sobrancelhas",
+  "slug": "demo-solo",
+  "nicho": "beauty_clinic",
+  "endereco": "Rua do Exemplo, 200 - Sala 4, São Paulo/SP",
+  "whatsapp": "(27) 99695-0409",
+  "cor": "#BE185D",
+  "limiteProfissionais": 1,
+  "horarioFuncionamento": [
+    { "dias": "ter-sex", "horario": "09:00-19:00" },
+    { "dias": "sab", "horario": "09:00-15:00" }
+  ],
+  "politicas": {
+    "antecedenciaMinutos": 60,
+    "janelaDias": 30,
+    "cancelamentoHoras": 4,
+    "texto": "Atendo com hora marcada. Se precisar remarcar, use o link do agendamento com pelo menos 4 horas de antecedência."
+  },
+  "servicos": [
+    { "nome": "Design de sobrancelha", "categoria": "Sobrancelhas", "duracao": 40, "preco": 60 },
+    { "nome": "Design com henna", "categoria": "Sobrancelhas", "duracao": 60, "preco": 80 },
+    { "nome": "Brow lamination", "categoria": "Sobrancelhas", "duracao": 60, "preco": 140 },
+    { "nome": "Lash lifting", "categoria": "Cílios", "duracao": 60, "preco": 120 },
+    { "nome": "Micropigmentação", "categoria": "Sobrancelhas", "duracao": 150, "preco": 450, "aPartirDe": true, "descricao": "Valor final combinado na avaliação, conforme a técnica" }
+  ],
+  "profissionais": [
+    {
+      "nome": "Ana",
+      "especialidade": "Design de sobrancelhas e cílios",
+      "cor": "pink",
+      "expediente": [
+        { "dias": "ter-sex", "horario": "09:00-19:00", "intervalo": "12:30-13:30" },
+        { "dias": "sab", "horario": "09:00-15:00" }
+      ]
+    }
+  ]
+}

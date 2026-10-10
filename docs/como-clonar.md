@@ -82,7 +82,8 @@ Uma demo é um negócio comum marcado como demonstração (`Business.isDemo`): s
 
 | | Comando | Endereço | Validade |
 |---|---|---|---|
-| Demo pública | `npm run novo-cliente -- docs/demo-aprazzo.json --demo --permanente --producao` | `aprazzo.com.br/demo` | sem prazo |
+| Demo pública (equipe) | `npm run novo-cliente -- docs/demo-aprazzo.json --demo --permanente --producao` | `aprazzo.com.br/demo` | sem prazo |
+| Demo pública (Plano Solo) | `npm run novo-cliente -- docs/demo-aprazzo-solo.json --demo --permanente --producao` | `aprazzo.com.br/demo-solo` | sem prazo |
 | Prévia para um prospect | `npm run novo-cliente -- clientes/barbearia-do-ze.json --demo --producao` | `aprazzo.com.br/barbearia-do-ze-demo` | 7 dias |
 
 - A prévia usa o mesmo arquivo do cliente (nome, logo, cor, nicho, serviços e equipe dele) e o comando imprime a mensagem pronta para o prospect. Se ele fechar, crie o cliente de verdade com o comando normal (sem `--demo`): dados limpos, endereço sem "-demo".
