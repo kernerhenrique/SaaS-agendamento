@@ -27,7 +27,7 @@ export function TimeSlotGrid({
   slots,
   onSelect,
   highlightFirst = true,
-  emptyDescription = "Tente outra data ou use “Próximo horário disponível”.",
+  emptyDescription = "Tente outra data ou use “Próximo dia com horário”.",
 }: {
   slots: TimeSlot[];
   onSelect: (slot: TimeSlot) => void;

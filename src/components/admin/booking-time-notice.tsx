@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, CircleX } from "lucide-react";
 
+import { useAdminShell } from "@/components/admin/admin-shell-context";
 import { minutesToTimeInput } from "@/lib/weekday";
 import type { WorkingHoursWindow } from "@/server/modules/appointment/admin-booking-rules";
 
@@ -26,7 +27,8 @@ function describeHours(wh: WorkingHoursWindow): string {
 /**
  * Aviso de horário nos formulários do painel (novo agendamento, remarcar).
  * Passado bloqueia o envio; fora do expediente só avisa — quem decide é o
- * botão "Agendar mesmo assim".
+ * botão "… mesmo assim" (`confirmLabel`, o texto exato do botão daquele formulário).
+ * No plano Solo fala com a pessoa ("Você não atende…"), sem o "cobrindo" de equipe.
  */
 export function BookingTimeNotice({
   professionalName,
@@ -34,6 +36,7 @@ export function BookingTimeNotice({
   isOutsideHours,
   workingHours,
   closedReason = null,
+  confirmLabel = "Agendar mesmo assim",
 }: {
   professionalName: string;
   isPast: boolean;
@@ -41,7 +44,10 @@ export function BookingTimeNotice({
   workingHours: WorkingHoursWindow | null;
   /** Negócio fechado no dia (feriado, férias): o aviso diz o motivo. */
   closedReason?: string | null;
+  confirmLabel?: string;
 }) {
+  const { solo } = useAdminShell();
+  const who = solo ? "Você" : professionalName;
   if (isPast) {
     return (
       <p role="alert" className="flex items-center gap-2 text-sm text-destructive">
@@ -58,10 +64,11 @@ export function BookingTimeNotice({
         {closedReason
           ? `O negócio está fechado neste dia (${closedReason}).`
           : workingHours
-            ? `${professionalName} não atende neste horário (expediente ${describeHours(workingHours)}).`
-            : `${professionalName} não tem expediente neste dia.`}{" "}
+            ? `${who} não atende neste horário (expediente ${describeHours(workingHours)}).`
+            : `${who} não tem expediente neste dia.`}{" "}
         <span className="text-muted-foreground">
-          {closedReason ? "Se for abrir mesmo assim" : "Se estiver cobrindo"}, confirme em “Agendar mesmo assim”.
+          {closedReason ? "Se for abrir mesmo assim" : solo ? "Se for atender mesmo assim" : "Se estiver cobrindo"}, confirme em “
+          {confirmLabel}”.
         </span>
       </p>
     </div>

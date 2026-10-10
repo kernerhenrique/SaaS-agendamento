@@ -149,7 +149,7 @@ test("serviço que ninguém faz fica fora da página; o resumo mostra quem atend
   await expect(page.getByText("Mostramos os horários de todos.", { exact: false })).toBeVisible();
   await page.getByText("Sem preferência", { exact: true }).click();
   const timeSlot = page.locator('[data-testid="time-slot"]:not([data-unavailable])').first();
-  await page.getByRole("button", { name: "Próximo horário disponível" }).click();
+  await page.getByRole("button", { name: "Próximo dia com horário" }).click();
   await timeSlot.click();
   // Com o horário escolhido, o resumo já diz quem atende (não "Sem preferência").
   const summary = page.locator("div.sticky");

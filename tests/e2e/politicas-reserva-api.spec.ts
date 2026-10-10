@@ -95,7 +95,7 @@ test("antecedência, janela e prazo para cancelar valem na reserva pública", as
     await page.goto("/navalha-de-ouro");
     await page.getByText("Corte de cabelo", { exact: true }).click();
     await page.getByText("João Barbeiro", { exact: true }).click();
-    await page.getByRole("button", { name: "Próximo horário disponível" }).click();
+    await page.getByRole("button", { name: "Próximo dia com horário" }).click();
     await page.locator('[data-testid="time-slot"]:not([data-unavailable])').first().click();
     await expect(page.getByRole("note")).toContainText("não dá para cancelar nem remarcar pelo link");
   } finally {

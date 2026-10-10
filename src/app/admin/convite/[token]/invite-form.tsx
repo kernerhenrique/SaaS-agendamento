@@ -81,7 +81,7 @@ export function InviteForm({
         <CardDescription>
           {invite.role === "OWNER" ? (
             <>
-              O painel de {invite.businessName} está pronto. Crie o seu acesso de dono: você vai ver a agenda da equipe, os
+              O painel de {invite.businessName} está pronto. Crie o seu acesso de dono: você vai ver a agenda, os
               clientes, o financeiro e as configurações.
             </>
           ) : (

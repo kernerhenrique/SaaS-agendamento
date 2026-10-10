@@ -252,7 +252,7 @@ export function ManageView({
                 <h2 id="cancel-title" className="font-medium">
                   Não vai poder ir?
                 </h2>
-                <p className="text-sm text-muted-foreground">Cancele aqui para liberar o horário. A equipe de {business.name} recebe o aviso na hora.</p>
+                <p className="text-sm text-muted-foreground">Cancele aqui para liberar o horário. {business.name} recebe o aviso na hora.</p>
               </div>
               <Button variant="destructive" className="w-full sm:w-fit" onClick={() => setConfirmCancelOpen(true)}>
                 <CalendarX />

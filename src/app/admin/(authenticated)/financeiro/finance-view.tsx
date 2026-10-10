@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CircleCheck, HandCoins, Receipt, RotateCcw, TicketPercent, Wallet } from "lucide-react";
 
+import { useAdminShell } from "@/components/admin/admin-shell-context";
 import { MethodBreakdown } from "@/components/admin/method-breakdown";
 import { PeriodPicker } from "@/components/admin/period-picker";
 import { EmptyState } from "@/components/empty-state";
@@ -49,6 +50,8 @@ export function FinanceView({
   initialTab: FinanceTab;
 }) {
   const { terms, features } = useVertical();
+  // Plano Solo: todo recebimento é da mesma pessoa; filtro e coluna de profissional não dizem nada.
+  const { solo } = useAdminShell();
   const today = todayInTimeZone(timezone);
   const [preset, setPreset] = useState<PeriodPreset>(initialPreset);
   const [custom, setCustom] = useState(() => resolvePeriod("personalizado", today, initialCustom));
@@ -176,6 +179,7 @@ export function FinanceView({
                 ))}
               </SelectContent>
             </Select>
+            {solo ? null : (
             <Select value={professionalId} onValueChange={(value) => setProfessionalId(value ?? ALL)}>
               <SelectTrigger aria-label={terms.professional.singular} className="w-48">
                 <SelectValue>
@@ -195,6 +199,7 @@ export function FinanceView({
                 ))}
               </SelectContent>
             </Select>
+            )}
           </div>
 
           {payments.error ? (
@@ -220,7 +225,7 @@ export function FinanceView({
                     <TableRow>
                       <TableHead>Recebido em</TableHead>
                       <TableHead>Cliente · serviço</TableHead>
-                      <TableHead>{terms.professional.singular}</TableHead>
+                      {solo ? null : <TableHead>{terms.professional.singular}</TableHead>}
                       <TableHead>Forma</TableHead>
                       <TableHead className="text-right">Valor</TableHead>
                     </TableRow>
@@ -249,7 +254,7 @@ export function FinanceView({
                             {payment.note ? ` · ${payment.note}` : ""}
                           </span>
                         </TableCell>
-                        <TableCell>{payment.professional.name}</TableCell>
+                        {solo ? null : <TableCell>{payment.professional.name}</TableCell>}
                         <TableCell>{payment.amountCents > 0 ? PAYMENT_METHOD_LABELS[payment.method] : "Desconto"}</TableCell>
                         <TableCell className="text-right tabular-nums">
                           {payment.amountCents > 0 ? formatPriceFromCents(payment.amountCents) : "—"}
@@ -276,8 +281,8 @@ export function FinanceView({
                         <span className="block truncate font-medium">{payment.clientName}</span>
                         <span className="block truncate text-caption text-muted-foreground">
                           {formatDate(payment.receivedAt)} ·{" "}
-                          {payment.amountCents > 0 ? PAYMENT_METHOD_LABELS[payment.method] : "Desconto"} ·{" "}
-                          {payment.professional.name}
+                          {payment.amountCents > 0 ? PAYMENT_METHOD_LABELS[payment.method] : "Desconto"}
+                          {solo ? null : ` · ${payment.professional.name}`}
                         </span>
                       </span>
                       <span className="shrink-0 font-semibold tabular-nums">

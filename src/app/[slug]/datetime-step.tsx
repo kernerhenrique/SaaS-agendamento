@@ -171,7 +171,7 @@ export function DatetimeStep({
         <p className="text-sm font-medium first-letter:uppercase">{formatDateLabel(date, timezone)}</p>
         <Button variant="outline" size="sm" onClick={handleFindNextAvailable} disabled={isSearchingNext}>
           {isSearchingNext ? <Loader2 className="animate-spin" /> : <SparklesIcon />}
-          Próximo horário disponível
+          Próximo dia com horário
         </Button>
       </div>
       {notice ? (
@@ -188,7 +188,7 @@ export function DatetimeStep({
       {closedReason ? (
         <p role="status" className="flex items-center gap-2 rounded-lg border bg-muted p-4 text-sm text-muted-foreground">
           <CalendarOff className="size-4 shrink-0" aria-hidden />
-          Fechado neste dia: {closedReason}. Escolha outra data ou use “Próximo horário disponível”.
+          Fechado neste dia: {closedReason}. Escolha outra data ou use “Próximo dia com horário”.
         </p>
       ) : isLoading ? (
         <SlotGridSkeleton />

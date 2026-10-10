@@ -28,7 +28,7 @@ test("plano Solo: reserva em 3 passos (Serviço, Horário, Contato) e Voltar lev
 
   // Reserva completa em 3 passos.
   await page.getByText("Pé e mão", { exact: true }).click();
-  await page.getByRole("button", { name: "Próximo horário disponível" }).click();
+  await page.getByRole("button", { name: "Próximo dia com horário" }).click();
   await page.locator('[data-testid="time-slot"]:not([data-unavailable])').first().click();
   await page.getByLabel("Nome").fill("Cliente Solo E2E");
   await page.getByLabel("WhatsApp").fill(`119${Date.now().toString().slice(-8)}`);
@@ -100,6 +100,7 @@ test("plano Solo: painel sem telas de equipe; o negócio de equipe continua igua
   await page.goto("/admin/financeiro");
   await expect(page.getByRole("tab", { name: "Recebimentos" })).toBeVisible();
   await expect(page.getByRole("tab", { name: "Comissões" })).toHaveCount(0);
+  await expect(page.getByRole("combobox", { name: "Profissional" })).toHaveCount(0);
   await page.goto("/admin/relatorios");
   await expect(page.getByRole("tab", { name: "Faturamento" })).toBeVisible();
   await expect(page.getByRole("tab", { name: "Profissionais" })).toHaveCount(0);

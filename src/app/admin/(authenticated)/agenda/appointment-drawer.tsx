@@ -27,6 +27,7 @@ import { NEXT_STATUS_ACTIONS, STATUS_LABELS, STATUS_TONE } from "@/lib/appointme
 import { localMinutesToUtc, utcToLocalDate, utcToLocalMinutes } from "@/lib/date";
 import { formatPhoneBR } from "@/lib/phone";
 import { minutesToTimeInput, timeInputToMinutes } from "@/lib/weekday";
+import { useAdminShell } from "@/components/admin/admin-shell-context";
 import { BookingTimeNotice, useNow } from "@/components/admin/booking-time-notice";
 import { SeriesDialog } from "@/components/admin/series-dialog";
 import { useBusinessClosures } from "@/components/admin/use-business-closures";
@@ -123,6 +124,7 @@ function DrawerBody({
   onChanged: () => void;
 }) {
   const { terms } = useVertical();
+  const { solo } = useAdminShell();
   const [detail, setDetail] = useState<AppointmentDetail | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -404,8 +406,13 @@ function DrawerBody({
         </section>
 
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-          <dt className="text-muted-foreground">{terms.professional.singular}</dt>
-          <dd className="font-medium">{appointment.professional.name}</dd>
+          {/* Plano Solo: é sempre a mesma pessoa. */}
+          {solo ? null : (
+            <>
+              <dt className="text-muted-foreground">{terms.professional.singular}</dt>
+              <dd className="font-medium">{appointment.professional.name}</dd>
+            </>
+          )}
           <dt className="text-muted-foreground">Duração</dt>
           <dd>{appointment.service.durationMin} min</dd>
           {appointment.notes ? (
@@ -555,6 +562,8 @@ function RescheduleForm({
           <Input id="rs-time" type="time" step={900} value={time} onChange={(e) => setTime(e.target.value)} required />
         </div>
       </div>
+      {/* Só aparece quando há outra pessoa que faz o serviço (no Solo, nunca). */}
+      {eligible.length === 1 && eligible[0].id === currentProfessionalId ? null : (
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="rs-professional">{terms.professional.singular}</Label>
         <Select value={professionalId} onValueChange={(value) => setProfessionalId(value ?? currentProfessionalId)}>
@@ -570,6 +579,7 @@ function RescheduleForm({
           </SelectContent>
         </Select>
       </div>
+      )}
       {slot && selected ? (
         <BookingTimeNotice
           professionalName={selected.name}
@@ -577,6 +587,7 @@ function RescheduleForm({
           isOutsideHours={slot.isOutsideHours}
           workingHours={slot.workingHours}
           closedReason={slot.closedReason}
+          confirmLabel="Remarcar mesmo assim"
         />
       ) : null}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}

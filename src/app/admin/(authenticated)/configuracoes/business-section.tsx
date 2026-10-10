@@ -130,8 +130,15 @@ export function BusinessSection({
         <Label htmlFor="business-type">Tipo de negócio</Label>
         <Input id="business-type" readOnly value={vertical.label} className="text-muted-foreground sm:w-72" aria-describedby="business-type-help" />
         <p id="business-type-help" className="text-caption text-muted-foreground">
-          Definido na contratação: é o que faz o sistema falar &quot;{vertical.terms.professional.plural}&quot; e &quot;
-          {vertical.terms.service.plural}&quot;. Para mudar, fale com o suporte.
+          {soloProfessional ? (
+            <>Definido na contratação: é o que faz o sistema falar &quot;{vertical.terms.service.plural}&quot;.</>
+          ) : (
+            <>
+              Definido na contratação: é o que faz o sistema falar &quot;{vertical.terms.professional.plural}&quot; e &quot;
+              {vertical.terms.service.plural}&quot;.
+            </>
+          )}{" "}
+          Para mudar, fale com o suporte.
         </p>
       </div>
 

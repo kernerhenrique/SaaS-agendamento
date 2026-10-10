@@ -14,7 +14,7 @@ export function buildDateStripDays(minDateISO: string, days: number): string[] {
 /**
  * Faixa horizontal rolável de dias (estilo Fresha), substituindo o calendário
  * de mês inteiro. Não desabilita dias sem vaga (exigiria checar disponibilidade
- * em lote) — o atalho "Próximo horário disponível" resolve isso navegando.
+ * em lote) — o atalho "Próximo dia com horário" resolve isso navegando.
  */
 export function DateStrip({
   minDate,

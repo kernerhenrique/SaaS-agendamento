@@ -189,6 +189,7 @@ Só com `Business.maxProfessionals = 1` (`isSoloPlan`); o layout do painel calcu
 - **Serviços**: sem "Profissionais que realizam" e sem a coluna de profissionais; o servidor liga todo serviço criado ou editado à única pessoa (`professionalIdsFor`).
 - **Início**: o alerta de expediente vazio diz "Seu horário de atendimento está vazio" e leva a Configurações › Horário. Dias fechados aponta para Folgas.
 - **Escondido no Solo**: o cadastro de profissionais inteiro (perfil, desempenho, convite, "Ativo", "Remover": o que importava foi para Configurações e Folgas; desempenho está em Relatórios e Início), a aba Profissionais e o "mais requisitado" dos Relatórios, o gráfico por profissional e o campo de profissional no "Novo agendamento" (a pessoa já vem escolhida).
+- **Também no Solo (auditoria de 2026-10-10)**: Financeiro sem filtro nem coluna de profissional; detalhe do agendamento sem a linha "Profissional"; o aviso de fora do expediente fala com "Você" ("Se for atender mesmo assim"). Valem para os dois planos: o "Remarcar" só pergunta o profissional quando outra pessoa faz o serviço; a agenda do celular esconde a aba quando há uma agenda só; o aviso cita o botão exato do formulário (`confirmLabel`: "Agendar/Remarcar mesmo assim"); o botão da reserva pública se chama "Próximo dia com horário" (ele procura a partir do dia seguinte; o horário mais cedo do dia já tem o selo "Mais próximo").
 - Tudo depende do plano, nunca da contagem: negócio de equipe com uma pessoa só cadastrada continua com o painel de equipe.
 
 ## Equipe: dono + profissionais
@@ -304,7 +305,7 @@ Duas camadas independentes:
 ## Dias fechados (Bloco D)
 
 - **Configurações › Dias fechados** (`closures-section.tsx`): lista com "Reabrir" (modal de confirmação), formulário Data · Até (opcional) · Motivo, e o diálogo **"Adicionar feriados nacionais"** (próximos 12 meses; facultativos desmarcados; os já fechados aparecem desabilitados). Ao fechar, alerta `warning` com os agendamentos já marcados no período, com link para a agenda do dia.
-- **Página pública**: na `DateStrip`, o dia fechado fica `bg-muted` riscado, com o motivo no `title` e no nome acessível; selecionado, mostra "Fechado neste dia: {motivo}" no lugar da grade (o botão "Próximo horário disponível" continua).
+- **Página pública**: na `DateStrip`, o dia fechado fica `bg-muted` riscado, com o motivo no `title` e no nome acessível; selecionado, mostra "Fechado neste dia: {motivo}" no lugar da grade (o botão "Próximo dia com horário" continua).
 - **Agenda**: coluna hachurada (mesmo padrão dos bloqueios) com o selo "Fechado: {motivo}"; o clique continua abrindo o encaixe, que avisa no `BookingTimeNotice` (`closedReason`). Arrastar para o dia abre o modal "Negócio fechado". No celular, aviso no topo da lista.
 - `useBusinessClosures()` (`components/admin/use-business-closures.ts`) carrega os dias fechados para a agenda e o encaixe.
 

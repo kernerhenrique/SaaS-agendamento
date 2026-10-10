@@ -47,7 +47,8 @@ export function AgendaDayList({
         </p>
       ) : null}
       <Tabs defaultValue={professionals[0].id}>
-        <TabsList className="w-full justify-start overflow-x-auto">
+        {/* Uma agenda só (plano Solo, ou o profissional vendo a dele): a aba sozinha não ajuda. */}
+        <TabsList className={professionals.length === 1 ? "hidden" : "w-full justify-start overflow-x-auto"}>
           {professionals.map((professional) => {
             const count = appointments.filter((a) => a.professional.id === professional.id && a.status !== "CANCELLED").length;
             return (
