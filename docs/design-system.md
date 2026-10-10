@@ -108,7 +108,7 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
   - uma coluna no celular, duas a partir de `sm`.
 - **"Concluir" abre "Concluir e receber"** (uma transação no servidor), com "Só concluir" para receber depois.
 - **`MoneyInput`** (`src/components/money-input.tsx`): valor em R$ guardado em centavos inteiros; os dígitos entram pela direita, como em maquininha. O cursor fica sempre no fim (`caretNeedsMove`, `lib/currency.ts`): com ele no meio, "2000" digitado em "0,00" virava R$ 20.000,00. Selecionar tudo continua valendo (digitar substitui).
-- **`PaymentIndicator`**: ícone discreto nos concluídos da agenda (grade e lista) — check = pago, cifrão = falta receber —, com `aria-label`.
+- **`PaymentIndicator`**: ao lado do nome do cliente na agenda (grade e lista do celular), regra em `agendaPaymentStatus` (`payment-rules.ts`). Concluído: check = pago, cifrão = nada recebido, selo "Parcial" (`payment-partial`) = falta uma parte. Ainda por vir: só aparece se já entrou algum valor (sinal = "Parcial", adiantado = check). Cancelado e falta: nada.
 - **Acessibilidade na grade**: só blocos arrastáveis recebem os atributos do dnd-kit. Nos demais, ele marcava `aria-disabled="true"` num botão que continua clicável.
 
 ## Financeiro (Fase 4C)
