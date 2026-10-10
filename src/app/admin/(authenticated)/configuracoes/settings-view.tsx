@@ -3,6 +3,7 @@
 import { CalendarCheck, CalendarOff, Clock, KeyRound, Palette, Store, type LucideIcon } from "lucide-react";
 
 import type { BusinessSettings } from "@/server/modules/business/business.service";
+import type { SoloProfessional } from "@/server/modules/business/solo.service";
 
 import { AccountSection } from "./account-section";
 import { BrandingSection } from "./branding-section";
@@ -24,7 +25,16 @@ const SECTIONS: { id: string; label: string; icon: LucideIcon }[] = [
  * Configurações em seções (padrão Vercel): cada cartão salva sozinho. Índice
  * lateral fixo no desktop; no celular, uma faixa de atalhos rolável no topo.
  */
-export function SettingsView({ business, email }: { business: BusinessSettings | null; email: string }) {
+export function SettingsView({
+  business,
+  soloProfessional,
+  email,
+}: {
+  business: BusinessSettings | null;
+  /** Plano Solo: a pessoa que atende (nome e expediente editados aqui). */
+  soloProfessional: SoloProfessional | null;
+  email: string;
+}) {
   // Sem os dados do negócio (profissional): só a seção Conta.
   const sections = business ? SECTIONS : SECTIONS.filter((section) => section.id === "conta");
   return (
@@ -56,9 +66,9 @@ export function SettingsView({ business, email }: { business: BusinessSettings |
         <div className="flex min-w-0 flex-col gap-6">
           {business ? (
             <>
-              <BusinessSection business={business} />
+              <BusinessSection business={business} soloProfessional={soloProfessional} />
               <BrandingSection business={business} />
-              <HoursSection business={business} />
+              <HoursSection business={business} soloProfessional={soloProfessional} />
               <ClosuresSection timezone={business.timezone} />
               <PoliciesSection business={business} />
             </>

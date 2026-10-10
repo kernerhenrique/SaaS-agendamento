@@ -11,6 +11,7 @@ import { getVertical } from "@/config/vertical";
 import { formatPhoneBR } from "@/lib/phone";
 
 import type { BusinessSettings } from "@/server/modules/business/business.service";
+import type { SoloProfessional } from "@/server/modules/business/solo.service";
 
 import { SettingsCard, useSaveSettings } from "./settings-card";
 
@@ -21,8 +22,15 @@ function useOrigin(): string {
   return useSyncExternalStore(noopSubscribe, () => window.location.origin, () => "");
 }
 
-export function BusinessSection({ business }: { business: BusinessSettings }) {
+export function BusinessSection({
+  business,
+  soloProfessional,
+}: {
+  business: BusinessSettings;
+  soloProfessional: SoloProfessional | null;
+}) {
   const [name, setName] = useState(business.name);
+  const [professionalName, setProfessionalName] = useState(soloProfessional?.name ?? "");
   const [address, setAddress] = useState(business.address ?? "");
   const [whatsapp, setWhatsapp] = useState(business.whatsapp ? formatPhoneBR(business.whatsapp) : "");
   const [instagram, setInstagram] = useState(business.instagramUrl ?? "");
@@ -56,6 +64,7 @@ export function BusinessSection({ business }: { business: BusinessSettings }) {
           address,
           whatsapp,
           instagramUrl: instagram,
+          ...(soloProfessional ? { professionalName } : {}),
         })
       }
     >
@@ -63,6 +72,24 @@ export function BusinessSection({ business }: { business: BusinessSettings }) {
         <Label htmlFor="business-name">Nome do negócio</Label>
         <Input id="business-name" value={name} onChange={(event) => setName(event.target.value)} maxLength={80} required />
       </div>
+
+      {soloProfessional ? (
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="professional-name">Seu nome</Label>
+          <Input
+            id="professional-name"
+            value={professionalName}
+            onChange={(event) => setProfessionalName(event.target.value)}
+            maxLength={80}
+            required
+            aria-describedby="professional-name-help"
+          />
+          <p id="professional-name-help" className="text-caption text-muted-foreground">
+            Aparece para o cliente na reserva, no e-mail de confirmação e nas mensagens de WhatsApp: &quot;com{" "}
+            {professionalName.trim() || "você"}&quot;.
+          </p>
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="business-address">Endereço (opcional)</Label>

@@ -11,8 +11,6 @@ interface AdminShellContextValue {
   publicPath: string;
   /** Plano Solo (limite = 1 profissional): o painel esconde o que é de equipe. */
   solo: boolean;
-  /** No Solo, o cadastro da única pessoa (o "Meu expediente" do menu). */
-  soloProfessionalId: string | null;
   /** Abre o "novo agendamento" de qualquer tela, opcionalmente já preenchido. */
   openNewAppointment: (initial?: NewAppointmentInitial) => void;
   /** Muda a cada agendamento criado — telas que listam agendamentos recarregam ao ver a mudança. */
@@ -31,13 +29,11 @@ export function AdminShellProvider({
   timezone,
   publicPath,
   solo = false,
-  soloProfessionalId = null,
   children,
 }: {
   timezone: string;
   publicPath: string;
   solo?: boolean;
-  soloProfessionalId?: string | null;
   children: ReactNode;
 }) {
   const [newAppointment, setNewAppointment] = useState<{ open: boolean; initial?: NewAppointmentInitial }>({
@@ -67,8 +63,8 @@ export function AdminShellProvider({
   }, []);
 
   const value = useMemo(
-    () => ({ timezone, publicPath, solo, soloProfessionalId, openNewAppointment, appointmentsVersion, openSearch, setContextDate }),
-    [timezone, publicPath, solo, soloProfessionalId, openNewAppointment, appointmentsVersion, openSearch],
+    () => ({ timezone, publicPath, solo, openNewAppointment, appointmentsVersion, openSearch, setContextDate }),
+    [timezone, publicPath, solo, openNewAppointment, appointmentsVersion, openSearch],
   );
 
   return (

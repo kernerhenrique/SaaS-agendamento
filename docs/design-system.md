@@ -183,8 +183,12 @@ Cor de marca do negócio: `AccentColorScope` injeta as variáveis em `:root`, po
 
 Só com `Business.maxProfessionals = 1` (`isSoloPlan`); o layout do painel calcula uma vez e entrega `solo` ao `VerticalProvider` e ao `AdminShellProvider` (`useAdminShell().solo` / `soloProfessionalId`).
 - **Comissão some sozinha**: no Solo, o `VerticalProvider` desliga `features.commissions`, então Financeiro (aba Comissões), Relatórios (coluna e CSV), cadastro e perfil escondem sem regra própria.
-- **Menu**: "Profissionais" vira **"Meu expediente"** (ícone `CalendarClock`), que abre o perfil da pessoa já na aba Dados (`?aba=dados`); `isNavItemActive` ignora a query.
-- **Escondido no Solo**: convite da equipe (`StaffAccessCard`), "Remover cadastro", o interruptor "Ativo" (pausar a única pessoa deixaria a página sem horários; férias = folgas), o "‹ Profissionais" do perfil, a aba Profissionais e o "mais requisitado" dos Relatórios, o gráfico por profissional e o campo de profissional no "Novo agendamento" (a pessoa já vem escolhida).
+- **Menu**: "Profissionais" vira **"Folgas"** (ícone `CalendarOff`, `/admin/folgas`): só o `TimeBlocksManager`, com o título "Folgas e ausências" (sem o nome) e o texto "Feriado ou recesso do negócio?". `/admin/profissionais/*` redireciona para lá (`profissionais/layout.tsx`).
+- **Um horário só** (`solo.service.ts`): Configurações › Horário vira "Seu horário de atendimento", com almoço; o `PUT /api/admin/business/hours` grava o horário da página e o expediente da pessoa na mesma transação (`parseSoloHours`). O cartão parte do expediente, de onde saem os horários livres.
+- **"Seu nome"** no cartão Negócio: o nome de quem atende ("com Ana" na reserva, no e-mail e no WhatsApp).
+- **Serviços**: sem "Profissionais que realizam" e sem a coluna de profissionais; o servidor liga todo serviço criado ou editado à única pessoa (`professionalIdsFor`).
+- **Início**: o alerta de expediente vazio diz "Seu horário de atendimento está vazio" e leva a Configurações › Horário. Dias fechados aponta para Folgas.
+- **Escondido no Solo**: o cadastro de profissionais inteiro (perfil, desempenho, convite, "Ativo", "Remover": o que importava foi para Configurações e Folgas; desempenho está em Relatórios e Início), a aba Profissionais e o "mais requisitado" dos Relatórios, o gráfico por profissional e o campo de profissional no "Novo agendamento" (a pessoa já vem escolhida).
 - Tudo depende do plano, nunca da contagem: negócio de equipe com uma pessoa só cadastrada continua com o painel de equipe.
 
 ## Equipe: dono + profissionais

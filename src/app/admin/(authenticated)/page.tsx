@@ -15,6 +15,7 @@ import { formatDateLabel } from "@/lib/date";
 import { prisma } from "@/server/db/prisma";
 import { can, professionalScope } from "@/server/modules/auth/permissions";
 import { requireAdminSession } from "@/server/modules/auth/session";
+import { isSoloPlan } from "@/server/modules/business/plan-rules";
 import { INACTIVE_CLIENT_DAYS, getDashboard } from "@/server/modules/dashboard/dashboard.service";
 
 import { getProfessionalOptions } from "./agenda/professional-options";
@@ -29,8 +30,10 @@ export default async function InicioPage() {
   const session = await requireAdminSession();
   const business = await prisma.business.findUniqueOrThrow({
     where: { id: session.businessId },
-    select: { timezone: true, businessType: true },
+    select: { timezone: true, businessType: true, maxProfessionals: true },
   });
+  // Plano Solo: o expediente é o horário de Configurações (não há cadastro de equipe).
+  const solo = isSoloPlan(business.maxProfessionals);
   const { terms } = getVertical(business.businessType);
   // Profissional: o Início mostra só os números dele, sem links para as telas do dono.
   const canFinance = can(session.role, "finance.view");
@@ -175,11 +178,17 @@ export default async function InicioPage() {
                 (faltam {formatPriceFromCents(data.alerts.completedPartialPayment.cents)}).
               </Alert>
             ) : null}
-            {data.alerts.professionalsWithoutHours.map((professional) => (
-              <Alert key={professional.id} href={canCatalog ? "/admin/profissionais" : undefined}>
-                <strong>{professional.name}</strong> está sem expediente configurado e não recebe reservas.
-              </Alert>
-            ))}
+            {data.alerts.professionalsWithoutHours.map((professional) =>
+              solo ? (
+                <Alert key={professional.id} href={canCatalog ? "/admin/configuracoes#horario" : undefined}>
+                  Seu horário de atendimento está vazio: a página não oferece nenhum horário.
+                </Alert>
+              ) : (
+                <Alert key={professional.id} href={canCatalog ? "/admin/profissionais" : undefined}>
+                  <strong>{professional.name}</strong> está sem expediente configurado e não recebe reservas.
+                </Alert>
+              ),
+            )}
             {data.alerts.inactiveClients > 0 ? (
               <Alert href="/admin/clientes?filtro=sumidos-60">
                 <strong>{data.alerts.inactiveClients}</strong>{" "}

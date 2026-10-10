@@ -3,7 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { ValidationError } from "@/server/errors";
 import { handleApiError } from "@/server/http";
 import { requirePermission } from "@/server/modules/auth/session";
-import { parseBookingPolicies, parseBranding, parseBusinessProfile } from "@/server/modules/business/business-rules";
+import {
+  parseBookingPolicies,
+  parseBranding,
+  parseBusinessProfile,
+  parseSoloProfessionalName,
+} from "@/server/modules/business/business-rules";
+import { getSoloProfessional, renameSoloProfessional } from "@/server/modules/business/solo.service";
 import {
   getBusinessSettings,
   updateBookingPolicies,
@@ -30,8 +36,15 @@ export async function PATCH(request: NextRequest) {
     if (!body) throw new ValidationError("Corpo da requisição inválido");
 
     switch (body.secao) {
-      case "negocio":
-        return NextResponse.json({ business: await updateBusinessProfile(session.businessId, parseBusinessProfile(body)) });
+      case "negocio": {
+        const profile = parseBusinessProfile(body);
+        // Plano Solo: o mesmo cartão guarda o nome de quem atende ("com Ana" na reserva).
+        const soloProfessional = await getSoloProfessional(session.businessId);
+        const soloName = soloProfessional ? parseSoloProfessionalName(body.professionalName) : null;
+        const business = await updateBusinessProfile(session.businessId, profile);
+        if (soloProfessional && soloName) await renameSoloProfessional(soloProfessional.id, soloName);
+        return NextResponse.json({ business });
+      }
       case "identidade":
         return NextResponse.json({ business: await updateBranding(session.businessId, parseBranding(body)) });
       case "reservas":

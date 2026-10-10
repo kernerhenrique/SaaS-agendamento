@@ -168,3 +168,42 @@ export function parseBusinessHours(value: unknown): BusinessHoursInput[] {
     return { weekday: weekday as Weekday, startMinute, endMinute };
   });
 }
+
+export interface SoloHoursInput extends BusinessHoursInput {
+  breakStartMinute: number | null;
+  breakEndMinute: number | null;
+}
+
+/**
+ * Plano Solo: um horário só, com intervalo. Quem atende sozinho abre quando
+ * atende, então a mesma semana vira o horário da página (sem o intervalo) e o
+ * expediente de onde saem os horários livres (com o intervalo).
+ */
+export function parseSoloHours(value: unknown): SoloHoursInput[] {
+  const hours = parseBusinessHours(value);
+  return hours.map((day, index) => {
+    const entry = ((value as unknown[])[index] ?? {}) as Body;
+    const breakStart = entry.breakStartMinute ?? null;
+    const breakEnd = entry.breakEndMinute ?? null;
+    if (breakStart === null && breakEnd === null) return { ...day, breakStartMinute: null, breakEndMinute: null };
+    if (
+      typeof breakStart !== "number" ||
+      typeof breakEnd !== "number" ||
+      !Number.isInteger(breakStart) ||
+      !Number.isInteger(breakEnd) ||
+      breakStart < day.startMinute ||
+      breakEnd > day.endMinute ||
+      breakStart >= breakEnd
+    ) {
+      throw new ValidationError("O intervalo precisa ficar dentro do horário do dia, com o fim depois do início");
+    }
+    return { ...day, breakStartMinute: breakStart, breakEndMinute: breakEnd };
+  });
+}
+
+/** Plano Solo: o nome de quem atende ("com Ana" no resumo da reserva e no e-mail). */
+export function parseSoloProfessionalName(value: unknown): string {
+  const name = optionalText(value, "Seu nome", TEXT_LIMITS.name);
+  if (!name) throw new ValidationError("Informe o seu nome (aparece na reserva)");
+  return name;
+}

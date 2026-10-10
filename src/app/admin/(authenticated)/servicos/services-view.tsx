@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { ArrowDown, ArrowUp, MoreHorizontal, Pencil, Plus, Scissors, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useAdminShell } from "@/components/admin/admin-shell-context";
 import { EmptyState } from "@/components/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,8 @@ export function ServicesView({
   initialCategories: ServiceCategoryOption[];
 }) {
   const { terms, features } = useVertical();
+  // Plano Solo: a coluna de quem realiza repetiria o mesmo nome em todas as linhas.
+  const { solo } = useAdminShell();
   const [services, setServices] = useState(initialServices);
   const [categories, setCategories] = useState(initialCategories);
   const [editing, setEditing] = useState<ServiceListItem | null>(null);
@@ -222,7 +225,7 @@ export function ServicesView({
                       <TableHead>Nome</TableHead>
                       <TableHead className="w-24">Duração</TableHead>
                       <TableHead className="w-36">Preço</TableHead>
-                      <TableHead className="w-1/4">{terms.professional.plural}</TableHead>
+                      {solo ? null : <TableHead className="w-1/4">{terms.professional.plural}</TableHead>}
                       <TableHead className="w-28">Na página</TableHead>
                       <TableHead className="w-12">
                         <span className="sr-only">Ações</span>
@@ -238,12 +241,17 @@ export function ServicesView({
                           {service.description ? (
                             <span className="block truncate text-caption text-muted-foreground">{service.description}</span>
                           ) : null}
+                          {solo && activeProfessionalNames(service).length === 0 ? (
+                            <span className="block text-caption whitespace-normal text-warning">{NOBODY_LABEL}</span>
+                          ) : null}
                         </TableCell>
                         <TableCell className="tabular-nums">{service.durationMin} min</TableCell>
                         <TableCell className="tabular-nums">{priceLabel(service)}</TableCell>
-                        <TableCell className={activeProfessionalNames(service).length ? "max-w-56 truncate" : "whitespace-normal"}>
-                          {activeProfessionalNames(service).join(", ") || <span className="text-warning">{NOBODY_LABEL}</span>}
-                        </TableCell>
+                        {solo ? null : (
+                          <TableCell className={activeProfessionalNames(service).length ? "max-w-56 truncate" : "whitespace-normal"}>
+                            {activeProfessionalNames(service).join(", ") || <span className="text-warning">{NOBODY_LABEL}</span>}
+                          </TableCell>
+                        )}
                         <TableCell>{visibilitySwitch(service)}</TableCell>
                         <TableCell>{actionsMenu(service)}</TableCell>
                       </TableRow>

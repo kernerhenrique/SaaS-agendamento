@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AlertTriangle, CalendarOff, PartyPopper, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useAdminShell } from "@/components/admin/admin-shell-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -43,6 +44,7 @@ function describeRange(closure: ClosureRange): string {
  * Fechar não cancela nada: os agendamentos já marcados aparecem para remarcar.
  */
 export function ClosuresSection({ timezone }: { timezone: string }) {
+  const { solo } = useAdminShell();
   const [closures, setClosures] = useState<Closure[] | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [startDate, setStartDate] = useState("");
@@ -138,8 +140,18 @@ export function ClosuresSection({ timezone }: { timezone: string }) {
         <CardTitle className="text-section-title">Dias fechados</CardTitle>
         <CardDescription>
           Dias em que o negócio inteiro fecha (feriados, recesso, reforma): a página não oferece horários e a agenda mostra o dia
-          fechado. Agendamentos já marcados não são cancelados: você vê a lista para remarcar. Folga ou férias de uma pessoa só
-          ficam no cadastro dela, em “Folgas e ausências”.
+          fechado. Agendamentos já marcados não são cancelados: você vê a lista para remarcar.{" "}
+          {solo ? (
+            <>
+              Uma folga sua, médico ou férias também podem ir em{" "}
+              <Link href="/admin/folgas" className="font-medium text-primary underline-offset-4 hover:underline">
+                Folgas
+              </Link>
+              .
+            </>
+          ) : (
+            "Folga ou férias de uma pessoa só ficam no cadastro dela, em “Folgas e ausências”."
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-6">

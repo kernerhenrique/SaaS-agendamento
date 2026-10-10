@@ -23,6 +23,7 @@ interface TimeBlockDto {
  * Folgas e ausências de UMA pessoa (folga, médico, férias), num cartão à
  * parte do formulário: "Adicionar" grava na hora, sem o "Salvar" do cadastro.
  * Feriado ou recesso de todos fica em Configurações › Dias fechados.
+ * Sem `professionalName` (plano Solo, página Folgas): o título fica sem o nome.
  */
 export function TimeBlocksManager({
   professionalId,
@@ -30,7 +31,7 @@ export function TimeBlocksManager({
   timezone,
 }: {
   professionalId: string;
-  professionalName: string;
+  professionalName?: string;
   timezone: string;
 }) {
   const [timeBlocks, setTimeBlocks] = useState<TimeBlockDto[] | null>(null);
@@ -113,11 +114,12 @@ export function TimeBlocksManager({
     <section aria-labelledby="time-blocks-title" className="flex max-w-2xl flex-col gap-3 rounded-lg border p-4">
       <div className="flex flex-col gap-1">
         <h2 id="time-blocks-title" className="text-section-title font-semibold">
-          Folgas e ausências de {professionalName}
+          {professionalName ? `Folgas e ausências de ${professionalName}` : "Folgas e ausências"}
         </h2>
         <p className="text-sm text-muted-foreground">
           Folga, médico, férias: nesses dias e horários a agenda fica bloqueada e a página não oferece horário nesse período.
-          Feriado ou recesso de todos?{" "}
+          {" "}
+          {professionalName ? "Feriado ou recesso de todos?" : "Feriado ou recesso do negócio?"}{" "}
           <Link href="/admin/configuracoes#fechados" className="font-medium text-primary underline-offset-4 hover:underline">
             Use Dias fechados
           </Link>

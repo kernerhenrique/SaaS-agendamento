@@ -7,6 +7,8 @@ import {
   parseBusinessHours,
   parseBusinessProfile,
   parseInstagram,
+  parseSoloHours,
+  parseSoloProfessionalName,
 } from "@/server/modules/business/business-rules";
 
 describe("parseBusinessProfile", () => {
@@ -96,5 +98,50 @@ describe("newPasswordProblem", () => {
     expect(newPasswordProblem("senha123", "curta")).toMatch("8 caracteres");
     expect(newPasswordProblem("senha123", "senha123")).toMatch("diferente");
     expect(newPasswordProblem("senha123", "nova-senha-boa")).toBeNull();
+  });
+});
+
+describe("parseSoloHours (plano Solo: horário da página + expediente)", () => {
+  it("aceita o dia com almoço e o dia sem", () => {
+    expect(
+      parseSoloHours([
+        { weekday: "TUESDAY", startMinute: 540, endMinute: 1140, breakStartMinute: 750, breakEndMinute: 810 },
+        { weekday: "SATURDAY", startMinute: 480, endMinute: 840, breakStartMinute: null, breakEndMinute: null },
+      ]),
+    ).toEqual([
+      { weekday: "TUESDAY", startMinute: 540, endMinute: 1140, breakStartMinute: 750, breakEndMinute: 810 },
+      { weekday: "SATURDAY", startMinute: 480, endMinute: 840, breakStartMinute: null, breakEndMinute: null },
+    ]);
+  });
+
+  it("sem os campos de almoço, o dia fica sem almoço", () => {
+    expect(parseSoloHours([{ weekday: "MONDAY", startMinute: 540, endMinute: 1080 }])).toEqual([
+      { weekday: "MONDAY", startMinute: 540, endMinute: 1080, breakStartMinute: null, breakEndMinute: null },
+    ]);
+  });
+
+  it("recusa almoço fora do dia, invertido ou pela metade", () => {
+    const day = { weekday: "MONDAY", startMinute: 540, endMinute: 1080 };
+    expect(() => parseSoloHours([{ ...day, breakStartMinute: 500, breakEndMinute: 600 }])).toThrow(/intervalo/);
+    expect(() => parseSoloHours([{ ...day, breakStartMinute: 780, breakEndMinute: 720 }])).toThrow(/intervalo/);
+    expect(() => parseSoloHours([{ ...day, breakStartMinute: 720, breakEndMinute: null }])).toThrow(/intervalo/);
+  });
+
+  it("mantém as regras do horário comum (dia repetido, fim antes do início)", () => {
+    expect(() =>
+      parseSoloHours([
+        { weekday: "MONDAY", startMinute: 540, endMinute: 1080 },
+        { weekday: "MONDAY", startMinute: 600, endMinute: 1080 },
+      ]),
+    ).toThrow(/uma vez/);
+    expect(() => parseSoloHours([{ weekday: "MONDAY", startMinute: 1080, endMinute: 540 }])).toThrow(/fechamento/);
+  });
+});
+
+describe("parseSoloProfessionalName", () => {
+  it("apara o nome e recusa vazio", () => {
+    expect(parseSoloProfessionalName("  Ana  ")).toBe("Ana");
+    expect(() => parseSoloProfessionalName("   ")).toThrow(/seu nome/i);
+    expect(() => parseSoloProfessionalName(undefined)).toThrow(/seu nome/i);
   });
 });

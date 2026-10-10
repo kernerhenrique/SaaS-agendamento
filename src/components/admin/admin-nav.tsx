@@ -1,10 +1,10 @@
 "use client";
 
 import {
-  CalendarClock,
   BarChart3,
   Briefcase,
   CalendarDays,
+  CalendarOff,
   Contact,
   House,
   MessageCircle,
@@ -52,9 +52,10 @@ const SERVICE_ICONS: Record<ServiceIconKey, LucideIcon> = {
 export function useAdminNav(): AdminNavItem[] {
   const { terms, serviceIcon } = useVertical();
   const access = useAdminAccess();
-  const { solo, soloProfessionalId } = useAdminShell();
+  const { solo } = useAdminShell();
+  // Plano Solo: sem equipe; o que sobra do cadastro é marcar folgas (o horário fica em Configurações).
   const team = solo
-    ? { href: soloProfessionalId ? `/admin/profissionais/${soloProfessionalId}?aba=dados` : "/admin/profissionais", label: "Meu expediente", icon: CalendarClock }
+    ? { href: "/admin/folgas", label: "Folgas", icon: CalendarOff }
     : { href: "/admin/profissionais", label: terms.professional.plural, icon: Users };
   const items: (AdminNavItem & { permission?: Permission })[] = [
     { href: "/admin", label: "Início", icon: House, group: "operacao" },

@@ -160,7 +160,8 @@ describe("mensagem de entrega", () => {
       timezone: "America/Sao_Paulo",
       solo: true,
     });
-    expect(message).toContain("Meu expediente");
+    expect(message).toContain("Configurações › Horário");
+    expect(message).toContain("Folgas");
     expect(message).not.toContain("convite de cada");
   });
 });

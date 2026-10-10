@@ -94,7 +94,7 @@ Para quem quer entrada baixa, normalmente negócio pequeno:
 
 Manicure, esteticista, tatuador ou barbeiro que trabalha sem equipe. O sistema é o mesmo; só o limite muda (`limiteProfissionais: 1`), e com ele a experiência:
 - **Página de reservas em 3 passos**: serviço → data e hora → dados (o cliente não escolhe profissional).
-- **Painel enxuto**: "Profissionais" vira "Meu expediente" (dias, horários e folgas); somem comissões, convite de equipe e a comparação entre profissionais nos Relatórios.
+- **Painel enxuto**: "Profissionais" vira "Folgas" (dias em que não atende); o horário de atendimento é um só, em Configurações, e já gera os horários da página; serviço novo já é da pessoa. Somem comissões, convite de equipe e a comparação entre profissionais nos Relatórios.
 
 | | Solo |
 |---|---|

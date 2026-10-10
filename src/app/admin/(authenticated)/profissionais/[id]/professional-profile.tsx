@@ -87,7 +87,7 @@ export function ProfessionalProfile({
 }) {
   const { terms, features } = useVertical();
   const router = useRouter();
-  const { openNewAppointment, solo } = useAdminShell();
+  const { openNewAppointment } = useAdminShell();
   const [isConfirmingRemove, setIsConfirmingRemove] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
 
@@ -127,16 +127,13 @@ export function ProfessionalProfile({
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
       <div className="flex flex-col gap-3">
-        {/* Plano Solo: não há lista de equipe para voltar (aqui é o "Meu expediente"). */}
-        {solo ? null : (
-          <Link
-            href="/admin/profissionais"
-            className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ChevronLeft className="size-4" />
-            {terms.professional.plural}
-          </Link>
-        )}
+        <Link
+          href="/admin/profissionais"
+          className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ChevronLeft className="size-4" />
+          {terms.professional.plural}
+        </Link>
         <div className="flex flex-wrap items-center gap-4">
           <ProfessionalAvatar
             name={professional.name}
@@ -253,11 +250,8 @@ export function ProfessionalProfile({
 
           <TimeBlocksManager professionalId={professional.id} professionalName={professional.name} timezone={timezone} />
 
-          {/* Plano Solo: sem equipe para convidar. */}
-          {solo ? null : <StaffAccessCard professionalId={professional.id} professionalName={professional.name} />}
+          <StaffAccessCard professionalId={professional.id} professionalName={professional.name} />
 
-          {/* Plano Solo: remover a única pessoa deixaria a página sem nenhum horário. */}
-          {solo ? null : (
           <section className="flex max-w-2xl flex-col gap-2 rounded-lg border border-destructive/30 p-4">
             <h2 className="text-sm font-semibold">Remover cadastro</h2>
             <p className="text-sm text-muted-foreground">
@@ -269,7 +263,6 @@ export function ProfessionalProfile({
               Remover
             </Button>
           </section>
-          )}
         </TabsContent>
       </Tabs>
 

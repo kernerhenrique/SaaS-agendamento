@@ -13,7 +13,7 @@ export interface DeliveryInfo {
   ownerInviteUrl: string;
   ownerInviteExpiresAt: string;
   timezone: string;
-  /** Plano Solo: sem equipe para convidar; o expediente fica em "Meu expediente". */
+  /** Plano Solo: sem equipe para convidar; o horário fica em Configurações e as folgas em "Folgas". */
   solo?: boolean;
 }
 
@@ -30,7 +30,7 @@ export function buildOwnerMessage(info: DeliveryInfo): string {
     info.publicUrl,
     "",
     info.solo
-      ? "Depois de entrar, em Meu expediente você ajusta seus dias, horários e folgas."
+      ? "Depois de entrar, em Configurações › Horário você ajusta seus dias e horários, e em Folgas marca os dias em que não atende."
       : `Depois de entrar, no menu ${professional.plural} você gera o convite de cada ${professional.singular.toLowerCase()} para ele ver a própria agenda.`,
     "Dica: no celular, toque em Mais › Instalar no celular para ter o painel na tela inicial, como um app.",
     `Qualquer dúvida, é só me chamar. Equipe ${BRAND.name}`,

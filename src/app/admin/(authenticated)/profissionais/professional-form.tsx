@@ -11,7 +11,6 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { lowerTerm } from "@/config/vertical";
 import { useVertical } from "@/config/vertical-context";
-import { useAdminShell } from "@/components/admin/admin-shell-context";
 import { PROFESSIONAL_COLORS } from "@/lib/professional-colors";
 import { cn } from "cn";
 
@@ -41,7 +40,6 @@ export function ProfessionalForm({
   onSaved: (saved: { id: string }) => void | Promise<void>;
 }) {
   const { terms, features } = useVertical();
-  const { solo } = useAdminShell();
   const isEditing = Boolean(professional);
   const [name, setName] = useState(professional?.name ?? "");
   const [specialty, setSpecialty] = useState(professional?.specialty ?? "");
@@ -210,8 +208,7 @@ export function ProfessionalForm({
             </p>
           </div>
         ) : null}
-        {/* Plano Solo: pausar a única pessoa deixaria a página sem horários (para férias, use as folgas). */}
-        <div className={solo ? "hidden" : "flex items-start justify-between gap-4 rounded-lg border p-3"}>
+        <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
           <div className="flex flex-col gap-0.5">
             <Label htmlFor="active">Ativo</Label>
             <p className="text-caption text-muted-foreground">

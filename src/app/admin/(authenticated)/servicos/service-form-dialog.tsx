@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 
+import { useAdminShell } from "@/components/admin/admin-shell-context";
 import { MoneyInput } from "@/components/money-input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -47,6 +48,7 @@ export function ServiceFormDialog({
   onOpenChange?: (open: boolean) => void;
 }) {
   const { terms } = useVertical();
+  const { solo } = useAdminShell();
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
   const setOpen = onOpenChange ?? setInternalOpen;
@@ -58,7 +60,9 @@ export function ServiceFormDialog({
         <DialogHeader>
           <DialogTitle>{service ? editLabel(terms.service) : newLabel(terms.service)}</DialogTitle>
           <DialogDescription>
-            Nome, categoria, duração, preço e {lowerTerm(terms.professional.plural)} que realizam.
+            {solo
+              ? "Nome, categoria, duração e preço."
+              : `Nome, categoria, duração, preço e ${lowerTerm(terms.professional.plural)} que realizam.`}
           </DialogDescription>
         </DialogHeader>
         {/* Só monta o formulário enquanto o diálogo está aberto: cada
@@ -95,6 +99,7 @@ function ServiceFormFields({
   onClose: () => void;
 }) {
   const { terms, features } = useVertical();
+  const { solo } = useAdminShell();
   const isEditing = Boolean(service);
   const [name, setName] = useState(service?.name ?? "");
   const [description, setDescription] = useState(service?.description ?? "");
@@ -273,6 +278,8 @@ function ServiceFormFields({
         </div>
       </section>
 
+      {/* Plano Solo: todo serviço é da única pessoa (o servidor garante). */}
+      {solo ? null : (
       <section className="flex flex-col gap-3">
         <h3 className="text-sm font-semibold">{terms.professional.plural} que realizam</h3>
         <div className="flex flex-col gap-2">
@@ -287,6 +294,7 @@ function ServiceFormFields({
           ))}
         </div>
       </section>
+      )}
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 

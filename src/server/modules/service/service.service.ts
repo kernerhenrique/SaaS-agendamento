@@ -1,6 +1,7 @@
 import { ServicePriceType } from "@/generated/prisma/enums";
 import { prisma } from "@/server/db/prisma";
 import { NotFoundError, ValidationError } from "@/server/errors";
+import { getSoloProfessional } from "@/server/modules/business/solo.service";
 
 import { moveWithinCategory, type MoveDirection } from "./service-order";
 
@@ -28,6 +29,15 @@ function validateServiceInput(input: ServiceInput): void {
 }
 
 /**
+ * Plano Solo: todo serviço é da única pessoa, venha o que vier da tela. Sem isso,
+ * um serviço novo nasceria sem ninguém e ficaria fora da página de reservas.
+ */
+async function professionalIdsFor(businessId: string, professionalIds: string[]): Promise<string[]> {
+  const soloProfessional = await getSoloProfessional(businessId);
+  return soloProfessional ? [soloProfessional.id] : professionalIds;
+}
+
+/**
  * Ordem única usada no painel e na página pública: categoria (pela ordem da
  * categoria; sem categoria por último), depois a posição escolhida pelo dono.
  */
@@ -49,6 +59,7 @@ export async function createService(businessId: string, input: ServiceInput) {
   validateServiceInput(input);
   // Novo serviço entra no fim da lista.
   const last = await prisma.service.aggregate({ where: { businessId, deletedAt: null }, _max: { position: true } });
+  const professionalIds = await professionalIdsFor(businessId, input.professionalIds);
 
   return prisma.service.create({
     data: {
@@ -61,7 +72,7 @@ export async function createService(businessId: string, input: ServiceInput) {
       priceType: input.priceType ?? ServicePriceType.FIXED,
       categoryId: input.categoryId ?? null,
       professionalServices: {
-        create: input.professionalIds.map((professionalId) => ({ professionalId })),
+        create: professionalIds.map((professionalId) => ({ professionalId })),
       },
     },
     include: { professionalServices: true, category: true },
@@ -73,6 +84,7 @@ export async function updateService(businessId: string, id: string, input: Servi
 
   const existing = await prisma.service.findFirst({ where: { id, businessId, deletedAt: null } });
   if (!existing) throw new NotFoundError("Cadastro não encontrado");
+  const professionalIds = await professionalIdsFor(businessId, input.professionalIds);
 
   return prisma.$transaction(async (tx) => {
     await tx.professionalService.deleteMany({ where: { serviceId: id } });
@@ -87,7 +99,7 @@ export async function updateService(businessId: string, id: string, input: Servi
         priceType: input.priceType ?? ServicePriceType.FIXED,
         categoryId: input.categoryId ?? null,
         professionalServices: {
-          create: input.professionalIds.map((professionalId) => ({ professionalId })),
+          create: professionalIds.map((professionalId) => ({ professionalId })),
         },
       },
       include: { professionalServices: true, category: true },

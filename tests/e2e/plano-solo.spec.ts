@@ -52,16 +52,49 @@ test("plano Solo: painel sem telas de equipe; o negócio de equipe continua igua
   await page.getByRole("button", { name: "Criar acesso e entrar" }).click();
   await expect(page).toHaveURL(/\/admin$/);
 
-  // Menu: "Meu expediente" no lugar de "Profissionais", direto nos dados da Ana.
+  // Menu: "Folgas" no lugar de "Profissionais"; a página tem só as folgas, sem o nome.
   const nav = page.getByRole("navigation").first();
   await expect(nav.getByRole("link", { name: "Profissionais" })).toHaveCount(0);
-  await nav.getByRole("link", { name: "Meu expediente" }).click();
-  await expect(page.getByRole("tab", { name: "Dados" })).toHaveAttribute("aria-selected", "true");
+  await nav.getByRole("link", { name: "Folgas" }).click();
+  await expect(page.getByRole("heading", { name: "Folgas", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Folgas e ausências", exact: true })).toBeVisible();
   await expect(page.getByText("Acesso ao painel")).toHaveCount(0);
-  await expect(page.getByText("Remover cadastro")).toHaveCount(0);
-  await expect(page.getByText(/Comissão/)).toHaveCount(0);
-  await expect(page.getByRole("switch", { name: "Ativo" })).toBeHidden();
-  await expect(page.getByRole("link", { name: "Profissionais" })).toHaveCount(0);
+  // O cadastro de equipe não existe no Solo: endereço antigo cai nas folgas.
+  await page.goto("/admin/profissionais");
+  await expect(page).toHaveURL(/\/admin\/folgas$/);
+
+  // Configurações: o nome de quem atende e um horário só, com almoço (vira o expediente).
+  await page.goto("/admin/configuracoes");
+  const business = page.locator("#negocio");
+  await business.getByLabel("Seu nome").fill("Ana Paula");
+  const savedBusiness = page.waitForResponse((r) => r.url().endsWith("/api/admin/business") && r.request().method() === "PATCH");
+  await business.getByRole("button", { name: "Salvar" }).click();
+  expect((await savedBusiness).ok()).toBe(true);
+
+  const hours = page.locator("#horario");
+  await expect(hours.getByText("Seu horário de atendimento")).toBeVisible();
+  await hours.getByRole("checkbox", { name: "Almoço" }).first().click();
+  const savedHours = page.waitForResponse((r) => r.url().endsWith("/api/admin/business/hours") && r.request().method() === "PUT");
+  await hours.getByRole("button", { name: "Salvar" }).click();
+  expect((await savedHours).ok()).toBe(true);
+  await page.reload();
+  // Voltou marcado: o almoço foi gravado no expediente (é dele que o cartão parte).
+  await expect(page.locator("#horario").getByRole("checkbox", { name: "Almoço" }).first()).toBeChecked();
+  await expect(page.locator("#horario").getByText("08:00 às 20:00").first()).toBeVisible();
+
+  // Serviços: sem "quem realiza"; o serviço novo já é da pessoa e aparece na página.
+  await page.goto("/admin/servicos");
+  await page.getByRole("button", { name: /Novo serviço/ }).click();
+  const serviceDialog = page.getByRole("dialog");
+  await expect(serviceDialog.getByText(/que realizam/)).toHaveCount(0);
+  await serviceDialog.getByLabel("Nome", { exact: true }).fill("Esmaltação");
+  await serviceDialog.getByLabel("Preço", { exact: true }).pressSequentially("3000");
+  await serviceDialog.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByText("Esmaltação").first()).toBeVisible();
+  await expect(page.getByText(/Ninguém realiza/)).toHaveCount(0);
+  await page.goto(`/${slug}`);
+  await page.getByText("Esmaltação", { exact: true }).click();
+  await expect(page.locator("div.sticky").getByText("Ana Paula")).toBeVisible();
 
   // Financeiro sem comissões; relatórios sem a aba de profissionais nem "mais requisitado".
   await page.goto("/admin/financeiro");

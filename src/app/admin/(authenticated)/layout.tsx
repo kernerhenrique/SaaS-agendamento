@@ -32,24 +32,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const roleLabel = session.role === "OWNER" ? "Dono" : getVertical(business.businessType).terms.professional.singular;
   // Plano Solo: depende do limite do plano, nunca da contagem (equipe com uma pessoa continua equipe).
   const solo = isSoloPlan(business.maxProfessionals);
-  const soloProfessional = solo
-    ? await prisma.professional.findFirst({
-        where: { businessId: business.id, deletedAt: null },
-        orderBy: [{ active: "desc" }, { createdAt: "asc" }],
-        select: { id: true },
-      })
-    : null;
 
   return (
     <VerticalProvider verticalKey={business.businessType} solo={solo}>
       <AdminAccessProvider role={session.role} professionalId={session.professionalId}>
         <AccentColorScope accentColor={business.accentColor} className="flex flex-1">
-          <AdminShellProvider
-            timezone={business.timezone}
-            publicPath={`/${business.slug}`}
-            solo={solo}
-            soloProfessionalId={soloProfessional?.id ?? null}
-          >
+          <AdminShellProvider timezone={business.timezone} publicPath={`/${business.slug}`} solo={solo}>
             <AdminSidebar business={businessBadge} defaultCollapsed={sidebarCollapsed} />
             {/* No celular: espaço para a navegação inferior fixa (altura + área segura da barra de gestos). */}
             <div className="flex min-w-0 flex-1 flex-col pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pb-0">
