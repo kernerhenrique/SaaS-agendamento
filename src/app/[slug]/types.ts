@@ -19,6 +19,8 @@ export interface BusinessInfo {
   cancellationDeadlineHours: number;
   /** Dias fechados de hoje em diante (feriados, férias): riscados na faixa de datas. */
   closures: { startDate: string; endDate: string; reason: string }[];
+  /** Plano Solo: a reserva tem 3 passos (sem a escolha do profissional). */
+  solo: boolean;
 }
 
 export interface ServiceOption {

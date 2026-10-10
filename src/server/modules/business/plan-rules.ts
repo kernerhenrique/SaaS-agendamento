@@ -21,6 +21,15 @@ export function professionalLimitMessage(maxProfessionals: number): string {
   return `Seu plano permite ${plano}. Para ter mais, fale com a Aprazzo pelo WhatsApp ${formatPhoneBR(LEGAL.contactWhatsapp)} e mude de plano. Também dá para pausar alguém (desligar "Ativo") para ativar outra pessoa.`;
 }
 
+/**
+ * Plano Solo (limite = 1 profissional): a página de reservas pula a escolha do profissional
+ * e o painel esconde o que é de equipe. Depende só do PLANO, nunca da contagem: um negócio
+ * de equipe com uma pessoa só cadastrada continua exatamente como era.
+ */
+export function isSoloPlan(maxProfessionals: number | null): boolean {
+  return maxProfessionals === 1;
+}
+
 /** Valida o limite vindo do arquivo do cliente ou do comando de suporte. */
 export function parseProfessionalLimit(value: unknown): number | null {
   if (value === null || value === undefined || value === "" || value === "sem") return null;

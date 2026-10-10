@@ -64,14 +64,24 @@ export function BookingFlow({
     null,
   );
 
+  // Plano Solo: quem atende já está decidido, então a escolha do profissional some
+  // (Serviço → Horário → Contato). Só vale com uma pessoa que faz o serviço.
+  const soloProfessionalFor = (serviceId: string) => {
+    if (!business.solo) return null;
+    const eligible = professionals.filter((professional) => professional.serviceIds.includes(serviceId));
+    return eligible.length === 1 ? eligible[0].id : null;
+  };
+  const skipsProfessional = selection.service != null && soloProfessionalFor(selection.service.id) != null;
+
   function goBack() {
-    setStep((current) => Math.max(1, current - 1));
+    setStep((current) => (current === 3 && skipsProfessional ? 1 : Math.max(1, current - 1)));
   }
 
   function handleSelectService(service: ServiceOption) {
-    setSelection((prev) => ({ ...prev, service, professionalId: null, slot: null }));
+    const soloProfessional = soloProfessionalFor(service.id);
+    setSelection((prev) => ({ ...prev, service, professionalId: soloProfessional, slot: null }));
     setSlotNotice(null);
-    setStep(2);
+    setStep(soloProfessional ? 3 : 2);
   }
 
   function handleSelectProfessional(professionalId: string | typeof NO_PREFERENCE) {
@@ -192,10 +202,14 @@ export function BookingFlow({
             {step === 1 ? <BusinessDetails business={business} /> : null}
             {step <= 4 ? (
               <div className="mt-4">
-                <Stepper
-                  steps={[terms.service.singular, terms.professional.singular, "Horário", "Contato"]}
-                  currentStep={step}
-                />
+                {business.solo ? (
+                  <Stepper steps={[terms.service.singular, "Horário", "Contato"]} currentStep={step <= 2 ? 1 : step - 1} />
+                ) : (
+                  <Stepper
+                    steps={[terms.service.singular, terms.professional.singular, "Horário", "Contato"]}
+                    currentStep={step}
+                  />
+                )}
               </div>
             ) : null}
           </div>

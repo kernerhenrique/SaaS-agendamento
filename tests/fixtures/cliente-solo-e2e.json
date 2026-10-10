@@ -1,0 +1,13 @@
+{
+  "nome": "Studio Ana Unhas",
+  "slug": "studio-ana-unhas",
+  "nicho": "generic",
+  "whatsapp": "11966665555",
+  "limiteProfissionais": 1,
+  "horarioFuncionamento": [{ "dias": "seg-sab", "horario": "08:00-20:00" }],
+  "servicos": [
+    { "nome": "Manicure", "categoria": "Unhas", "duracao": 40, "preco": 45 },
+    { "nome": "Pé e mão", "categoria": "Unhas", "duracao": 80, "preco": 80 }
+  ],
+  "profissionais": [{ "nome": "Ana", "especialidade": "Unhas em gel" }]
+}

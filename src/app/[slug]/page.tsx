@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { DemoBar } from "@/components/demo-bar";
 import { prisma } from "@/server/db/prisma";
 import { listUpcomingClosures } from "@/server/modules/business/closure.service";
+import { isSoloPlan } from "@/server/modules/business/plan-rules";
 import { SERVICE_ORDER_BY } from "@/server/modules/service/service.service";
 
 import { BookingFlow } from "./booking-flow";
@@ -100,6 +101,7 @@ export default async function PublicBookingPage({
           maxBookingWindowDays: business.maxBookingWindowDays,
           cancellationDeadlineHours: business.cancellationDeadlineHours,
           closures: closures.map(({ startDate, endDate, reason }) => ({ startDate, endDate, reason })),
+          solo: isSoloPlan(business.maxProfessionals),
         }}
         services={bookableServices.map((service) => ({
           id: service.id,

@@ -30,32 +30,35 @@ async function withDb<T>(work: (client: PgClient) => Promise<T>): Promise<T> {
 }
 
 /**
- * Leva o agendamento para ontem, num quarto de hora livre (a exclusion
- * constraint recusa sobreposição; tenta outro horário). Devolve o dia (YYYY-MM-DD).
+ * Leva o agendamento para o passado (ontem; se ontem já estiver cheio de testes
+ * anteriores, os dias antes dele), num quarto de hora livre: a exclusion constraint
+ * recusa sobreposição. Devolve o dia (YYYY-MM-DD) e o início.
  */
 export async function moveToPast(appointmentId: string): Promise<{ date: string; startAt: string }> {
   return withDb(async (client) => {
     const { rows } = await client.query(`SELECT "startAt", "endAt" FROM "Appointment" WHERE id = $1`, [appointmentId]);
     if (rows.length === 0) throw new Error(`Agendamento ${appointmentId} não encontrado`);
     const durationMs = (rows[0].endAt as Date).getTime() - (rows[0].startAt as Date).getTime();
-    const date = localDateInDays(-1);
-    const firstQuarter = Math.floor(Math.random() * 64);
-    for (let attempt = 0; attempt < 64; attempt++) {
-      const minute = 6 * 60 + 15 * ((firstQuarter + attempt) % 64);
-      const hhmm = `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
-      const startAt = new Date(`${date}T${hhmm}:00-03:00`);
-      try {
-        await client.query(`UPDATE "Appointment" SET "startAt" = $1, "endAt" = $2 WHERE id = $3`, [
-          startAt,
-          new Date(startAt.getTime() + durationMs),
-          appointmentId,
-        ]);
-        return { date, startAt: startAt.toISOString() };
-      } catch (error) {
-        if (!String((error as Error).message).includes("no_overlapping_appointments")) throw error;
+    for (let daysAgo = 1; daysAgo <= 14; daysAgo++) {
+      const date = localDateInDays(-daysAgo);
+      const firstQuarter = Math.floor(Math.random() * 64);
+      for (let attempt = 0; attempt < 64; attempt++) {
+        const minute = 6 * 60 + 15 * ((firstQuarter + attempt) % 64);
+        const hhmm = `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+        const startAt = new Date(`${date}T${hhmm}:00-03:00`);
+        try {
+          await client.query(`UPDATE "Appointment" SET "startAt" = $1, "endAt" = $2 WHERE id = $3`, [
+            startAt,
+            new Date(startAt.getTime() + durationMs),
+            appointmentId,
+          ]);
+          return { date, startAt: startAt.toISOString() };
+        } catch (error) {
+          if (!String((error as Error).message).includes("no_overlapping_appointments")) throw error;
+        }
       }
     }
-    throw new Error("Nenhum horário livre ontem para o teste");
+    throw new Error("Nenhum horário livre nos últimos 14 dias para o teste");
   });
 }
 
