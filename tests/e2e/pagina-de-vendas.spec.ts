@@ -35,6 +35,11 @@ test("página de vendas: WhatsApp, demonstração, abas pelo teclado, dúvidas e
   await page.getByRole("radio", { name: "Clínica ou consultório" }).click();
   await expect(page.getByText("Clínica Exemplo")).toBeVisible();
 
+  // Plano Solo: seção própria, no menu do topo, com WhatsApp que já diz o interesse.
+  await expect(page.getByRole("heading", { name: "Trabalha sozinho? A Aprazzo também é para você." })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Quero conhecer o plano Solo" })).toHaveAttribute("href", /plano%20Solo/);
+  await expect(page.getByRole("navigation").getByRole("link", { name: "Plano Solo" }).first()).toHaveAttribute("href", "#solo");
+
   // Dúvidas: abre a resposta.
   await page.getByText("Preciso configurar tudo sozinho?").click();
   await expect(page.getByText(/Nós configuramos seus serviços/)).toBeVisible();

@@ -10,6 +10,7 @@ import { LoginLink, WhatsAppCta } from "./landing-links";
 const NAV = [
   { href: "#como-funciona", label: "Como funciona" },
   { href: "#recursos", label: "Recursos" },
+  { href: "#solo", label: "Plano Solo" },
   { href: "#duvidas", label: "Dúvidas" },
 ] as const;
 

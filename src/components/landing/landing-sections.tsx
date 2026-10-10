@@ -116,7 +116,16 @@ const FAQ: { q: string; a: ReactNode }[] = [
   },
   {
     q: "Dá para usar com mais de um profissional? E sozinho?",
-    a: "Os dois. Cada profissional tem a sua agenda e, se você quiser, o próprio acesso, vendo só os atendimentos e clientes dele; financeiro e relatórios ficam com você. Quem atende sozinho tem um plano próprio, mais simples: o cliente reserva em 3 passos, sem escolher profissional, e o painel não mostra telas de equipe.",
+    a: (
+      <>
+        Os dois. Cada profissional tem a sua agenda e, se você quiser, o próprio acesso, vendo só os atendimentos e clientes
+        dele; financeiro e relatórios ficam com você. Quem atende sozinho tem o{" "}
+        <a href="#solo" className="font-semibold text-primary underline underline-offset-3">
+          plano Solo
+        </a>
+        , mais simples: o cliente agenda em 3 passos, sem escolher profissional, e o painel não mostra telas de equipe.
+      </>
+    ),
   },
   {
     q: "A Aprazzo recebe pagamentos dos meus clientes?",

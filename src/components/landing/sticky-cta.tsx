@@ -8,16 +8,17 @@ import { WhatsAppCta } from "./landing-links";
 
 /**
  * Botão fixo no rodapé do celular. Aparece depois que o botão do hero sai da tela e
- * some durante a demonstração e a chamada final (nunca cobre os controles delas).
+ * some durante a demonstração, o plano Solo e a chamada final (nunca cobre os controles
+ * delas nem fica ao lado de outro botão de WhatsApp).
  */
 export function StickyCta() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    const seen: Record<string, boolean> = { "hero-cta": true, "como-funciona": false, final: false };
+    const seen: Record<string, boolean> = { "hero-cta": true, "como-funciona": false, solo: false, final: false };
     const observer = new IntersectionObserver((entries) => {
       for (const entry of entries) seen[entry.target.id] = entry.isIntersecting;
-      setShow(!seen["hero-cta"] && !seen["como-funciona"] && !seen.final);
+      setShow(!seen["hero-cta"] && !seen["como-funciona"] && !seen.solo && !seen.final);
     });
     for (const id of Object.keys(seen)) {
       const el = document.getElementById(id);

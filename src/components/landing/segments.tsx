@@ -61,7 +61,7 @@ const SEGMENTS: Record<SegmentId, { chip: string; name: string; initial: string;
     chip: "Outro negócio",
     name: "Seu Negócio",
     initial: "S",
-    line: "Aulas, personal, pet shop, estética: se o cliente marca horário, a Aprazzo organiza. Também para quem atende sozinho.",
+    line: "Aulas, personal, pet shop, estética: se o cliente marca horário, a Aprazzo organiza. E quem atende sozinho tem o plano Solo.",
     services: [
       ["Seu serviço principal", "1 h", "R$ —"],
       ["Outro serviço", "30 min", "R$ —"],

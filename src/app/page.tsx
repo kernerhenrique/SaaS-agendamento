@@ -6,6 +6,7 @@ import { Hero } from "@/components/landing/hero";
 import { LandingHeader } from "@/components/landing/landing-header";
 import { Faq, FinalCta, HowToStart, LandingFooter, SectionHeading } from "@/components/landing/landing-sections";
 import { Segments } from "@/components/landing/segments";
+import { SoloPlan } from "@/components/landing/solo-plan";
 import { StickyCta } from "@/components/landing/sticky-cta";
 
 export const metadata: Metadata = {
@@ -59,6 +60,8 @@ export default function Home() {
         <section aria-labelledby="h-seg" className="bg-card py-18 lg:py-28">
           <Segments />
         </section>
+
+        <SoloPlan />
 
         <HowToStart />
         <Faq />

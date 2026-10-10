@@ -7,11 +7,13 @@ import { LEGAL } from "@/config/brand";
 export const LANDING = {
   whatsappNumber: `55${LEGAL.contactWhatsapp}`,
   whatsappMessage: "Olá! Vi o site e quero conhecer a Aprazzo.",
+  /** Botão da seção do plano Solo: a conversa já chega dizendo o interesse. */
+  whatsappMessageSolo: "Olá! Vi o site e quero conhecer o plano Solo da Aprazzo.",
   loginPath: "/admin/login",
 } as const;
 
-export function salesWhatsAppUrl(): string {
-  return `https://wa.me/${LANDING.whatsappNumber}?text=${encodeURIComponent(LANDING.whatsappMessage)}`;
+export function salesWhatsAppUrl(message: string = LANDING.whatsappMessage): string {
+  return `https://wa.me/${LANDING.whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
 
 declare global {

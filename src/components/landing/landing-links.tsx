@@ -18,6 +18,7 @@ export function WhatsAppCta({
   children = "Conhecer a Aprazzo pelo WhatsApp",
   icon = true,
   tabIndex,
+  message,
 }: {
   section: string;
   variant?: "primary" | "light";
@@ -26,10 +27,12 @@ export function WhatsAppCta({
   children?: ReactNode;
   icon?: boolean;
   tabIndex?: number;
+  /** Texto que já vem escrito na conversa (padrão: "quero conhecer a Aprazzo"). */
+  message?: string;
 }) {
   return (
     <a
-      href={salesWhatsAppUrl()}
+      href={salesWhatsAppUrl(message)}
       target="_blank"
       rel="noopener noreferrer"
       tabIndex={tabIndex}
