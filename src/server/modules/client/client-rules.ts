@@ -143,3 +143,23 @@ export function normalizeTags(tags: string[]): string[] {
   }
   return result;
 }
+
+const comparableName = (name: string) =>
+  name
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+
+/**
+ * Reserva pela página com um telefone já cadastrado: o cadastro mantém o nome
+ * (ex.: a mãe reserva para o filho com o próprio celular). Se o nome digitado for
+ * outro, ele vai como observação do agendamento; maiúsculas, acentos e espaços
+ * não contam como nome diferente.
+ */
+export function bookedAsNote(existingName: string, typedName: string): string | null {
+  const typed = typedName.trim().replace(/\s+/g, " ");
+  if (!typed || comparableName(existingName) === comparableName(typed)) return null;
+  return `Reservado como: ${typed}`;
+}

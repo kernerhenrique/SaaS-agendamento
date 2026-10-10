@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
       throw new ValidationError("client.name e client.phone são obrigatórios");
     }
 
+    const typedName = client.name.trim();
     const appointment = await createPublicAppointment({
       businessId,
       professionalId,
@@ -72,7 +73,8 @@ export async function POST(request: NextRequest) {
         try {
           await sendAppointmentConfirmationEmail({
             businessId,
-            clientName: appointment.client.name,
+            // Quem lê é quem reservou: o nome digitado agora (o cadastro pode ser de outra pessoa da família).
+            clientName: typedName,
             clientEmail: email,
             businessName: appointment.business.name,
             businessType: appointment.business.businessType,

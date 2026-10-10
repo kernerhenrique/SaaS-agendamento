@@ -1,5 +1,6 @@
 import { AppointmentStatus, type Prisma } from "@/generated/prisma/client";
 import { normalizePhoneBR } from "@/lib/phone";
+import { bookedAsNote } from "@/server/modules/client/client-rules";
 import { prisma } from "@/server/db/prisma";
 import { checkAdminBookingTime } from "./admin-booking-rules";
 import { assertSlotAvailable, SLOT_UNAVAILABLE_CODE } from "./availability";
@@ -97,6 +98,12 @@ export interface InsertAppointmentParams {
    * colega e para o dono).
    */
   keepExistingClientName?: boolean;
+  /**
+   * Reserva pela página pública: telefone já cadastrado mantém nome e e-mail do
+   * cadastro (o e-mail só entra se ainda não houver um). Nome diferente vira a
+   * observação "Reservado como: …".
+   */
+  publicBooking?: boolean;
 }
 
 export const MANAGE_TOKEN_TTL_DAYS_AFTER_APPOINTMENT = 30;
@@ -108,7 +115,8 @@ export const MANAGE_TOKEN_TTL_DAYS_AFTER_APPOINTMENT = 30;
  * exclusion constraint do Postgres rejeita a segunda gravação.
  */
 async function insertAppointment(params: InsertAppointmentParams) {
-  const { businessId, professionalId, serviceId, startAt, client, notes, createdByUserId, keepExistingClientName } = params;
+  const { businessId, professionalId, serviceId, startAt, client, createdByUserId, keepExistingClientName, publicBooking } = params;
+  let { notes } = params;
 
   const [professional, service] = await Promise.all([
     prisma.professional.findFirst({
@@ -129,11 +137,26 @@ async function insertAppointment(params: InsertAppointmentParams) {
     endAt.getTime() + MANAGE_TOKEN_TTL_DAYS_AFTER_APPOINTMENT * 24 * 60 * 60 * 1000,
   );
 
-  const clientRecord = await prisma.client.upsert({
-    where: { businessId_phone: { businessId, phone } },
-    update: keepExistingClientName ? {} : { name: client.name, email: client.email },
-    create: { businessId, name: client.name, phone, email: client.email },
-  });
+  let clientRecord;
+  if (publicBooking) {
+    const existing = await prisma.client.findUnique({ where: { businessId_phone: { businessId, phone } } });
+    if (existing) {
+      clientRecord =
+        !existing.email && client.email
+          ? await prisma.client.update({ where: { id: existing.id }, data: { email: client.email } })
+          : existing;
+      const bookedAs = bookedAsNote(existing.name, client.name);
+      if (bookedAs) notes = notes ? [bookedAs, notes].join("\n") : bookedAs;
+    } else {
+      clientRecord = await prisma.client.create({ data: { businessId, name: client.name, phone, email: client.email } });
+    }
+  } else {
+    clientRecord = await prisma.client.upsert({
+      where: { businessId_phone: { businessId, phone } },
+      update: keepExistingClientName ? {} : { name: client.name, email: client.email },
+      create: { businessId, name: client.name, phone, email: client.email },
+    });
+  }
 
   try {
     return await prisma.appointment.create({
@@ -242,7 +265,7 @@ export async function createPublicAppointment(params: InsertAppointmentParams) {
     professionalId: params.professionalId,
     startAt: params.startAt,
   });
-  return insertAppointment(params);
+  return insertAppointment({ ...params, publicBooking: true });
 }
 
 export async function updateAppointmentStatus(

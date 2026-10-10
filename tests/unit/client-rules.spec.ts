@@ -113,3 +113,14 @@ describe("normalizeTags", () => {
     expect(normalizeTags(["x".repeat(50)])[0]).toHaveLength(30);
   });
 });
+
+describe("bookedAsNote (reserva pela página com telefone já cadastrado)", () => {
+  it("mesmo nome (maiúsculas, acentos e espaços não contam): sem observação", async () => {
+    const { bookedAsNote } = await import("@/server/modules/client/client-rules");
+    expect(bookedAsNote("Maria José", "  maria   jose ")).toBeNull();
+  });
+  it("outro nome: vira a observação, com o nome como foi digitado", async () => {
+    const { bookedAsNote } = await import("@/server/modules/client/client-rules");
+    expect(bookedAsNote("Maria José", " Pedrinho  Silva ")).toBe("Reservado como: Pedrinho Silva");
+  });
+});
