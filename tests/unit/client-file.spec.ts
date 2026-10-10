@@ -149,4 +149,18 @@ describe("mensagem de entrega", () => {
     expect(message).toContain("menu Especialistas");
     expect(message).toContain("sexta-feira, 09 de outubro");
   });
+
+  it("no Plano Solo não fala em convidar equipe", () => {
+    const message = buildOwnerMessage({
+      businessName: "Studio Ana Unhas",
+      businessType: "beauty_clinic",
+      publicUrl: "https://aprazzo.com.br/studio-ana-unhas",
+      ownerInviteUrl: "https://aprazzo.com.br/admin/convite/abc",
+      ownerInviteExpiresAt: "2026-10-09T15:00:00.000Z",
+      timezone: "America/Sao_Paulo",
+      solo: true,
+    });
+    expect(message).toContain("Meu expediente");
+    expect(message).not.toContain("convite de cada");
+  });
 });

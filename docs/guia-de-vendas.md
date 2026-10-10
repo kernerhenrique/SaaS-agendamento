@@ -85,11 +85,30 @@ Para quem quer entrada baixa, normalmente negócio pequeno:
 |---|---|---|---|
 | Essencial | até 3 | R$ 89 | R$ 890 |
 | Equipe | 4–8 | R$ 149 | R$ 1.490 |
-| Completo | 9+ | R$ 249 | R$ 2.490 |
+| Completo | 9–15 | R$ 249 | R$ 2.490 |
 
 - **Implantação (única): R$ 490–990**: identidade, cadastro de serviços, equipe e horários, treinamento de 30 min por vídeo, link pronto para a bio do Instagram.
+- **O sistema confere o limite**: na entrega, `limiteProfissionais` no arquivo do cliente (3, 8 ou 15). Se o dono tentar ativar mais alguém, a tela explica o limite e manda falar com a Aprazzo. Mudou de plano: `npm run limite-profissionais -- <slug> <novo limite> --producao`. Acima de 15 ou com mais de uma unidade, proposta sob consulta.
 
-### Para os dois modelos
+### Plano Solo: para quem atende sozinho
+
+Manicure, esteticista, tatuador ou barbeiro que trabalha sem equipe. O sistema é o mesmo; só o limite muda (`limiteProfissionais: 1`), e com ele a experiência:
+- **Página de reservas em 3 passos**: serviço → data e hora → dados (o cliente não escolhe profissional).
+- **Painel enxuto**: "Profissionais" vira "Meu expediente" (dias, horários e folgas); somem comissões, convite de equipe e a comparação entre profissionais nos Relatórios.
+
+| | Solo |
+|---|---|
+| Implantação | R$ 497 (ou 3× R$ 165,67) |
+| Mensalidade | R$ 69 (anual R$ 690) |
+| Primeiro ano | R$ 1.325 |
+| Limite | 1 profissional ativo |
+
+- **Inclui** a implantação (identidade, serviços, expediente e regras pelo formulário de onboarding, importação da planilha pronta, treinamento de 30 min e manual) e a mensalidade (hospedagem, cópias de segurança, atualizações e suporte por WhatsApp). **Não inclui** domínio próprio, migração nem ajustes feitos por você (cobrados à parte).
+- **Contratou alguém?** Mude para um plano com equipe: `npm run limite-profissionais -- <slug> sem --producao` (A Leve ou A) ou `<slug> 3` (Essencial). Os dados continuam, e o painel ganha as telas de equipe na hora.
+- **Demonstração**: monte a partir de `docs/exemplo-cliente-solo.json`, trocando nome, cor, logo e serviços pelos do prospect, com `--demo`.
+- Contrato de 12 meses, como os outros planos.
+
+### Para todos os modelos
 
 - **Add-ons**: domínio próprio (+R$ 20/mês no Modelo B; já incluso no pacote Completo do Modelo A); remover "Agendamento por Aprazzo" do rodapé (incluso no Completo).
 - **Exclusivo** (instalação dedicada): sob consulta, a partir de R$ 3.000 + R$ 400/mês.

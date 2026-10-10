@@ -88,6 +88,7 @@ async function main() {
   const { buildDeliveryChecklist, buildDemoMessage, buildOwnerMessage } = await import("@/server/modules/onboarding/delivery-messages");
   const { ValidationError } = await import("@/server/errors");
   const { getVertical } = await import("@/config/vertical");
+  const { isSoloPlan } = await import("@/server/modules/business/plan-rules");
 
   const filePath = path.resolve(options.file);
   if (!existsSync(filePath)) fail(`Arquivo não encontrado: ${filePath}`);
@@ -165,6 +166,7 @@ async function main() {
       ownerInviteUrl: result.ownerInvite.url,
       ownerInviteExpiresAt: result.ownerInvite.expiresAt,
       timezone: input.timezone,
+      solo: isSoloPlan(input.maxProfessionals),
     };
     if (options.json) {
       console.log(JSON.stringify({ ok: true, slug: input.slug, ...info, warnings }));

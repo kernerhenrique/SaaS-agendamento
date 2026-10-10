@@ -15,7 +15,7 @@ Pedir ao dono (formulário de onboarding, ver guia de vendas):
 
 ## 2. Montar o arquivo do cliente
 
-Em `clientes/<slug>.json` (a pasta fica **fora do git**: são dados do cliente), no formato de `docs/exemplo-cliente.json`. Imagens ao lado, em `clientes/<slug>/`.
+Em `clientes/<slug>.json` (a pasta fica **fora do git**: são dados do cliente), no formato de `docs/exemplo-cliente.json` (equipe) ou `docs/exemplo-cliente-solo.json` (Plano Solo: `limiteProfissionais: 1` e uma pessoa só; a página pula a escolha do profissional e o painel fica sem as telas de equipe). Imagens ao lado, em `clientes/<slug>/`.
 
 | Campo | Formato | Observação |
 |---|---|---|

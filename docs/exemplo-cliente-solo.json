@@ -1,0 +1,40 @@
+{
+  "nome": "Studio Ana Unhas",
+  "slug": "studio-ana-unhas",
+  "nicho": "beauty_clinic",
+  "fuso": "America/Sao_Paulo",
+  "endereco": "Rua das Acácias, 120 - Sala 3, Vitória/ES",
+  "whatsapp": "(27) 99999-0000",
+  "instagram": "@studioanaunhas",
+  "cor": "#BE185D",
+  "logo": "studio-ana-unhas/logo.png",
+  "capa": "studio-ana-unhas/capa.jpg",
+  "limiteProfissionais": 1,
+  "horarioFuncionamento": [
+    { "dias": "ter-sex", "horario": "09:00-19:00" },
+    { "dias": "sab", "horario": "08:00-14:00" }
+  ],
+  "politicas": {
+    "antecedenciaMinutos": 120,
+    "janelaDias": 30,
+    "cancelamentoHoras": 12,
+    "texto": "Chegue no horário: atrasos acima de 15 minutos podem precisar remarcar."
+  },
+  "servicos": [
+    { "nome": "Manicure", "categoria": "Unhas", "duracao": 40, "preco": 40 },
+    { "nome": "Pedicure", "categoria": "Unhas", "duracao": 50, "preco": 45 },
+    { "nome": "Pé e mão", "categoria": "Unhas", "duracao": 80, "preco": 80 },
+    { "nome": "Unhas em gel", "categoria": "Alongamento", "duracao": 120, "preco": 150, "aPartirDe": true, "descricao": "Valor final conforme o tamanho e a decoração" }
+  ],
+  "profissionais": [
+    {
+      "nome": "Ana",
+      "especialidade": "Unhas em gel e nail art",
+      "cor": "pink",
+      "expediente": [
+        { "dias": "ter-sex", "horario": "09:00-19:00", "intervalo": "12:30-13:30" },
+        { "dias": "sab", "horario": "08:00-14:00" }
+      ]
+    }
+  ]
+}

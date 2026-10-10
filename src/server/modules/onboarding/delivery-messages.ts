@@ -13,6 +13,8 @@ export interface DeliveryInfo {
   ownerInviteUrl: string;
   ownerInviteExpiresAt: string;
   timezone: string;
+  /** Plano Solo: sem equipe para convidar; o expediente fica em "Meu expediente". */
+  solo?: boolean;
 }
 
 export function buildOwnerMessage(info: DeliveryInfo): string {
@@ -27,7 +29,9 @@ export function buildOwnerMessage(info: DeliveryInfo): string {
     "2) Esta é a página de reservas para colocar na bio do Instagram e mandar aos clientes:",
     info.publicUrl,
     "",
-    `Depois de entrar, no menu ${professional.plural} você gera o convite de cada ${professional.singular.toLowerCase()} para ele ver a própria agenda.`,
+    info.solo
+      ? "Depois de entrar, em Meu expediente você ajusta seus dias, horários e folgas."
+      : `Depois de entrar, no menu ${professional.plural} você gera o convite de cada ${professional.singular.toLowerCase()} para ele ver a própria agenda.`,
     "Dica: no celular, toque em Mais › Instalar no celular para ter o painel na tela inicial, como um app.",
     `Qualquer dúvida, é só me chamar. Equipe ${BRAND.name}`,
   ].join("\n");
@@ -49,9 +53,11 @@ export function buildDemoMessage(info: { businessName: string; publicUrl: string
 
 export function buildDeliveryChecklist(info: DeliveryInfo): string[] {
   return [
-    `Abrir ${info.publicUrl} no celular: logo, cor, serviços e equipe certos`,
+    info.solo
+      ? `Abrir ${info.publicUrl} no celular: logo, cor e serviços certos, reserva em 3 passos (sem escolher profissional)`
+      : `Abrir ${info.publicUrl} no celular: logo, cor, serviços e equipe certos`,
     "Fazer uma reserva de teste e cancelar pelo link do e-mail/WhatsApp",
-    "Conferir preços, durações e o expediente de cada profissional",
+    info.solo ? "Conferir preços, durações e o expediente" : "Conferir preços, durações e o expediente de cada profissional",
     "Mandar a mensagem ao dono e confirmar que ele criou o acesso",
     "Marcar o check-in de 7 dias com o dono",
   ];
