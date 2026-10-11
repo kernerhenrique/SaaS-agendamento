@@ -57,7 +57,9 @@ export function ResetPasswordForm({ token, name }: { token: string; name: string
         <div className="mx-auto mb-2">
           <BrandLogo />
         </div>
-        <CardTitle className="text-lg">Criar senha nova</CardTitle>
+        <CardTitle className="text-lg" role="heading" aria-level={1}>
+          Criar senha nova
+        </CardTitle>
         <CardDescription>Olá, {name}! Escolha a senha nova. As outras sessões abertas vão sair.</CardDescription>
       </CardHeader>
       <CardContent>

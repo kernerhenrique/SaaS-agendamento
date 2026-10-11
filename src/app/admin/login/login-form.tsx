@@ -59,7 +59,9 @@ export function LoginForm() {
             <CalendarClock className="size-6" />
           </div>
         )}
-        <CardTitle className="text-lg">Entrar</CardTitle>
+        <CardTitle className="text-lg" role="heading" aria-level={1}>
+          Entrar
+        </CardTitle>
         <CardDescription>
           {BRAND.name} · Painel do negócio
         </CardDescription>

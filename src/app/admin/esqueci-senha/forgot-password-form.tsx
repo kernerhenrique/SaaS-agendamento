@@ -49,7 +49,9 @@ export function ForgotPasswordForm() {
         <div className="mx-auto mb-2">
           <BrandLogo />
         </div>
-        <CardTitle className="text-lg">Esqueci minha senha</CardTitle>
+        <CardTitle className="text-lg" role="heading" aria-level={1}>
+          Esqueci minha senha
+        </CardTitle>
         <CardDescription>
           {sent ? "Confira a sua caixa de entrada." : "Informe o e-mail que você usa para entrar no painel."}
         </CardDescription>

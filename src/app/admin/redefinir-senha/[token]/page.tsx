@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
-import Link from "next/link";
 import type { Metadata } from "next";
 
+import { StatusPage } from "@/components/status-page";
 import { checkRateLimit, getClientIp, MANAGE_TOKEN_RATE_LIMIT } from "@/lib/rate-limit";
 import { NotFoundError } from "@/server/errors";
 import { getPasswordResetSummary } from "@/server/modules/auth/password-reset.service";
@@ -16,13 +16,25 @@ export default async function ResetPasswordPage({ params }: { params: Promise<{ 
   const { token } = await params;
 
   const rateLimit = checkRateLimit(`password-reset:${getClientIp(await headers())}`, MANAGE_TOKEN_RATE_LIMIT);
-  if (!rateLimit.allowed) return <Message text="Muitas tentativas. Tente novamente em instantes." />;
+  if (!rateLimit.allowed) {
+    return (
+      <StatusPage title="Muitas tentativas">
+        <p>Espere alguns minutos e abra o link de novo.</p>
+      </StatusPage>
+    );
+  }
 
   let summary: Awaited<ReturnType<typeof getPasswordResetSummary>>;
   try {
     summary = await getPasswordResetSummary(token);
   } catch (error) {
-    if (error instanceof NotFoundError) return <Message text={error.message} />;
+    if (error instanceof NotFoundError) {
+      return (
+        <StatusPage title="Link inválido ou expirado" action={{ href: "/admin/esqueci-senha", label: "Pedir um link novo" }} secondary={{ href: "/admin/login", label: "Voltar para o login" }}>
+          <p>O link para criar a senha nova vale 1 hora e só pode ser usado uma vez. Peça outro, que ele chega no seu e-mail.</p>
+        </StatusPage>
+      );
+    }
     throw error;
   }
 
@@ -33,13 +45,3 @@ export default async function ResetPasswordPage({ params }: { params: Promise<{ 
   );
 }
 
-function Message({ text }: { text: string }) {
-  return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
-      <p className="max-w-sm text-center text-sm text-muted-foreground">{text}</p>
-      <Link href="/admin/esqueci-senha" className="text-sm text-primary underline-offset-4 hover:underline">
-        Pedir um link novo
-      </Link>
-    </main>
-  );
-}

@@ -210,7 +210,8 @@ export function ManageView({
           ) : null}
         </div>
 
-        {rescheduledTo ? (
+        {/* Depois de cancelar, o aviso da remarcação feita antes já não vale. */}
+        {rescheduledTo && !isCancelled ? (
           <p role="status" className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 p-3 text-sm">
             <CalendarCheck className="size-4 shrink-0 text-success" aria-hidden />
             <span>Horário alterado para {formatFullDateTime(rescheduledTo, business.timezone)}.</span>

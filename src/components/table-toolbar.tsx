@@ -27,6 +27,8 @@ export function TableToolbar({
           value={searchValue}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder={searchPlaceholder}
+          // O texto de exemplo some ao digitar; o leitor de tela precisa de um nome fixo.
+          aria-label={searchPlaceholder}
           className="pl-8"
         />
       </div>

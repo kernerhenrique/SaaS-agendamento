@@ -77,7 +77,9 @@ export function InviteForm({
             <UserPlus className="size-6" />
           </div>
         )}
-        <CardTitle className="text-lg">Criar seu acesso</CardTitle>
+        <CardTitle className="text-lg" role="heading" aria-level={1}>
+          Criar seu acesso
+        </CardTitle>
         <CardDescription>
           {invite.role === "OWNER" ? (
             <>

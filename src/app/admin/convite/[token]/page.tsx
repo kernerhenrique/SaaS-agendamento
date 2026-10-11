@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import type { Metadata } from "next";
 
+import { StatusPage } from "@/components/status-page";
 import { checkRateLimit, getClientIp, MANAGE_TOKEN_RATE_LIMIT } from "@/lib/rate-limit";
 import { NotFoundError } from "@/server/errors";
 import { getInviteSummary } from "@/server/modules/staff/staff.service";
@@ -15,13 +16,29 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   const { token } = await params;
 
   const rateLimit = checkRateLimit(`staff-invite:${getClientIp(await headers())}`, MANAGE_TOKEN_RATE_LIMIT);
-  if (!rateLimit.allowed) return <Message text="Muitas tentativas. Tente novamente em instantes." />;
+  if (!rateLimit.allowed) {
+    return (
+      <StatusPage title="Muitas tentativas">
+        <p>Espere alguns minutos e abra o link de novo.</p>
+      </StatusPage>
+    );
+  }
 
   let invite: Awaited<ReturnType<typeof getInviteSummary>>;
   try {
     invite = await getInviteSummary(token);
   } catch (error) {
-    if (error instanceof NotFoundError) return <Message text={error.message} />;
+    // Genérico de propósito: não diz se o convite existiu, venceu ou já foi usado.
+    if (error instanceof NotFoundError) {
+      return (
+        <StatusPage title="Convite inválido ou expirado" action={{ href: "/admin/login", label: "Já criei meu acesso: entrar" }}>
+          <p>
+            O link pode ter vencido (vale 7 dias), já ter sido usado ou ter sido trocado por um novo. Se ainda não criou o seu
+            acesso, peça outro link a quem convidou você.
+          </p>
+        </StatusPage>
+      );
+    }
     throw error;
   }
 
@@ -32,10 +49,3 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   );
 }
 
-function Message({ text }: { text: string }) {
-  return (
-    <main className="flex flex-1 items-center justify-center p-6">
-      <p className="max-w-sm text-center text-sm text-muted-foreground">{text}</p>
-    </main>
-  );
-}

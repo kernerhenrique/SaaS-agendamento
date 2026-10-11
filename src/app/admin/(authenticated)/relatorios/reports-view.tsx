@@ -234,7 +234,8 @@ function AppointmentsSection({ report }: { report: AppointmentsReport }) {
         <KpiCard
           icon={XCircle}
           label="Taxa de cancelamento"
-          value={percent(current.cancellationRate)}
+          // Sem nenhum atendimento no período, a taxa não existe (0% diria "ninguém cancelou").
+          value={percent(current.total === 0 ? null : current.cancellationRate)}
           delta={{
             value: rateDelta({ rate: compare.cancellationRate, total: compare.total }, { rate: previous.cancellationRate, total: previous.total }),
             kind: "points",
@@ -244,7 +245,7 @@ function AppointmentsSection({ report }: { report: AppointmentsReport }) {
         <KpiCard
           icon={UserX}
           label="Taxa de faltas"
-          value={percent(current.noShowRate)}
+          value={percent(current.total === 0 ? null : current.noShowRate)}
           delta={{
             value: rateDelta({ rate: compare.noShowRate, total: compare.total }, { rate: previous.noShowRate, total: previous.total }),
             kind: "points",

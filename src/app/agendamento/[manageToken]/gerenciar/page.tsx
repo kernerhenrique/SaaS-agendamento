@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 
+import { StatusPage } from "@/components/status-page";
 import { VerticalProvider } from "@/config/vertical-context";
 import { checkRateLimit, getClientIp, MANAGE_TOKEN_RATE_LIMIT } from "@/lib/rate-limit";
 import { NotFoundError } from "@/server/errors";
@@ -31,15 +32,27 @@ export default async function ManageAppointmentPage({
   const ip = getClientIp(headersList);
   const rateLimit = checkRateLimit(`manage-token:${ip}`, MANAGE_TOKEN_RATE_LIMIT);
   if (!rateLimit.allowed) {
-    return <MessagePage message="Muitas tentativas. Tente novamente em instantes." />;
+    return (
+      <StatusPage title="Muitas tentativas">
+        <p>Espere alguns minutos e abra o link de novo.</p>
+      </StatusPage>
+    );
   }
 
   let appointment: Awaited<ReturnType<typeof getAppointmentForManagement>>;
   try {
     appointment = await getAppointmentForManagement(manageToken);
   } catch (error) {
+    // Mensagem genérica de propósito: não diz se o agendamento existe.
     if (error instanceof NotFoundError) {
-      return <MessagePage message={error.message} />;
+      return (
+        <StatusPage title="Link inválido ou expirado">
+          <p>
+            Este link de agendamento não existe ou já venceu (ele vale até 30 dias depois do atendimento). Confira se o link
+            foi copiado inteiro. Para marcar, cancelar ou remarcar, fale com o estabelecimento.
+          </p>
+        </StatusPage>
+      );
     }
     throw error;
   }
@@ -88,10 +101,4 @@ export default async function ManageAppointmentPage({
   );
 }
 
-function MessagePage({ message }: { message: string }) {
-  return (
-    <main className="flex flex-1 items-center justify-center p-6">
-      <p className="text-sm text-muted-foreground">{message}</p>
-    </main>
-  );
-}
+

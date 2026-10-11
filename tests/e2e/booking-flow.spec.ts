@@ -6,7 +6,12 @@ import { expect, test, type Page } from "@playwright/test";
  * de um servidor rodando com o banco populado — veja README.md.
  */
 /** `slotIndex`: testes em paralelo escolhem horários diferentes (senão disputam o mesmo). */
-async function bookUntilContact(page: Page, slotIndex = 0) {
+/**
+ * `startDay`: a partir de qual dia procurar vaga (1 = amanhã). Cada teste usa um dia
+ * e uma posição próprios: em paralelo, todos caíam no mesmo primeiro dia livre e
+ * disputavam o mesmo horário.
+ */
+async function bookUntilContact(page: Page, slotIndex = 0, startDay = 1) {
   await page.goto("/navalha-de-ouro");
 
   await expect(page.getByRole("heading", { name: "Escolha o serviço" })).toBeVisible();
@@ -30,8 +35,8 @@ async function bookUntilContact(page: Page, slotIndex = 0) {
   // Começa amanhã: um horário de hoje pode cair dentro do prazo para cancelar
   // (2 h no seed) e o link não mostraria cancelar/remarcar.
   await dayLoaded.first().waitFor();
-  await dateChips.nth(1).click();
-  for (let dayIndex = 1; dayIndex < 21; dayIndex++) {
+  await dateChips.nth(startDay).click();
+  for (let dayIndex = startDay; dayIndex < startDay + 20; dayIndex++) {
     await dayLoaded.first().waitFor();
     if (await timeSlot.isVisible().catch(() => false)) break;
     await dateChips.nth(dayIndex + 1).click();
@@ -51,12 +56,13 @@ async function bookUntilContact(page: Page, slotIndex = 0) {
 const dayLabelOf = (page: Page) => page.getByText(/^\S+, \d{2} de \S+$/).first().innerText();
 
 test("voltar do passo dos dados mantém o dia e o que foi digitado", async ({ page }) => {
-  const { dayLabel } = await bookUntilContact(page, 2);
+  const { dayLabel } = await bookUntilContact(page, 2, 2);
   await page.getByLabel("Nome").fill("Volta E2E");
   await page.getByRole("button", { name: "Voltar" }).click();
   // Volta no mesmo dia (não em hoje) e, ao escolher outro horário, os dados continuam lá.
   expect(await dayLabelOf(page)).toBe(dayLabel);
-  await page.locator('[data-testid="time-slot"]:not([data-unavailable])').nth(3).click();
+  // O último livre: existe mesmo num dia quase cheio (o 4º nem sempre).
+  await page.locator('[data-testid="time-slot"]:not([data-unavailable])').last().click();
   await expect(page.getByLabel("Nome")).toHaveValue("Volta E2E");
   await expect(page.getByLabel("WhatsApp")).not.toHaveValue("");
 });
@@ -65,8 +71,8 @@ test("horário reservado por outra pessoa no meio do caminho: volta aos horário
   test.setTimeout(90_000); // dois clientes percorrem a reserva inteira
   const [a, b] = await Promise.all([browser.newPage(), browser.newPage()]);
   // Os dois chegam ao mesmo horário (o 7º livre do mesmo dia).
-  await bookUntilContact(a, 6);
-  const { dayLabel } = await bookUntilContact(b, 6);
+  await bookUntilContact(a, 6, 8);
+  const { dayLabel } = await bookUntilContact(b, 6, 8);
   await b.getByLabel("Nome").fill("Segundo E2E");
   await a.getByRole("button", { name: "Confirmar agendamento" }).click();
   await expect(a.getByRole("heading", { name: "Horário confirmado!" })).toBeVisible();
@@ -83,7 +89,8 @@ test("horário reservado por outra pessoa no meio do caminho: volta aos horário
 });
 
 test("cliente agenda, já fica confirmado e o link mostra cancelar (vermelho) e remarcar (amarelo)", async ({ page }) => {
-  await bookUntilContact(page);
+  // Posição só deste teste: com testes em paralelo, o 1º horário livre é disputado por outros arquivos.
+  await bookUntilContact(page, 9, 5);
   await page.getByLabel("E-mail").fill("cliente.e2e@example.com");
   await page.getByRole("button", { name: "Confirmar agendamento" }).click();
 
@@ -136,6 +143,8 @@ test("cliente agenda, já fica confirmado e o link mostra cancelar (vermelho) e 
   await confirm.getByRole("button", { name: "Sim, cancelar" }).click();
   await expect(page.getByRole("heading", { name: "Agendamento cancelado" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Reservar outro horário" })).toHaveAttribute("href", "/navalha-de-ouro");
+  // O aviso verde da remarcação feita antes não fica na tela de cancelado.
+  await expect(page.getByRole("status").filter({ hasText: "Horário alterado para" })).toHaveCount(0);
 });
 
 test("serviço que ninguém faz fica fora da página; o resumo mostra quem atende e o preço “a partir de”", async ({ page }) => {
@@ -158,7 +167,7 @@ test("serviço que ninguém faz fica fora da página; o resumo mostra quem atend
 });
 
 test("sem e-mail, a confirmação não promete e-mail e pede para guardar o link", async ({ page }) => {
-  await bookUntilContact(page, 4);
+  await bookUntilContact(page, 4, 11);
   await page.getByRole("button", { name: "Confirmar agendamento" }).click();
 
   await expect(page.getByRole("heading", { name: "Horário confirmado!" })).toBeVisible();
