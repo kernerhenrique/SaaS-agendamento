@@ -39,7 +39,7 @@ export function ProfessionalForm({
   businessHours: DayHours[];
   onSaved: (saved: { id: string }) => void | Promise<void>;
 }) {
-  const { terms, features } = useVertical();
+  const { terms, features, specialtyExample } = useVertical();
   const isEditing = Boolean(professional);
   const [name, setName] = useState(professional?.name ?? "");
   const [specialty, setSpecialty] = useState(professional?.specialty ?? "");
@@ -145,7 +145,7 @@ export function ProfessionalForm({
           <Label htmlFor="specialty">Especialidade (opcional)</Label>
           <Input
             id="specialty"
-            placeholder="Ex.: cortes clássicos e degradê"
+            placeholder={`Ex.: ${specialtyExample}`}
             value={specialty}
             onChange={(event) => setSpecialty(event.target.value)}
           />

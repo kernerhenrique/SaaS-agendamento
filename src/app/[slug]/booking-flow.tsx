@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronLeft, MapPin, MessageCircle } from "lucide-react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { CalendarPlus, ChevronLeft, MapPin, MessageCircle } from "lucide-react";
 
 import { AccentColorScope } from "@/components/accent-color-scope";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,6 +11,14 @@ import { Stepper } from "@/components/stepper";
 import { BRAND } from "@/config/brand";
 import { getVertical } from "@/config/vertical";
 import { VerticalProvider } from "@/config/vertical-context";
+import {
+  BOOKING_STEP_STATE_KEY,
+  clearConfirmedBooking,
+  reachableStep,
+  readConfirmedBookingOnReload,
+  saveConfirmedBooking,
+  stepFromHistoryState,
+} from "@/lib/booking-steps";
 import { buildGoogleMapsUrl } from "@/lib/maps";
 import { getInitials } from "@/lib/text";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
@@ -37,6 +45,8 @@ import {
 // o conteúdo não se estica de ponta a ponta. Header e corpo usam a mesma.
 const CONTENT_WIDTH_CLASS = "mx-auto w-full max-w-6xl";
 
+const subscribeNoop = () => () => {};
+
 export function BookingFlow({
   business,
   services,
@@ -46,7 +56,8 @@ export function BookingFlow({
   services: ServiceOption[];
   professionals: ProfessionalOption[];
 }) {
-  const [step, setStep] = useState(1);
+  // O passo pedido (pelos botões ou pelo histórico do navegador); o mostrado é `step`, mais abaixo.
+  const [requestedStep, setRequestedStep] = useState(1);
   const [selection, setSelection] = useState<BookingSelection>({
     service: null,
     professionalId: null,
@@ -60,9 +71,36 @@ export function BookingFlow({
   const [slotNotice, setSlotNotice] = useState<string | null>(null);
   // Calculado ao escolher o horário (evento, não renderização: "agora" não pode variar entre servidor e cliente).
   const [lockedNotice, setLockedNotice] = useState<string | null>(null);
-  const [confirmedAppointment, setConfirmedAppointment] = useState<ConfirmedAppointmentInfo | null>(
-    null,
+  const [justConfirmed, setJustConfirmed] = useState<ConfirmedAppointmentInfo | null>(null);
+  // Página recarregada logo depois de confirmar: a confirmação (com o link) volta, em vez do passo 1.
+  const [restoreDismissed, setRestoreDismissed] = useState(false);
+  const storedConfirmation = useSyncExternalStore(subscribeNoop, () => readConfirmedBookingOnReload(business.id), () => null);
+  const restoredConfirmation = useMemo(
+    () => (storedConfirmation && !restoreDismissed ? (JSON.parse(storedConfirmation) as ConfirmedAppointmentInfo) : null),
+    [storedConfirmation, restoreDismissed],
   );
+  const confirmedAppointment = justConfirmed ?? restoredConfirmation;
+
+  // "Voltar" e "avançar" do navegador (ou do aparelho) andam pelos passos.
+  useEffect(() => {
+    const onPopState = (event: PopStateEvent) => setRequestedStep(stepFromHistoryState(event.state));
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  const step = confirmedAppointment
+    ? 5
+    : reachableStep(requestedStep, {
+        service: selection.service != null,
+        professional: selection.professionalId != null,
+        slot: selection.slot != null,
+      });
+
+  /** Avança criando uma entrada no histórico: é ela que o "voltar" do aparelho desfaz. */
+  function advanceTo(next: number) {
+    window.history.pushState({ [BOOKING_STEP_STATE_KEY]: next }, "");
+    setRequestedStep(next);
+  }
 
   // Plano Solo: quem atende já está decidido, então a escolha do profissional some
   // (Serviço → Horário → Contato). Só vale com uma pessoa que faz o serviço.
@@ -71,30 +109,39 @@ export function BookingFlow({
     const eligible = professionals.filter((professional) => professional.serviceIds.includes(serviceId));
     return eligible.length === 1 ? eligible[0].id : null;
   };
-  const skipsProfessional = selection.service != null && soloProfessionalFor(selection.service.id) != null;
 
   function goBack() {
-    setStep((current) => (current === 3 && skipsProfessional ? 1 : Math.max(1, current - 1)));
+    // O mesmo caminho do "voltar" do aparelho. No plano Solo o passo 2 nunca entrou no histórico: do 3 volta ao 1.
+    if (stepFromHistoryState(window.history.state) > 1) window.history.back();
+    else setRequestedStep(1);
+  }
+
+  function bookAnother() {
+    clearConfirmedBooking(business.id);
+    setJustConfirmed(null);
+    setRestoreDismissed(true);
+    setSelection({ service: null, professionalId: null, date: null, slot: null });
+    setRequestedStep(1);
   }
 
   function handleSelectService(service: ServiceOption) {
     const soloProfessional = soloProfessionalFor(service.id);
     setSelection((prev) => ({ ...prev, service, professionalId: soloProfessional, slot: null }));
     setSlotNotice(null);
-    setStep(soloProfessional ? 3 : 2);
+    advanceTo(soloProfessional ? 3 : 2);
   }
 
   function handleSelectProfessional(professionalId: string | typeof NO_PREFERENCE) {
     setSelection((prev) => ({ ...prev, professionalId, slot: null }));
     setSlotNotice(null);
-    setStep(3);
+    advanceTo(3);
   }
 
   function handleSelectSlot(slot: AvailableSlot) {
     setSelection((prev) => ({ ...prev, slot }));
     setSlotNotice(null);
     setLockedNotice(lockedBookingNotice(new Date(slot.startAt), new Date(), business.cancellationDeadlineHours, business.name));
-    setStep(4);
+    advanceTo(4);
   }
 
   async function handleSubmitContact(contact: ContactInfo) {
@@ -120,14 +167,14 @@ export function BookingFlow({
           // Outra pessoa reservou antes: volta aos horários do mesmo dia, sem o horário perdido no resumo e com os dados guardados.
           setSelection((prev) => ({ ...prev, slot: null }));
           setSlotNotice("Esse horário acabou de ser reservado por outra pessoa. Escolha outro: seus dados continuam preenchidos.");
-          setStep(3);
+          goBack();
           return;
         }
         setSubmitError(data?.error ?? "Não foi possível confirmar o agendamento");
         return;
       }
 
-      setConfirmedAppointment({
+      const confirmed: ConfirmedAppointmentInfo = {
         id: data.appointment.id,
         manageToken: data.appointment.manageToken,
         startAt: data.appointment.startAt,
@@ -140,8 +187,9 @@ export function BookingFlow({
         timezone: data.appointment.business.timezone,
         clientEmail: contact.email?.trim() || null,
         changeLocked: lockedBookingNotice(new Date(data.appointment.startAt), new Date(), business.cancellationDeadlineHours, business.name) != null,
-      });
-      setStep(5);
+      };
+      saveConfirmedBooking(business.id, confirmed);
+      setJustConfirmed(confirmed);
     } finally {
       setIsSubmitting(false);
     }
@@ -256,7 +304,13 @@ export function BookingFlow({
               ) : null}
 
               {step === 5 && confirmedAppointment ? (
-                <ConfirmationStep appointment={confirmedAppointment} />
+                <>
+                  <ConfirmationStep appointment={confirmedAppointment} />
+                  <Button variant="ghost" className="mt-4" onClick={bookAnother}>
+                    <CalendarPlus />
+                    Fazer outra reserva
+                  </Button>
+                </>
               ) : null}
 
               {step > 1 && step <= 4 ? (

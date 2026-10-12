@@ -67,6 +67,48 @@ test("voltar do passo dos dados mantém o dia e o que foi digitado", async ({ pa
   await expect(page.getByLabel("WhatsApp")).not.toHaveValue("");
 });
 
+test("voltar do aparelho anda pelos passos, +55 no telefone é aceito e recarregar não esconde a confirmação", async ({ page }) => {
+  await bookUntilContact(page, 4, 11);
+  await page.getByLabel("Nome").fill("Histórico E2E");
+
+  // O "voltar" do navegador volta um passo de cada vez, sem sair da página do negócio.
+  await page.goBack();
+  await expect(page.getByRole("heading", { name: "Escolha data e horário" })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole("heading", { name: "Escolha o barbeiro" })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole("heading", { name: "Escolha o serviço" })).toBeVisible();
+  await expect(page).toHaveURL(/\/navalha-de-ouro$/);
+
+  // "Avançar" refaz o caminho com tudo o que já estava escolhido e digitado.
+  await page.goForward();
+  await page.goForward();
+  await page.goForward();
+  await expect(page.getByRole("heading", { name: "Seus dados" })).toBeVisible();
+  await expect(page.getByLabel("Nome")).toHaveValue("Histórico E2E");
+
+  // Número colado do WhatsApp, com o +55: fica o número certo (antes virava DDD 55 e perdia o final).
+  const last8 = Date.now().toString().slice(-8);
+  await page.getByLabel("WhatsApp").fill(`+55 11 9${last8}`);
+  await expect(page.getByLabel("WhatsApp")).toHaveValue(`(11) 9${last8.slice(0, 4)}-${last8.slice(4)}`);
+
+  await page.getByRole("button", { name: "Confirmar agendamento" }).click();
+  await expect(page.getByRole("heading", { name: "Horário confirmado!" })).toBeVisible();
+
+  // Depois de confirmar, nem o "voltar" nem recarregar escondem o link do agendamento.
+  await page.goBack();
+  await expect(page.getByRole("heading", { name: "Horário confirmado!" })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Horário confirmado!" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Abrir meu agendamento" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Fazer outra reserva" }).click();
+  await expect(page.getByRole("heading", { name: "Escolha o serviço" })).toBeVisible();
+  // Quem abre o link de novo começa do zero.
+  await page.goto("/navalha-de-ouro");
+  await expect(page.getByRole("heading", { name: "Escolha o serviço" })).toBeVisible();
+});
+
 test("horário reservado por outra pessoa no meio do caminho: volta aos horários do dia, com os dados guardados", async ({ browser }) => {
   test.setTimeout(90_000); // dois clientes percorrem a reserva inteira
   const [a, b] = await Promise.all([browser.newPage(), browser.newPage()]);

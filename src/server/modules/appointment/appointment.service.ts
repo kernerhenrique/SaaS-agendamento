@@ -1,5 +1,5 @@
 import { AppointmentStatus, type Prisma } from "@/generated/prisma/client";
-import { normalizePhoneBR } from "@/lib/phone";
+import { nationalDigitsBR } from "@/lib/phone";
 import { bookedAsNote } from "@/server/modules/client/client-rules";
 import { prisma } from "@/server/db/prisma";
 import { checkAdminBookingTime } from "./admin-booking-rules";
@@ -129,8 +129,9 @@ async function insertAppointment(params: InsertAppointmentParams) {
   if (!professional) throw new NotFoundError("Cadastro não encontrado");
   if (!service) throw new NotFoundError("Cadastro não encontrado");
 
-  const phone = normalizePhoneBR(client.phone);
-  if (phone.length < 10) throw new ValidationError("Telefone inválido: informe DDD e número");
+  // Formato nacional: "+55 11 9…" e "11 9…" precisam cair no mesmo cadastro.
+  const phone = nationalDigitsBR(client.phone);
+  if (phone.length < 10 || phone.length > 11) throw new ValidationError("Telefone inválido: informe DDD e número");
 
   const endAt = new Date(startAt.getTime() + service.durationMin * 60_000);
   const manageTokenExpiresAt = new Date(

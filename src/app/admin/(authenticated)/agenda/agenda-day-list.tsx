@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/empty-state";
 import { StatusBadge } from "@/components/status-badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { STATUS_LABELS, STATUS_TONE } from "@/lib/appointment-status";
+import { shortNames } from "@/lib/text";
 
 import type { AppointmentDto, ProfessionalOption, TimeBlockDto } from "./types";
 
@@ -37,6 +38,7 @@ export function AgendaDayList({
     new Intl.DateTimeFormat("pt-BR", { timeZone: timezone, hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
 
   if (professionals.length === 0) return null;
+  const tabLabels = shortNames(professionals.map((professional) => professional.name));
 
   return (
     <div className="flex flex-col gap-3">
@@ -49,11 +51,11 @@ export function AgendaDayList({
       <Tabs defaultValue={professionals[0].id}>
         {/* Uma agenda só (plano Solo, ou o profissional vendo a dele): a aba sozinha não ajuda. */}
         <TabsList className={professionals.length === 1 ? "hidden" : "w-full justify-start overflow-x-auto"}>
-          {professionals.map((professional) => {
+          {professionals.map((professional, index) => {
             const count = appointments.filter((a) => a.professional.id === professional.id && a.status !== "CANCELLED").length;
             return (
               <TabsTrigger key={professional.id} value={professional.id} className="shrink-0">
-                {professional.name.split(" ")[0]}
+                {tabLabels[index]}
                 <span className="text-caption text-muted-foreground">{count}</span>
               </TabsTrigger>
             );

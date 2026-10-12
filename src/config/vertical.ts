@@ -38,6 +38,8 @@ export interface VerticalPreset {
   terms: VerticalTerms;
   features: VerticalFeatures;
   serviceIcon: ServiceIconKey;
+  /** Exemplo do campo Especialidade no cadastro de quem atende. */
+  specialtyExample: string;
 }
 
 const m = (singular: string, plural: string): Term => ({ singular, plural, gender: "m" });
@@ -49,6 +51,7 @@ export const VERTICAL_PRESETS = {
     terms: { professional: m("Barbeiro", "Barbeiros"), service: m("Serviço", "Serviços"), client: m("Cliente", "Clientes") },
     features: { portfolio: true, priceFrom: true, serviceCategories: true, commissions: true },
     serviceIcon: "scissors",
+    specialtyExample: "cortes clássicos e degradê",
   },
   beauty_clinic: {
     key: "beauty_clinic",
@@ -60,6 +63,7 @@ export const VERTICAL_PRESETS = {
     },
     features: { portfolio: true, priceFrom: true, serviceCategories: true, commissions: true },
     serviceIcon: "sparkles",
+    specialtyExample: "limpeza de pele e peeling",
   },
   tattoo_studio: {
     key: "tattoo_studio",
@@ -67,6 +71,7 @@ export const VERTICAL_PRESETS = {
     terms: { professional: m("Tatuador", "Tatuadores"), service: m("Serviço", "Serviços"), client: m("Cliente", "Clientes") },
     features: { portfolio: true, priceFrom: true, serviceCategories: true, commissions: true },
     serviceIcon: "pen-tool",
+    specialtyExample: "fineline e blackwork",
   },
   generic: {
     key: "generic",
@@ -79,6 +84,7 @@ export const VERTICAL_PRESETS = {
     // Genérico (ex.: consultório de uma pessoa só): sem comissão por padrão.
     features: { portfolio: true, priceFrom: true, serviceCategories: true, commissions: false },
     serviceIcon: "briefcase",
+    specialtyExample: "a área em que mais atende",
   },
 } satisfies Record<string, VerticalPreset>;
 
