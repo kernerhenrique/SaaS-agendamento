@@ -10,6 +10,8 @@ export const LANDING = {
   /** Botão da seção do plano Solo: a conversa já chega dizendo o interesse. */
   whatsappMessageSolo: "Olá! Vi o site e quero conhecer o plano Solo da Aprazzo.",
   loginPath: "/admin/login",
+  /** Perfil da Aprazzo no Instagram, sem o @. */
+  instagramHandle: "useaprazzo",
 } as const;
 
 export function salesWhatsAppUrl(message: string = LANDING.whatsappMessage): string {

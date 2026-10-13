@@ -38,6 +38,11 @@ test("página de vendas: WhatsApp, demonstração, abas pelo teclado, dúvidas e
   // Plano Solo: seção própria, no menu do topo, com WhatsApp que já diz o interesse.
   await expect(page.getByRole("heading", { name: "Trabalha sozinho? A Aprazzo também é para você." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Quero conhecer o plano Solo" })).toHaveAttribute("href", /plano%20Solo/);
+
+  // Rodapé: o Instagram da Aprazzo abre em nova aba.
+  const instagram = page.getByRole("contentinfo").getByRole("link", { name: "@useaprazzo" });
+  await expect(instagram).toHaveAttribute("href", "https://www.instagram.com/useaprazzo");
+  await expect(instagram).toHaveAttribute("target", "_blank");
   await expect(page.getByRole("navigation").getByRole("link", { name: "Plano Solo" }).first()).toHaveAttribute("href", "#solo");
 
   // Dúvidas: abre a resposta.

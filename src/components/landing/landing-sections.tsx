@@ -8,6 +8,7 @@ import { formatPhoneBR } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 
 import { SlotPattern } from "./hero";
+import { LANDING } from "./landing-config";
 import { LoginLink, WhatsAppCta, WhatsAppTextLink } from "./landing-links";
 import { Reveal } from "./reveal";
 
@@ -220,6 +221,17 @@ export function LandingFooter() {
             {" · "}E-mail:{" "}
             <a href="mailto:contato@aprazzo.com.br" className="text-foreground underline underline-offset-3">
               contato@aprazzo.com.br
+            </a>
+          </p>
+          <p className="mt-1.5">
+            Instagram:{" "}
+            <a
+              href={`https://www.instagram.com/${LANDING.instagramHandle}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-foreground underline underline-offset-3"
+            >
+              @{LANDING.instagramHandle}
             </a>
           </p>
         </div>
