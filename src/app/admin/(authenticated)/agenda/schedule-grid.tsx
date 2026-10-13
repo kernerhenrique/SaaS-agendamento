@@ -35,10 +35,16 @@ import {
 } from "./schedule-grid-math";
 import type { AppointmentDto, TimeBlockDto, WorkingHoursEntry } from "./types";
 
-// 96px/h: um serviço de 30min ocupa 48px, o suficiente para duas linhas.
+// 96px/h: um serviço de 30min ocupa 48px (duas linhas) e um de 15min, 24px (uma linha).
 export const PIXELS_PER_HOUR = 96;
-const MIN_APPOINTMENT_HEIGHT_PX = 44;
-const COMPACT_BLOCK_HEIGHT_PX = 56;
+// O bloco tem a altura da duração de verdade: um mínimo maior que 15 min de grade
+// fazia o atendimento curto cobrir o que começa logo depois dele.
+const MIN_APPOINTMENT_HEIGHT_PX = 22;
+/** Respiro entre um bloco e o que começa quando ele termina. */
+const BLOCK_GAP_PX = 2;
+/** Abaixo disto cabe uma linha só (hora · cliente · serviço); abaixo do seguinte, duas. */
+const ONE_LINE_BLOCK_HEIGHT_PX = 40;
+const TWO_LINE_BLOCK_HEIGHT_PX = 56;
 // Respiro para os rótulos de hora centralizados na linha não serem cortados.
 const GRID_BODY_CLASS = "relative my-3";
 
@@ -376,9 +382,11 @@ function AppointmentBlock({
     disabled: !canDrag,
   });
   const timeLabel = `${formatTime(appointment.startAt, timezone)}–${formatTime(appointment.endAt, timezone)}`;
-  const height = minutesToHeightPx(minutes.startMinute, minutes.endMinute, PIXELS_PER_HOUR, MIN_APPOINTMENT_HEIGHT_PX);
-  // Abaixo de ~3 linhas de texto, o bloco vira uma linha só (hora · cliente).
-  const isCompact = height < COMPACT_BLOCK_HEIGHT_PX;
+  const height =
+    minutesToHeightPx(minutes.startMinute, minutes.endMinute, PIXELS_PER_HOUR, MIN_APPOINTMENT_HEIGHT_PX + BLOCK_GAP_PX) - BLOCK_GAP_PX;
+  // O texto se ajusta à altura: nada fica cortado no meio da linha.
+  const lines = height < ONE_LINE_BLOCK_HEIGHT_PX ? 1 : height < TWO_LINE_BLOCK_HEIGHT_PX ? 2 : 3;
+  const startLabel = formatTime(appointment.startAt, timezone);
 
   return (
     <button
@@ -392,8 +400,9 @@ function AppointmentBlock({
       className={cn(
         coversActive ? "absolute right-1 left-auto z-0 w-1/4 min-w-8" : "absolute inset-x-1",
         appointment.status !== "CANCELLED" && "z-[1]",
-        "flex flex-col overflow-hidden rounded-md px-2 py-1 text-left text-caption leading-tight shadow-sm transition-shadow hover:z-20 hover:shadow-md focus-visible:z-20 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+        "flex overflow-hidden rounded-md px-2 text-left text-caption leading-tight shadow-sm transition-shadow hover:z-20 hover:shadow-md focus-visible:z-20 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
         STATUS_BLOCK_CLASSES[appointment.status],
+        lines === 1 ? "flex-row items-center gap-1 py-0.5" : "flex-col py-1",
         canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         isDragging && "z-30 opacity-80 shadow-lg",
       )}
@@ -407,18 +416,25 @@ function AppointmentBlock({
         onClick(appointment);
       }}
     >
-      {isCompact ? (
-        <span className="truncate">
-          <span className="inline-flex items-center gap-1 align-middle">
+      {lines === 1 ? (
+        <>
+          <SeriesIndicator seriesId={appointment.seriesId} />
+          <span className="shrink-0 font-semibold">{startLabel}</span>
+          <span className="min-w-0 truncate">
+            · {appointment.client.name} <span className="opacity-80">· {appointment.service.name}</span>
+          </span>
+          <PaymentIndicator status={appointment.paymentStatus} />
+        </>
+      ) : lines === 2 ? (
+        <>
+          <span className="flex min-w-0 items-center gap-1">
             <SeriesIndicator seriesId={appointment.seriesId} />
-            <span className="font-semibold">{formatTime(appointment.startAt, timezone)}</span>
-          </span>{" "}
-          · {appointment.client.name}{" "}
-          <span className="inline-flex align-middle">
+            <span className="shrink-0 font-semibold">{startLabel}</span>
+            <span className="min-w-0 truncate">· {appointment.client.name}</span>
             <PaymentIndicator status={appointment.paymentStatus} />
           </span>
-          <span className="block truncate opacity-80">{appointment.service.name}</span>
-        </span>
+          <span className="truncate opacity-80">{appointment.service.name}</span>
+        </>
       ) : (
         <>
           <span className="flex items-center gap-1 truncate font-semibold">
