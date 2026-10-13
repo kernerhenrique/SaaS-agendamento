@@ -42,9 +42,10 @@ export const PIXELS_PER_HOUR = 96;
 const MIN_APPOINTMENT_HEIGHT_PX = 22;
 /** Respiro entre um bloco e o que começa quando ele termina. */
 const BLOCK_GAP_PX = 2;
-/** Abaixo disto cabe uma linha só (hora · cliente · serviço); abaixo do seguinte, duas. */
-const ONE_LINE_BLOCK_HEIGHT_PX = 40;
-const TWO_LINE_BLOCK_HEIGHT_PX = 56;
+// Cada linha de texto do bloco tem 20px. Abaixo de duas linhas inteiras cabe uma só
+// (hora · cliente · serviço); abaixo de três (com o respiro), duas.
+const ONE_LINE_BLOCK_HEIGHT_PX = 44;
+const TWO_LINE_BLOCK_HEIGHT_PX = 68;
 // Respiro para os rótulos de hora centralizados na linha não serem cortados.
 const GRID_BODY_CLASS = "relative my-3";
 
@@ -402,7 +403,7 @@ function AppointmentBlock({
         appointment.status !== "CANCELLED" && "z-[1]",
         "flex overflow-hidden rounded-md px-2 text-left text-caption leading-tight shadow-sm transition-shadow hover:z-20 hover:shadow-md focus-visible:z-20 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
         STATUS_BLOCK_CLASSES[appointment.status],
-        lines === 1 ? "flex-row items-center gap-1 py-0.5" : "flex-col py-1",
+        lines === 1 ? "flex-row items-center gap-1" : lines === 2 ? "flex-col justify-center py-0.5" : "flex-col py-1",
         canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         isDragging && "z-30 opacity-80 shadow-lg",
       )}
