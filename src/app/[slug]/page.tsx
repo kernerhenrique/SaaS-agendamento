@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { CookieConsent } from "@/components/cookie-consent";
 import { DemoBar } from "@/components/demo-bar";
 import { DemoOpenCounter } from "@/components/site-metric-counter";
 import { prisma } from "@/server/db/prisma";
@@ -84,6 +85,8 @@ export default async function PublicBookingPage({
     <>
       {business.isDemo ? <DemoBar slug={business.slug} /> : null}
       {business.isDemo ? <DemoOpenCounter slug={business.slug} /> : null}
+      {/* Medição com cookies só nas demonstrações (site da Aprazzo), nunca na página de um negócio de verdade. */}
+      {business.isDemo ? <CookieConsent /> : null}
       <BookingFlow
         business={{
           id: business.id,

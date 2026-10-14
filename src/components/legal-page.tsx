@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { BrandLogo } from "@/components/brand-logo";
+import { CookieConsent } from "@/components/cookie-consent";
 import { BRAND, LEGAL } from "@/config/brand";
 import { formatPhoneBR } from "@/lib/phone";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
@@ -43,6 +44,7 @@ export function LegalPage({ title, children }: { title: string; children: React.
           </Link>
         </p>
       </footer>
+      <CookieConsent />
     </main>
   );
 }

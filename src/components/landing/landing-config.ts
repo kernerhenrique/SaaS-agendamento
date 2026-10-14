@@ -1,4 +1,5 @@
 import { LEGAL } from "@/config/brand";
+import { sendAnalyticsEvent } from "@/lib/analytics";
 import { countEvent } from "@/lib/site-metrics-client";
 
 /**
@@ -19,21 +20,15 @@ export function salesWhatsAppUrl(message: string = LANDING.whatsappMessage): str
   return `https://wa.me/${LANDING.whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
 
-declare global {
-  interface Window {
-    dataLayer?: Record<string, unknown>[];
-  }
-}
-
 /**
  * Evento de medição. O clique no WhatsApp entra na contagem própria do site (anônima,
- * sem cookies: `lib/site-metric-rules.ts`). Os demais só vão para o `dataLayer`, se um
- * gerenciador de tags for instalado (com aviso de cookies, LGPD). `whatsapp_click`
+ * sem cookies: `lib/site-metric-rules.ts`). Todos vão também para o Google Analytics,
+ * mas só de quem aceitou o aviso de cookies (`lib/analytics.ts`). `whatsapp_click`
  * conta clique, não conversa: a conversa se mede no WhatsApp Business.
  */
 export function track(event: string, params: Record<string, string> = {}): void {
   if (event === "whatsapp_click" && params.section) countEvent("whatsapp_click", params.section);
-  if (typeof window !== "undefined" && Array.isArray(window.dataLayer)) window.dataLayer.push({ event, ...params });
+  sendAnalyticsEvent(event, params);
 }
 
 /**

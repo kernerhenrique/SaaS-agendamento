@@ -23,6 +23,18 @@ export const BRAND = {
 } as const;
 
 /**
+ * Medição de terceiros do site da Aprazzo (página de vendas, demonstrações, termos e
+ * privacidade), sempre depois do aceite no aviso de cookies. `null` desliga tudo, e o
+ * aviso deixa de aparecer. As páginas de reserva dos negócios e o painel ficam de fora.
+ */
+export const ANALYTICS = {
+  /** ID de medição do Google Analytics 4 (começa com "G-"). Não é segredo: aparece no código de qualquer site que o usa. */
+  gaMeasurementId: "G-GK3XN0XS51" as string | null,
+  /** Só carrega nestes endereços: nunca em computador local nem em prévias da Vercel. */
+  hosts: ["aprazzo.com.br", "www.aprazzo.com.br"],
+} as const;
+
+/**
  * Dados das páginas /termos e /privacidade. Razão social e CNPJ ficam null até
  * a empresa existir: as páginas só mostram a linha quando preenchidos.
  * Atualize `updatedAt` sempre que mudar o texto das páginas.

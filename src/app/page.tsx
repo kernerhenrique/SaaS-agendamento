@@ -8,6 +8,7 @@ import { Faq, FinalCta, HowToStart, LandingFooter, SectionHeading } from "@/comp
 import { Segments } from "@/components/landing/segments";
 import { SoloPlan } from "@/components/landing/solo-plan";
 import { StickyCta } from "@/components/landing/sticky-cta";
+import { CookieConsent } from "@/components/cookie-consent";
 import { SiteVisitCounter } from "@/components/site-metric-counter";
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ export default function Home() {
         Pular para o conteúdo
       </a>
       <SiteVisitCounter />
+      <CookieConsent />
       <LandingHeader />
 
       <main id="conteudo" className="flex-1 max-md:pb-21">

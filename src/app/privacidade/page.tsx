@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { CookiePreferencesButton } from "@/components/cookie-consent";
 import { LegalPage } from "@/components/legal-page";
 import { BRAND } from "@/config/brand";
 
@@ -85,6 +86,10 @@ export default function PrivacyPage() {
             prestar esse serviço e podem manter servidores fora do Brasil, com garantias contratuais de proteção compatíveis
             com a LGPD.
           </li>
+          <li>
+            Com o Google (Google Analytics), apenas dados de navegação no site da {name} e apenas se você aceitar os cookies
+            de medição descritos no item 7. O Google pode tratar esses dados em servidores fora do Brasil.
+          </li>
           <li>Com autoridades, quando a lei exigir.</li>
         </ul>
       </section>
@@ -98,11 +103,24 @@ export default function PrivacyPage() {
         </p>
       </section>
 
-      <section>
+      <section id="cookies" className="scroll-mt-6">
         <h2>7. Cookies</h2>
         <p>
-          Usamos apenas cookies e armazenamento local essenciais: a sessão de quem entra no painel e preferências de tela
-          (tema claro ou escuro, menu recolhido). Não usamos cookies de rastreamento nem de publicidade.
+          <strong>Essenciais:</strong> a sessão de quem entra no painel e preferências de tela (tema claro ou escuro, menu
+          recolhido, a sua resposta ao aviso de cookies). Não dependem de aceite, porque sem eles o site não funciona.
+        </p>
+        <p>
+          <strong>De medição, só com o seu aceite:</strong> no site da {name} (página inicial, páginas de demonstração e
+          estas páginas de termos e privacidade) usamos o Google Analytics para entender como o site é usado: páginas
+          vistas, cliques e de onde a visita veio. Ele só é carregado se você tocar em “Aceitar” no aviso de cookies; se
+          recusar, nada é enviado ao Google. Você pode mudar de ideia quando quiser:{" "}
+          <CookiePreferencesButton className="cursor-pointer font-medium text-primary underline underline-offset-3">
+            rever minha escolha
+          </CookiePreferencesButton>
+          .
+        </p>
+        <p>
+          As páginas de agendamento dos negócios e o painel não têm cookies de medição. Não usamos cookies de publicidade.
         </p>
         <p>
           Para saber se o site está sendo útil, contamos quantas visitas ele recebe, de onde elas vêm (por exemplo, do
