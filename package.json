@@ -13,7 +13,8 @@
     "link-senha": "tsx --tsconfig tsconfig.json scripts/link-senha.ts",
     "limite-profissionais": "tsx --tsconfig tsconfig.json scripts/limite-profissionais.ts",
     "remover-cliente": "tsx --tsconfig tsconfig.json scripts/remover-cliente.ts",
-    "importar-clientes": "tsx --tsconfig tsconfig.json scripts/importar-clientes.ts"
+    "importar-clientes": "tsx --tsconfig tsconfig.json scripts/importar-clientes.ts",
+    "metricas": "tsx --tsconfig tsconfig.json scripts/metricas.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

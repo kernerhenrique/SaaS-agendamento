@@ -98,6 +98,7 @@ Uma demo é um negócio comum marcado como demonstração (`Business.isDemo`): s
 | Alguém do painel esqueceu a senha | Primeiro, "Esqueci minha senha" na tela de login (link por e-mail, 1 h). Se o e-mail não chegar: `npm run link-senha -- email@do.dono --producao` e mande o link pelo WhatsApp (vale 24 h, uso único). |
 | Cliente mudou de plano (mais ou menos profissionais) | `npm run limite-profissionais -- <slug> 3 --producao` (ou `sem`). Sem o número, só mostra o limite atual. Baixar o limite não desativa ninguém: só impede ativar mais gente. |
 | O link de primeiro acesso do dono venceu | `createOwnerInvite(businessId)` gera outro (o anterior deixa de valer). |
+| Saber se o site e as demos estão sendo vistos | `npm run metricas -- 30 --producao`: visitas por origem, aberturas de cada demonstração (inclusive a prévia de um prospect) e cliques no WhatsApp. Para o seu navegador não entrar na conta, abra uma vez `aprazzo.com.br/?contar=nao`. |
 | Cliente saiu / negócio de teste | Exporte os dados (Relatórios › Exportar CSV) se for um cliente real; depois `npm run remover-cliente -- <slug> --producao` (só mostra) e `... --confirmar <slug> --producao` (apaga banco e imagens). |
 
 ## O que o dono ajusta sozinho depois

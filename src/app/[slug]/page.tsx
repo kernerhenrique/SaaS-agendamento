@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { DemoBar } from "@/components/demo-bar";
+import { DemoOpenCounter } from "@/components/site-metric-counter";
 import { prisma } from "@/server/db/prisma";
 import { listUpcomingClosures } from "@/server/modules/business/closure.service";
 import { isSoloPlan } from "@/server/modules/business/plan-rules";
@@ -82,6 +83,7 @@ export default async function PublicBookingPage({
   return (
     <>
       {business.isDemo ? <DemoBar slug={business.slug} /> : null}
+      {business.isDemo ? <DemoOpenCounter slug={business.slug} /> : null}
       <BookingFlow
         business={{
           id: business.id,

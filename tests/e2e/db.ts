@@ -82,3 +82,11 @@ export async function businessRefs(slug: string): Promise<{ professionalId: stri
     return rows[0] as { professionalId: string; serviceId: string; categoryId: string };
   });
 }
+
+/** Soma de um contador da medição do site (todas as datas): para conferir se um evento foi contado. */
+export async function siteMetricCount(event: string, label: string): Promise<number> {
+  return withDb(async (client) => {
+    const { rows } = await client.query(`SELECT COALESCE(SUM(count), 0)::int AS total FROM "SiteMetric" WHERE event = $1 AND label = $2`, [event, label]);
+    return rows[0].total as number;
+  });
+}

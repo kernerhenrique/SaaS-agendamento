@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { handleApiError, rateLimitedResponse } from "@/server/http";
 import { issueTokens } from "@/server/modules/auth/auth.service";
 import { setAuthCookies } from "@/server/modules/auth/cookies";
 import { getDemoOwner } from "@/server/modules/demo/demo.service";
+import { recordMetric } from "@/server/modules/metrics/metric.service";
 
 const DEMO_LOGIN_RATE_LIMIT = { limit: 30, windowMs: 5 * 60 * 1000 };
 
@@ -20,6 +21,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { slug } = await params;
     const owner = await getDemoOwner(slug);
     if (!owner) return NextResponse.json({ error: "Demonstração não encontrada" }, { status: 404 });
+
+    // Conta a entrada no painel da demonstração, depois de responder.
+    after(() => recordMetric("demo_panel", slug).catch((error) => console.error("[metric] entrada na demo não contada", error)));
 
     // 303: o navegador segue com GET para o painel depois do POST do formulário.
     const response = NextResponse.redirect(new URL("/admin", request.url), 303);

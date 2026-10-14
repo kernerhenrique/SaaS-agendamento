@@ -1,4 +1,5 @@
 import { LEGAL } from "@/config/brand";
+import { countEvent } from "@/lib/site-metrics-client";
 
 /**
  * Página de vendas (aprazzo.com.br): contato de vendas e medição.
@@ -25,11 +26,13 @@ declare global {
 }
 
 /**
- * Evento de medição: só vai para o `dataLayer` se um gerenciador de tags for instalado
- * (com aviso de cookies, LGPD). Sem ele, não faz nada. `whatsapp_click` conta clique,
- * não conversa: a conversa se mede no WhatsApp Business.
+ * Evento de medição. O clique no WhatsApp entra na contagem própria do site (anônima,
+ * sem cookies: `lib/site-metric-rules.ts`). Os demais só vão para o `dataLayer`, se um
+ * gerenciador de tags for instalado (com aviso de cookies, LGPD). `whatsapp_click`
+ * conta clique, não conversa: a conversa se mede no WhatsApp Business.
  */
 export function track(event: string, params: Record<string, string> = {}): void {
+  if (event === "whatsapp_click" && params.section) countEvent("whatsapp_click", params.section);
   if (typeof window !== "undefined" && Array.isArray(window.dataLayer)) window.dataLayer.push({ event, ...params });
 }
 

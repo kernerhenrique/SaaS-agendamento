@@ -104,6 +104,11 @@ export default function PrivacyPage() {
           Usamos apenas cookies e armazenamento local essenciais: a sessão de quem entra no painel e preferências de tela
           (tema claro ou escuro, menu recolhido). Não usamos cookies de rastreamento nem de publicidade.
         </p>
+        <p>
+          Para saber se o site está sendo útil, contamos quantas visitas ele recebe, de onde elas vêm (por exemplo, do
+          Instagram) e quantos cliques há nos botões de contato. São apenas totais por dia: não guardamos endereço IP nem
+          qualquer informação que identifique quem visitou, e nada é enviado a outras empresas.
+        </p>
       </section>
 
       <section>

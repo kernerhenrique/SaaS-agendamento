@@ -465,3 +465,18 @@ model Review {
   comment       String?
   createdAt     DateTime    @default(now())
 }
+
+// Medição própria do site (sem cookies): um contador por dia, evento e detalhe
+// (origem da visita, botão do WhatsApp, endereço da demonstração). Não guarda
+// nada de quem visitou: nem IP, nem identificador. Regras em src/lib/site-metric-rules.ts.
+model SiteMetric {
+  id    String @id @default(cuid())
+  // Dia de calendário ("YYYY-MM-DD") no fuso de São Paulo.
+  day   String
+  event String
+  label String @default("")
+  count Int    @default(0)
+
+  @@unique([day, event, label])
+  @@index([day])
+}

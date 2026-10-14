@@ -61,6 +61,7 @@ src/
 │   │   ├── service/
 │   │   ├── payment/         # registro de pagamentos externos: regras puras (payment-rules.ts) + financeiro/comissões
 │   │   ├── report/
+│   │   ├── metrics/         # medição própria do site: contadores anônimos por dia (regras puras em lib/site-metric-rules.ts)
 │   │   └── notification/    # e-mail; whatsapp/ isolado: templates.ts (puro), sender.ts (wa.me hoje), message.service.ts (modelos, filas, "enviado")
 │   └── db/prisma.ts         # singleton do PrismaClient
 ├── config/
@@ -154,6 +155,7 @@ npm run link-senha -- <email> [--producao]                              # suport
 npm run limite-profissionais -- <slug> [número | sem] [--producao]     # suporte: limite do plano (profissionais ativos)
 npm run remover-cliente -- <slug> [--confirmar <slug>] [--producao]     # sem --confirmar só mostra o que apagaria
 npm run importar-clientes -- <slug> <arquivo.csv> [--confirmar] [--atualizar] [--producao]
+npm run metricas -- [dias] [--producao]                                  # visitas ao site, demo e cliques no WhatsApp (padrão: 7 dias)
 ```
 Arquivos de ambiente (todos fora do git): `.env` (banco local), `.env.local` (token da Vercel criado pelo `vercel link`), `.env.vercel.local` (`vercel env pull`: credenciais do Blob) e `.env.producao.local` (`DATABASE_URL` do Neon, à mão). **Nunca `.env.production.local`**: o Next carrega esse nome sozinho no build/start local.
 Pré-requisitos: Node ≥20.19, Docker.
@@ -216,6 +218,7 @@ Pré-requisitos: Node ≥20.19, Docker.
   - Vercel Cron diário (`vercel.json`, 06:00 UTC = 03:00 BRT) chama `/api/cron/demos` com `CRON_SECRET`: apaga prévias vencidas e recria os dados das demos. Agendamentos são apagados antes do negócio (FK `Restrict`).
 - **"Quem fez":** `Appointment.createdByUserId`/`cancelledByUserId`, `Payment.createdByUserId`, `Client.notesUpdatedByUserId`. Registros antigos ficam sem autor e a tela não mostra a linha (não dá para distinguir "página pública" de "antes do controle").
 - **Limite do plano** (`Business.maxProfessionals`, `business/plan-rules.ts`): quantos profissionais **ativos** o negócio pode ter (Solo = 1; Modelo B = 3, 8 ou 15). `null` = sem limite, o padrão: nenhum negócio anterior foi enquadrado. Conferido na API ao criar um profissional ativo ou reativar um pausado (`code: "PLAN_LIMIT"`, mensagem com o WhatsApp da Aprazzo); cadastrar pausado e editar quem já está ativo continuam livres. Definido na entrega (`limiteProfissionais` no arquivo do cliente) ou pelo suporte (`npm run limite-profissionais`); a tela não muda o limite. **Plano Solo** = limite 1 (`isSoloPlan`): reserva em 3 passos, sem a escolha do profissional; painel sem o que é de equipe ("Folgas" no lugar de Profissionais, que redireciona; um horário só em Configurações, com almoço, que grava o horário da página e o expediente juntos, `business/solo.service.ts`; "Seu nome" no cartão Negócio; serviço sempre da única pessoa; sem comissões, convites nem comparação entre profissionais; detalhes em `docs/design-system.md`). Tudo do modo solo depende do plano, nunca da contagem de profissionais.
+- **Medição própria do site** (`lib/site-metric-rules.ts` puro, `modules/metrics/metric.service.ts`, tabela `SiteMetric`): contadores anônimos por dia, sem cookies, sem terceiros e sem aviso de consentimento. Conta visita à página de vendas (com a origem: `utm_source` ou de onde a pessoa veio), abertura de demonstração (por endereço, só de negócio `isDemo`), entrada no painel da demo (no servidor) e clique no WhatsApp (por botão). `POST /api/public/metric` responde sempre 204 e só soma eventos da lista. Uma contagem por aba; navegador automatizado (`navigator.webdriver`) e quem abriu `?contar=nao` ficam de fora. Conta visitas, não pessoas. Consulta: `npm run metricas`. Google Analytics/Pixel (com banner de cookies) só quando o dono for anunciar: o `track()` já alimenta o `dataLayer`.
 - Rate limit em memória via `globalThis`: funciona só em instância única. Limitação conhecida; Redis/Upstash só quando pedido.
 
 # This is NOT the Next.js you know
