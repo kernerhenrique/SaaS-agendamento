@@ -65,6 +65,11 @@ export function workingHoursFormEntriesToInput(entries: WorkingHoursFormEntry[])
     });
 }
 
+// No celular, os campos dividem a coluna ao lado do nome do dia (expediente e almoço
+// alinhados um embaixo do outro); no computador, largura fixa.
+const TIME_INPUT_CLASS = "min-w-0 flex-1 sm:w-28 sm:flex-none";
+const TIME_PAIR_CLASS = "flex min-w-0 items-center gap-2";
+
 export function WorkingHoursEditor({
   value,
   onChange,
@@ -100,11 +105,12 @@ export function WorkingHoursEditor({
         <div
           key={entry.weekday}
           className={cn(
-            "flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm transition-colors",
+            // Celular: grade "dia | horários"; computador: tudo numa linha (quebra se não couber).
+            "grid grid-cols-[5.5rem_1fr] items-center gap-2 rounded-md border p-2 text-sm transition-colors sm:flex sm:flex-wrap",
             conflict ? "border-warning/50 bg-warning/10" : entry.enabled ? "border-primary/30 bg-primary/5" : "border-border",
           )}
         >
-          <Label className="flex w-24 items-center gap-2 font-normal">
+          <Label className="flex items-center gap-2 font-normal sm:w-24">
             <Checkbox
               checked={entry.enabled}
               onCheckedChange={(checked) => updateEntry(index, { enabled: checked === true })}
@@ -113,55 +119,61 @@ export function WorkingHoursEditor({
           </Label>
           {entry.enabled ? (
             <>
-              <Input
-                type="time"
-                className="w-28"
-                aria-label={`${WEEKDAY_LABELS[entry.weekday]}: início`}
-                value={entry.startTime}
-                onChange={(event) => updateEntry(index, { startTime: event.target.value })}
-              />
-              <span className="text-muted-foreground">até</span>
-              <Input
-                type="time"
-                className="w-28"
-                aria-label={`${WEEKDAY_LABELS[entry.weekday]}: fim`}
-                value={entry.endTime}
-                onChange={(event) => updateEntry(index, { endTime: event.target.value })}
-              />
+              <div className={TIME_PAIR_CLASS}>
+                <Input
+                  type="time"
+                  className={TIME_INPUT_CLASS}
+                  aria-label={`${WEEKDAY_LABELS[entry.weekday]}: início`}
+                  value={entry.startTime}
+                  onChange={(event) => updateEntry(index, { startTime: event.target.value })}
+                />
+                <span className="text-muted-foreground">até</span>
+                <Input
+                  type="time"
+                  className={TIME_INPUT_CLASS}
+                  aria-label={`${WEEKDAY_LABELS[entry.weekday]}: fim`}
+                  value={entry.endTime}
+                  onChange={(event) => updateEntry(index, { endTime: event.target.value })}
+                />
+              </div>
               {allowBreak ? (
-                <Label className="flex items-center gap-1 font-normal">
-                  <Checkbox
-                    checked={entry.hasBreak}
-                    onCheckedChange={(checked) => updateEntry(index, { hasBreak: checked === true })}
-                  />
-                  Almoço
-                </Label>
-              ) : null}
-              {allowBreak && entry.hasBreak ? (
-                <>
-                  <Input
-                    type="time"
-                    className="w-28"
-                    aria-label={`Almoço de ${WEEKDAY_LABELS[entry.weekday]}: início`}
-                    value={entry.breakStartTime}
-                    onChange={(event) => updateEntry(index, { breakStartTime: event.target.value })}
-                  />
-                  <span className="text-muted-foreground">até</span>
-                  <Input
-                    type="time"
-                    className="w-28"
-                    aria-label={`Almoço de ${WEEKDAY_LABELS[entry.weekday]}: fim`}
-                    value={entry.breakEndTime}
-                    onChange={(event) => updateEntry(index, { breakEndTime: event.target.value })}
-                  />
-                </>
+                // No celular, "Almoço" vai na coluna do dia e os campos, na dos horários.
+                <div className="contents sm:flex sm:items-center sm:gap-2">
+                  <Label className="flex items-center gap-2 font-normal sm:gap-1">
+                    <Checkbox
+                      checked={entry.hasBreak}
+                      onCheckedChange={(checked) => updateEntry(index, { hasBreak: checked === true })}
+                    />
+                    Almoço
+                  </Label>
+                  {entry.hasBreak ? (
+                    <div className={TIME_PAIR_CLASS}>
+                      <Input
+                        type="time"
+                        className={TIME_INPUT_CLASS}
+                        aria-label={`Almoço de ${WEEKDAY_LABELS[entry.weekday]}: início`}
+                        value={entry.breakStartTime}
+                        onChange={(event) => updateEntry(index, { breakStartTime: event.target.value })}
+                      />
+                      <span className="text-muted-foreground">até</span>
+                      <Input
+                        type="time"
+                        className={TIME_INPUT_CLASS}
+                        aria-label={`Almoço de ${WEEKDAY_LABELS[entry.weekday]}: fim`}
+                        value={entry.breakEndTime}
+                        onChange={(event) => updateEntry(index, { breakEndTime: event.target.value })}
+                      />
+                    </div>
+                  ) : null}
+                </div>
               ) : null}
             </>
           ) : (
             <span className="text-muted-foreground">{offLabel}</span>
           )}
+          {/* Horário do negócio no pé do box (no computador, no fim da linha). */}
           {referenceHours && referenceHours.length > 0 ? (
-            <span className={cn("basis-full text-caption sm:ml-auto sm:basis-auto", conflict ? "font-medium text-warning" : "text-muted-foreground")}>
+            <span className={cn("col-span-2 text-caption sm:ml-auto", conflict ? "font-medium text-warning" : "text-muted-foreground")}>
               {reference ? `Negócio: ${minutesToTimeInput(reference.startMinute)} às ${minutesToTimeInput(reference.endMinute)}` : "Negócio fechado"}
               {conflict ? " · fora do horário" : ""}
             </span>

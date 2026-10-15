@@ -313,6 +313,8 @@ Duas camadas independentes:
 
 ## Horários e folgas (Bloco E3)
 
+- **`WorkingHoursEditor` no celular**: grade "dia | horários" — "☑ Segunda [09:00] até [19:00]" numa linha, "☑ Almoço [12:00] até [13:00]" na de baixo com os campos alinhados, e "Negócio: …" no pé do box. No computador, tudo numa linha como antes.
+- **Campos de data e hora** (`globals.css`): sem a aparência nativa (`appearance: none`), porque o Safari do iPhone ignorava a largura e eles vazavam do contêiner; em tela de toque o ícone do seletor some (o toque já abre o seletor). O DevTools não reproduz isso: conferir no aparelho.
 - **Expediente** (cadastro do profissional): cada dia mostra à direita "Negócio: 09:00 às 17:00" (ou "Negócio fechado"); fora disso o dia fica `warning/10` com "· fora do horário" e o salvar recusa. O dia desligado diz "Folga". Profissional novo já vem com o horário do negócio.
 - **"Folgas e ausências de {nome}"** (`TimeBlocksManager`): cartão à parte, abaixo do formulário, com o próprio botão "Adicionar ausência" (grava na hora). Chips `role="radio"` "Dia inteiro (ou vários dias)" / "Só algumas horas"; lista só do que ainda não passou, em texto ("13/11 a 17/11 · dias inteiros · Férias"). Link "Use Dias fechados" para feriado de todos; Dias fechados devolve "Folga ou férias de uma pessoa só ficam no cadastro dela".
 - **Lembretes** (Mensagens): setas "Dia anterior"/"Próximo dia" com "Amanhã, segunda-feira, 05 de outubro"; estado vazio "Nenhum agendamento neste dia".

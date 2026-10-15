@@ -290,6 +290,23 @@
   h1 {
     font-family: var(--font-heading);
   }
+  /* Safari do iPhone: data e hora com a aparência nativa ignoram a largura
+     (têm largura mínima própria e vazam do contêiner) e ficam mais altas que
+     os outros campos. Sem ela, obedecem ao Input; o seletor nativo continua. */
+  input:is([type="date"], [type="time"], [type="datetime-local"], [type="month"]) {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input::-webkit-date-and-time-value {
+    margin: 0;
+    text-align: left;
+  }
+  /* Em tela de toque o seletor abre ao tocar no campo: o ícone só tomaria espaço do texto. */
+  @media (pointer: coarse) {
+    input::-webkit-calendar-picker-indicator {
+      display: none;
+    }
+  }
   html {
     scroll-behavior: smooth;
   }
