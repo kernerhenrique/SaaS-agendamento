@@ -1,12 +1,14 @@
-import { LayoutDashboard, Sparkles } from "lucide-react";
+import { LayoutDashboard, MessageCircle, Sparkles } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { DemoWhatsAppLink } from "@/components/demo-whatsapp-link";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { BRAND } from "@/config/brand";
 
 /**
  * Faixa no topo da página pública de uma demonstração: explica o que é e leva
  * ao painel sem senha (POST para /api/public/demo/{slug}/entrar, que só
  * funciona em negócio de demonstração). Formulário comum: funciona sem JS.
+ * Ao lado, o WhatsApp de vendas da Aprazzo para quem quiser conversar.
  */
 export function DemoBar({ slug }: { slug: string }) {
   return (
@@ -19,12 +21,18 @@ export function DemoBar({ slug }: { slug: string }) {
             veja como ela chega no painel.
           </span>
         </p>
-        <form action={`/api/public/demo/${slug}/entrar`} method="post" className="shrink-0">
-          <Button type="submit" size="sm" className="w-full sm:w-auto">
-            <LayoutDashboard aria-hidden />
-            Ver o painel da demonstração
-          </Button>
-        </form>
+        <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+          <form action={`/api/public/demo/${slug}/entrar`} method="post">
+            <Button type="submit" size="sm" className="w-full sm:w-auto">
+              <LayoutDashboard aria-hidden />
+              Ver o painel da demonstração
+            </Button>
+          </form>
+          <DemoWhatsAppLink section="demo-pagina" className={buttonVariants({ variant: "outline", size: "sm", className: "w-full sm:w-auto" })}>
+            <MessageCircle aria-hidden />
+            Falar com a {BRAND.name}
+          </DemoWhatsAppLink>
+        </div>
       </div>
     </div>
   );

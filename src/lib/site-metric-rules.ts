@@ -8,8 +8,13 @@
 export const VISIT_SOURCES = ["instagram", "linkedin", "whatsapp", "facebook", "google", "direto", "outro"] as const;
 export type VisitSource = (typeof VISIT_SOURCES)[number];
 
-/** Botões de WhatsApp da página de vendas (`section` em `landing-links.tsx`). */
-export const WHATSAPP_SECTIONS = ["header", "hero", "demo", "solo", "como-comecar", "final", "footer", "sticky-mobile"] as const;
+/**
+ * Botões de WhatsApp: os da página de vendas (`section` em `landing-links.tsx`) e os das
+ * demonstrações (`demo-pagina` na faixa da página de reservas, `demo-painel` no painel).
+ */
+export const WHATSAPP_SECTIONS = [
+  "header", "hero", "demo", "solo", "como-comecar", "final", "footer", "sticky-mobile", "demo-pagina", "demo-painel",
+] as const;
 
 /**
  * Eventos contados e o que vale como detalhe de cada um:

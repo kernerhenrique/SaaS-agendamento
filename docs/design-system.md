@@ -219,8 +219,9 @@ Só com `Business.maxProfessionals = 1` (`isSoloPlan`); o layout do painel calcu
 ## Demonstração
 
 Só em negócio de demonstração (`Business.isDemo`, ver `docs/como-clonar.md`):
-- **`DemoBar`** (`src/components/demo-bar.tsx`), no topo da página pública: fundo `muted`, ícone `Sparkles` em `primary`, "Demonstração da Aprazzo" e o botão "Ver o painel da demonstração". É um `<form method="post">` comum (funciona sem JS); no celular o botão ocupa a largura toda.
-- **`DemoBanner`** (`src/components/admin/demo-banner.tsx`), acima da barra superior do painel: "Você está numa demonstração", com link "Página de reservas" (nova aba, anunciado ao leitor de tela).
+- **`DemoBar`** (`src/components/demo-bar.tsx`), no topo da página pública: fundo `muted`, ícone `Sparkles` em `primary`, "Demonstração da Aprazzo", o botão "Ver o painel da demonstração" (um `<form method="post">` comum, funciona sem JS) e, em contorno, "Falar com a Aprazzo" (`DemoWhatsAppLink`: WhatsApp de vendas com "Testei a demonstração da Aprazzo…"; o nome evita confusão com o botão "WhatsApp" do negócio de exemplo). No celular os botões ocupam a largura toda, um embaixo do outro.
+- **`DemoBanner`** (`src/components/admin/demo-banner.tsx`), acima da barra superior do painel: "Você está numa demonstração", com os links "Página de reservas" (nova aba, anunciado ao leitor de tela) e "Falar com a Aprazzo" (o mesmo `DemoWhatsAppLink`).
+- Os cliques nesses dois botões entram na medição própria como `demo-pagina` e `demo-painel` (`WHATSAPP_SECTIONS`).
 - Ações bloqueadas não somem da tela: o salvar mostra a mensagem da API ("Na demonstração, isso fica desativado…") no lugar de erro, para o visitante ver a tela inteira.
 
 ## Quando usar drawer vs. modal vs. página

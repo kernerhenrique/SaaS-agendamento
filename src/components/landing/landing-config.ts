@@ -11,6 +11,8 @@ export const LANDING = {
   whatsappMessage: "Olá! Vi o site e quero conhecer a Aprazzo.",
   /** Botão da seção do plano Solo: a conversa já chega dizendo o interesse. */
   whatsappMessageSolo: "Olá! Vi o site e quero conhecer o plano Solo da Aprazzo.",
+  /** Botões das demonstrações (página de reservas e painel). */
+  whatsappMessageDemo: "Olá! Testei a demonstração da Aprazzo e quero saber mais.",
   loginPath: "/admin/login",
   /** Perfil da Aprazzo no Instagram, sem o @. */
   instagramHandle: "useaprazzo",

@@ -6,6 +6,7 @@ describe("parseMetric", () => {
   it("aceita só eventos e detalhes da lista", () => {
     expect(parseMetric({ event: "site_visit", label: "instagram" })).toEqual({ event: "site_visit", label: "instagram" });
     expect(parseMetric({ event: "whatsapp_click", label: "hero" })).toEqual({ event: "whatsapp_click", label: "hero" });
+    expect(parseMetric({ event: "whatsapp_click", label: "demo-painel" })).toEqual({ event: "whatsapp_click", label: "demo-painel" });
     expect(parseMetric({ event: "demo_open", label: "barbearia-do-ze-demo" })).toEqual({ event: "demo_open", label: "barbearia-do-ze-demo" });
   });
 
